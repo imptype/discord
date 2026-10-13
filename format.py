@@ -42,7 +42,7 @@ def diff(path, old, new):
 
 mode = sys.argv[1] if len(sys.argv) > 1 else ''
 files = [*Path('.').glob('*.py'), *Path('discord').rglob('*.py')]
-before = {p: p.read_text() for p in files}
+before = {p: p.read_text(encoding='utf-8', newline='') for p in files}
 
 if mode == '--check':
   ruff('check', '.')
@@ -59,9 +59,9 @@ else:
   ruff('check', '--fix', '--show-fixes', '.')
   ruff('format', '--quiet', '.')
   for path in files:
-    current = path.read_text()
+    current = path.read_text(encoding='utf-8', newline='')
     new = fix(current)
     if new != current:
-      path.write_text(new)
+      path.write_text(new, encoding='utf-8', newline='')
     if new != before[path]:
       print(f'Reformatted {path}')

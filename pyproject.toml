@@ -9,7 +9,7 @@ description = 'Discord API wrapper'
 readme = 'README.md'
 license = 'MIT'
 license-files = ['LICENSE']
-requires-python = '>=3.10'
+requires-python = '>=3.15'
 
 [tool.uv.build-backend]
 module-name = 'discord'
@@ -23,6 +23,7 @@ indent-width = 2
 
 [tool.ruff.format]
 quote-style = 'single'
+line-ending = 'lf'
 
 [tool.ruff.lint]
 extend-select = ['I', 'UP', 'B']
