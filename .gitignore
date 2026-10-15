@@ -1,5 +1,12 @@
+# Meta stuff
 .venv/
 __pycache__/
+dist/
+.ruff_cache/
+.git/
+
+# Hide personal stuff
 .env
+!example.env
 test.py
 NOTES.md
