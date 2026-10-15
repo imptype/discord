@@ -10,3 +10,5 @@ dist/
 !example.env
 test.py
 NOTES.md
+dump.py
+dump.txt
