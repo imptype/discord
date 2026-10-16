@@ -2,9 +2,8 @@
 format.py - Custom formatter for this repo (This was AI-assisted).
 
 First it runs Ruff check to achieve the following:
-1. Sorts imports, for example alphabetically.
-2. Check for outdated syntax, like Union[int, str] vs int | str.
-3. Check for likely bugs and bad patterns (flake8-bugbear), like mutable default arguments.
+1. Check for outdated syntax, like Union[int, str] vs int | str.
+2. Check for likely bugs and bad patterns (flake8-bugbear), like mutable default arguments.
 
 Then it runs some extra things outside:
 1. Enforce 2-space indents.
@@ -14,7 +13,17 @@ Then it runs some extra things outside:
 5. Somewhat enforce snake_case variable and function names.
 6. Enforce no double blank lines in a row (skipping strings).
 7. Enforce a space between operators like * + (includes = in parameters and assignments)
-It also ensures all tracked text (.gitignore, *.md, *.toml, *.lock, 
+8. Sort imports by these rules:
+   a. Groups first: __future__, then system libs, then 3rd party libs, then local files.
+   b. Then "import x" over "from x import y"
+   c. Then shortest line first, so "import os" comes before "import sys" before "import asyncio".
+   d. Then alphabetical when the lengths match.
+   e. Also formats names in "from x import a, b, c" by class, then func, then variable, and alphabetical
+   Imports have no blank lines between them, and exactly one blank line after them.
+   A comment on an import line like # is preserved, but not counted in the line length.
+   A comment or docstring outside an import line, are not touched (they stay in that line index).
+9. It also removes the trailing commas (but ignores 1 size tuples). (one, two,) -> (one, two)
+It also ensures all tracked text (.gitignore, *.md, *.toml, *.lock,
 *.env, LICENSE) files use LF and end with 1 newline.
 
 This is a hybrid because Ruff can either expand or collapse lines, but
@@ -26,17 +35,17 @@ Usage (run from the project root):
   uv run python format.py --diff      show what would change, change nothing
   uv run python format.py --selftest  run the built-in tests
 
-No pass ever joins or splits lines. Each pass only changes whitespace and quotes.
+No pass ever joins or splits lines. Each pass only changes whitespace, quotes and import order.
 """
 
-import ast
-import difflib
 import io
-import keyword
 import os
-import subprocess
+import ast
 import sys
+import difflib
+import keyword
 import tokenize
+import subprocess
 from pathlib import Path
 
 INDENT = 2
@@ -53,7 +62,7 @@ SKIP_TYPES = {
   tokenize.ENDMARKER,
   tokenize.INDENT,
   tokenize.NEWLINE,
-  tokenize.NL,
+  tokenize.NL
 }
 STR_STARTS = {getattr(tokenize, n) for n in ('FSTRING_START', 'TSTRING_START') if hasattr(tokenize, n)}
 STR_ENDS = {getattr(tokenize, n) for n in ('FSTRING_END', 'TSTRING_END') if hasattr(tokenize, n)}
@@ -61,7 +70,7 @@ STR_ENDS = {getattr(tokenize, n) for n in ('FSTRING_END', 'TSTRING_END') if hasa
 # Operators that always get a space on both sides.
 ALWAYS_SPACED = {
   '=', '+=', '-=', '*=', '/=', '//=', '%=', '**=', '@=', '<<=', '>>=', '&=', '|=', '^=',
-  ':=', '->', '<', '>', '<=', '>=', '==', '!=',
+  ':=', '->', '<', '>', '<=', '>=', '==', '!='
 }
 # Operators spaced only when used as binary operators (not unary or *args).
 BINARY_OPS = {'+', '-', '*', '/', '//', '%', '**', '@', '<<', '>>', '&', '|', '^'}
@@ -237,6 +246,81 @@ def fix_spacing(src):
     adjacent = True
   return splice(src, edits)
 
+# --- pass: trailing commas ---
+
+NO_TUPLE_KEYWORDS = {'import', 'with'}
+
+def fix_trailing_commas(src):
+  """Remove a comma that sits right before a closing bracket, unless removing
+  it would change the meaning: the sole comma in a parenthesized single-element
+  tuple, or in a single-element tuple subscript (a[1,])."""
+  starts = line_starts(src)
+  stack = []
+  prev = None
+  str_depth = 0
+  edits = []
+  for tok in tokens_of(src):
+    kind = tok.type
+    if kind in STR_STARTS:
+      if str_depth == 0 and stack:
+        stack[-1]['last_comma'] = None
+      str_depth += 1
+      prev = tok
+      continue
+    if kind in STR_ENDS:
+      str_depth -= 1
+      prev = tok
+      continue
+    if str_depth > 0:
+      continue
+    if kind in SKIP_TYPES:
+      continue
+    callable_before = prev is not None and (
+      (prev.type == tokenize.NAME and not keyword.iskeyword(prev.string)) or
+      (prev.type == tokenize.OP and prev.string in CLOSERS) or
+      prev.type == tokenize.STRING or prev.type in STR_ENDS
+    )
+    list_keyword_before = (
+      prev is not None and prev.type == tokenize.NAME and
+      keyword.iskeyword(prev.string) and prev.string in NO_TUPLE_KEYWORDS
+    )
+    if kind == tokenize.OP and tok.string in ('(', '[', '{'):
+      if stack:
+        stack[-1]['last_comma'] = None
+      stack.append({
+        'bracket': tok.string,
+        'tuple_like': tok.string == '(' and not callable_before and not list_keyword_before,
+        'subscript': tok.string == '[' and callable_before,
+        'commas': 0,
+        'last_comma': None
+      })
+      prev = tok
+      continue
+    if kind == tokenize.OP and tok.string in CLOSERS and stack:
+      frame = stack.pop()
+      keep = frame['last_comma'] is not None and frame['commas'] == 1 and (frame['tuple_like'] or frame['subscript'])
+      if frame['last_comma'] is not None and not keep:
+        comma = frame['last_comma']
+        begin = offset(starts, comma.start)
+        comma_end = offset(starts, comma.end)
+        closer_start = offset(starts, tok.start)
+        gap_text = src[comma_end:closer_start]
+        end = closer_start if '\n' not in gap_text else comma_end
+        edits.append((begin, end, ''))
+      if stack:
+        stack[-1]['last_comma'] = None
+      prev = tok
+      continue
+    if kind == tokenize.OP and tok.string == ',' and stack:
+      stack[-1]['commas'] += 1
+      stack[-1]['last_comma'] = tok
+      prev = tok
+      continue
+    if stack:
+      stack[-1]['last_comma'] = None
+    prev = tok
+  return splice(src, edits)
+
 # --- pass: indentation ---
 
 def statements(tokens, lines):
@@ -300,6 +384,88 @@ def fix_indent(src):
       out[row - 1] = ' ' * comment_indent(row, width(line), stmts) + body
   return ''.join(out)
 
+# --- pass: import order ---
+
+def import_group(node):
+  """0 = __future__, 1 = system libs, 2 = 3rd party libs, 3 = local files."""
+  if isinstance(node, ast.ImportFrom):
+    if node.level:
+      return 3
+    top = (node.module or '').split('.')[0]
+  else:
+    top = node.names[0].name.split('.')[0]
+  if top == '__future__':
+    return 0
+  if top in sys.stdlib_module_names:
+    return 1
+  if top and (Path(top).is_dir() or Path(top + '.py').is_file()):
+    return 3
+  return 2
+
+def length_key(text):
+  """Shortest first, then alphabetical."""
+  return len(text), text.lower(), text
+
+def name_kind(name):
+  """0 = class (PascalCase), 1 = func (lowercase/mixed), 2 = variable (ALL_CAPS constant)."""
+  bare = name.lstrip('_') or name
+  if bare.isupper():
+    return 2
+  if bare[:1].isupper():
+    return 0
+  return 1
+
+def import_lines(node, lines):
+  """Source lines of an import. A simple one-line 'from' import also gets its names sorted."""
+  chunk = lines[node.lineno - 1 : node.end_lineno]
+  simple = len(chunk) == 1 and not any(mark in chunk[0] for mark in '#(;')
+  if isinstance(node, ast.ImportFrom) and simple:
+    node.names.sort(key = lambda alias: (name_kind(alias.name), alias.name.lower(), alias.name))
+    chunk = [ast.unparse(node) + '\n']
+  return chunk
+
+def import_runs(tree):
+  """Lists of consecutive top-level import statements."""
+  runs = [[]]
+  for node in tree.body:
+    if isinstance(node, (ast.Import, ast.ImportFrom)):
+      runs[-1].append(node)
+    elif runs[-1]:
+      runs.append([])
+  return [run for run in runs if run]
+
+def fix_imports(src):
+  lines = io.StringIO(src).readlines()
+  if lines and not lines[-1].endswith('\n'):
+    lines[-1] += '\n'
+  edits = []
+  for run in import_runs(ast.parse(src)):
+    first = run[0].lineno
+    last = run[-1].end_lineno
+    inside = {row for node in run for row in range(node.lineno, node.end_lineno + 1)}
+    stray = any(row not in inside and lines[row - 1].strip() for row in range(first, last + 1))
+    shared = any(a.end_lineno >= b.lineno for a, b in zip(run, run[1:], strict = False))
+    if stray or shared:
+      continue
+    items = []
+    for node in run:
+      chunk = import_lines(node, lines)
+      is_from = isinstance(node, ast.ImportFrom)
+      items.append((import_group(node), is_from, *length_key(ast.unparse(node)), chunk))
+    items.sort(key = lambda item: item[:5])
+    new = [line for item in items for line in item[5]]
+    after = lines[last:]
+    blanks = 0
+    while blanks < len(after) and not after[blanks].strip():
+      blanks += 1
+    if blanks < len(after):
+      new.append('\n')
+      last += blanks
+    edits.append((first, last, new))
+  for first, last, new in sorted(edits, reverse = True):
+    lines[first - 1 : last] = new
+  return ''.join(lines)
+
 # --- pass: whitespace and blank lines (Python files) ---
 
 def fix_whitespace(src):
@@ -332,11 +498,30 @@ def normalize_text(text):
 
 # --- pipeline ---
 
-PASSES = [fix_quotes, fix_spacing, fix_indent, fix_whitespace]
+PASSES = [fix_quotes, fix_trailing_commas, fix_spacing, fix_indent, fix_imports, fix_whitespace]
+
+def canonical(src):
+  """AST dump that ignores import order, so the import pass is allowed to reorder them."""
+  tree = ast.parse(src)
+  for node in ast.walk(tree):
+    if isinstance(node, (ast.Import, ast.ImportFrom)):
+      node.names.sort(key = ast.dump)
+  body = []
+  run = []
+  for node in [*tree.body, None]:
+    if isinstance(node, (ast.Import, ast.ImportFrom)):
+      run.append(node)
+      continue
+    body += sorted(run, key = ast.dump)
+    run = []
+    if node is not None:
+      body.append(node)
+  tree.body = body
+  return ast.dump(tree)
 
 def same_tree(old, new):
   try:
-    return ast.dump(ast.parse(old)) == ast.dump(ast.parse(new))
+    return canonical(old) == canonical(new)
   except SyntaxError:
     return False
 
@@ -394,7 +579,14 @@ CASES = [
   ('operators', 'x=1+2*3\ny=a**-b\n', 'x = 1 + 2 * 3\ny = a ** -b\n'),
   ('unary and star', 'f(*args,**kw)\nz=[-1,+2,~3]\n', 'f(*args, **kw)\nz = [-1, +2, ~3]\n'),
   ('kwargs and defaults', 'def f(a: int=1, *, b=2)->int:\n  return f(a=1,b=-2)\n', 'def f(a: int = 1, *, b = 2) -> int:\n  return f(a = 1, b = -2)\n'),
-  ('comma', 'x = (1 ,2,)\ny = (1, )\n', 'x = (1, 2,)\ny = (1, )\n'),
+  ('comma removed', 'x = (1 ,2,)\n', 'x = (1, 2)\n'),
+  ('comma single tuple kept', 'y = (1, )\nv = (1,)\n', 'y = (1, )\nv = (1,)\n'),
+  ('comma call always removed', 'z = f(1,2,)\n', 'z = f(1, 2)\n'),
+  ('comma list always removed', 'w = [1,]\n', 'w = [1]\n'),
+  ('comma dict always removed', 'd = {1: 2,}\n', 'd = {1: 2}\n'),
+  ('comma subscript tuple kept', 'a[1,]\n', 'a[1,]\n'),
+  ('comma multiline kept across lines', 'x = (\n  1,\n  2,\n)\n', 'x = (\n  1,\n  2\n)\n'),
+  ('comma fstring element not eaten', "x = ['a', FENCE, f'{ROOT.name}/']\n", "x = ['a', FENCE, f'{ROOT.name}/']\n"),
   ('fstring untouched', "x = f'{a=}{b+1}'\n", "x = f'{a=}{b+1}'\n"),
   ('except star', 'try:\n  pass\nexcept* E:\n  pass\n', 'try:\n  pass\nexcept* E:\n  pass\n'),
   ('indent', 'if a:\n    b = (1,\n        2)\n    # note\n    c = 1\n', 'if a:\n  b = (1,\n      2)\n  # note\n  c = 1\n'),
@@ -402,20 +594,30 @@ CASES = [
   ('blank lines', 'a = 1   \n\n\n\nb = 2\n\n\n', 'a = 1\n\nb = 2\n'),
   ('crlf to lf', 'a = 1\r\nb = 2\r\n', 'a = 1\nb = 2\n'),
   ('strings untouched', 's = """\n\n\n  x   \n"""\n', 's = """\n\n\n  x   \n"""\n'),
+  ('imports by length', 'import sys\nimport asyncio\nfrom enum import IntEnum\nimport os\n', 'import os\nimport sys\nimport asyncio\nfrom enum import IntEnum\n'),
+  ('imports same length alphabetical', 'import re\nimport os\n', 'import os\nimport re\n'),
+  ('imports in groups', 'from .x import y\nimport orjson\nimport sys\nimport os\nz = 1\n', 'import os\nimport sys\nimport orjson\nfrom .x import y\n\nz = 1\n'),
+  ('imports future stays first', 'from __future__ import annotations\nimport os\n', 'from __future__ import annotations\nimport os\n'),
+  ('imports blank lines', 'import sys\n\nimport os\n\n\n\nz = 1\n', 'import os\nimport sys\n\nz = 1\n'),
+  ('imports names sorted', 'from enum import IntEnum, auto, Flag as F\n', 'from enum import Flag as F, IntEnum, auto\n'),
+  ('imports comment left alone', 'import sys\n# note\nimport os\n', 'import sys\n# note\nimport os\n'),
+  ('imports multiline kept', 'import sys\nfrom enum import (\n  IntEnum,\n  auto,\n)\nimport os\n', 'import os\nimport sys\nfrom enum import (\n  IntEnum,\n  auto\n)\n'),
+  ('imports not at top', 'def f():\n  import sys\n  import os\n', 'def f():\n  import sys\n  import os\n'),
+  ('imports import before from', 'from a import b\nimport numpy_extra\n', 'import numpy_extra\nfrom a import b\n')
 ]
 NAME_CASES = [
   ('thing = 1\npoint_RTS = 2\nRTS_point = 3\nRTS = 4\nclass ABC: pass\nclass CoolCar: pass\n', 0),
   ('blueThing = 1\n', 1),
   ('class aBC: pass\nclass cOOlCAr: pass\n', 2),
   ('def doThing(selfThing): pass\n', 2),
-  ('blueThing = 1  # naming: ignore\n', 0),
+  ('blueThing = 1  # naming: ignore\n', 0)
 ]
 TEXT_CASES = [
   ('no trailing newline', 'readme body', 'readme body\n'),
   ('crlf', 'a = 1\r\nb = 2', 'a = 1\nb = 2\n'),
   ('many trailing blanks collapse to one newline', 'a\n\n\n\n', 'a\n'),
   ('mid-file blanks kept', 'a\n\nb\n', 'a\n\nb\n'),
-  ('empty file stays empty', '', ''),
+  ('empty file stays empty', '', '')
 ]
 
 def selftest():
