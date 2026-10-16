@@ -1,5 +1,5 @@
 import os
-from ping import ping
+from funcs import ping_command
 import discord
 
 app = discord.App(
@@ -8,7 +8,7 @@ app = discord.App(
   application_id = os.environ['APPLICATION_ID']
 )
 
-app.add_command(ping)
+app.add_command(ping_command)
 
 @app.command.slash()
 async def hello(interaction):

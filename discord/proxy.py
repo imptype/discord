@@ -1,9 +1,8 @@
 """
-proxy.py - allows for "@app.command.slash" syntax.
+proxy.py - allows for "@app/bot.command.slash" syntax.
 """
 
-import functools
-from .. import command
+from . import command
 
 class CommandProxy:
   def __init__(self, app, module):
@@ -15,7 +14,6 @@ class CommandProxy:
     if not callable(attr):
       return attr
 
-    @functools.wraps(attr)
     def wrapper(*args, **kwargs):
       result = attr(*args, **kwargs)
 
@@ -24,7 +22,6 @@ class CommandProxy:
         return result
 
       if callable(result):
-        @functools.wraps(result)
         def decorator(func):
           command = result(func)
           self.app.add_command(command)

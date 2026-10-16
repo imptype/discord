@@ -11,3 +11,9 @@ class ResponseType(IntEnum):
 
 class CommandType(IntEnum):
   CHAT_INPUT = 1
+
+class HTTPStatus(IntEnum):
+  OK_200 = 200
+  NO_CONTENT_204 = 204
+  UNAUTHORIZED_401 = 401
+  NOT_FOUND_404 = 404

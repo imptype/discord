@@ -1,5 +1,4 @@
 from ..enums import InteractionType, ResponseType
-from ..interaction import Interaction
 
 async def handler(app, payload):
   kind = payload['type']
@@ -8,14 +7,7 @@ async def handler(app, payload):
     return {'type': ResponseType.PONG}
 
   if kind == InteractionType.APPLICATION_COMMAND:
-    name = payload['data']['name']
-    command = app.registry.get(name)
-
-    if command is None:
-      raise ValueError(f'unknown command: {name}')
-
-    interaction = Interaction(payload)
-    await command(interaction)
+    interaction = await app.run_command(payload, is_from_http = True)
     return interaction.response # or {'type': ResponseType.DEFERRED_MESSAGE/etc}
 
   raise ValueError(f'unsupported interaction type: {kind}')
