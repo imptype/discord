@@ -50,7 +50,9 @@ class Bot(AppBase):
     intents = Event.MESSAGE_CREATE.value
     if not self.intents & intents:
       names = ' / '.join(flag.name for flag in intents if flag.name)
-      log.warning(f'{command.name} will never match: missing intents, enable one of {names}')
+      log.warning(f'message command {command.name}() will never run: missing intents, enable one of {names}')
+    elif self.intents & Intents.GUILD_MESSAGES and not self.intents & Intents.MESSAGE_CONTENT:
+      log.warning(f'message command {command.name}() may never run: missing intent, enable MESSAGE_CONTENT')
     self.command_handlers[command.name] = command
 
   def event(self, func = None, *, name = None):
@@ -68,7 +70,7 @@ class Bot(AppBase):
       log.warning(f'{name} is not a valid gateway event')
     elif member and member.value and not self.intents & member.value:
       names = ' / '.join(flag.name for flag in member.value if flag.name)
-      log.warning(f'{name}() will never fire: missing intents, enable one of {names}')
+      log.warning(f'event handler {name}() will never run: missing intents, enable one of {names}')
     self.event_handlers.setdefault(gateway_name, set()).add(func)
     return func
 
