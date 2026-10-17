@@ -26,6 +26,7 @@ class Bot(AppBase):
     self.connection = Connection(self.http, token, intents, self.on_event)
     self.event_handlers = {}
     self.command_handlers = {}
+    self.extra_handlers = {Event: self.add_events}
     self.tasks = set()
 
   def set_proxy(self):

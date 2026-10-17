@@ -1,3 +1,4 @@
+from .cog import Cog
 from .server import App
 from .command import command
 from .http import HTTPClient

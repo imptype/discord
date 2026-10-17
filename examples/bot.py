@@ -1,5 +1,6 @@
 import os
-from funcs import another_message_command, on_message_create as func_event, ping_command
+from utils import Utils
+from funcs import another_message_command, on_message_create as func_event
 import discord
 
 discord.enable_logs(truncate_after = 100)
@@ -23,7 +24,7 @@ async def on_ready(data):
 async def foo(data):
   print('did !foo')
 
-bot.add_commands(ping_command, another_message_command)
+bot.add_commands(another_message_command)
 
 @bot.command.slash()
 async def hello(interaction):
@@ -34,6 +35,7 @@ async def lifespan():
   print('startup')
   print(bot.registry)
   # print(await app.sync())
+  await bot.add_cogs(Utils)
   yield
   print('shutdown')
 

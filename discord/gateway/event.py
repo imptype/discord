@@ -4,6 +4,7 @@ events.py - lets you prefix a function name with on_ so MESSAGE_CREATE is on_mes
 
 from enum import Enum
 from .intents import Intents
+from ..command import Handler
 
 ANY_EVENT = 'ANY_EVENT'
 
@@ -102,10 +103,9 @@ class EventIntents(Enum):
   MESSAGE_POLL_VOTE_ADD = Intents.GUILD_MESSAGE_POLLS | Intents.DIRECT_MESSAGE_POLLS
   MESSAGE_POLL_VOTE_REMOVE = Intents.GUILD_MESSAGE_POLLS | Intents.DIRECT_MESSAGE_POLLS
 
-class Event:
+class Event(Handler):
   def __init__(self, func, name = None):
-    self.func = func
-    self.name = name or func.__name__
+    super().__init__(func, name)
     if not self.name.startswith('on_'):
       raise ValueError(f'event name must start with on_: {self.name}')
     self.gateway_name = self.name[3:].upper()

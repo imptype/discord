@@ -1,10 +1,11 @@
 from .enums import CommandType
 
-class BaseCommand:
+class Handler:
   def __init__(self, func, name = None):
     self.func = func
     self.name = name or func.__name__
 
+class BaseCommand(Handler):
   async def __call__(self, data):
     return await self.func(data)
 
