@@ -50,11 +50,14 @@ class Bot(AppBase):
     for command in commands: # noqa: F402
       if not isinstance(command, MessageCommand):
         continue
+      name = command.func.__name__
+      if command.name != name:
+        name = f'"{command.name}" {name}'
       if not self.intents & intents:
         names = ' / '.join(flag.name for flag in intents if flag.name)
-        log.warning(f'message command {command.name}() will never run: missing intents, enable one of {names}')
+        log.warning(f'message command {name}() will never run: missing intents, enable one of {names}')
       elif self.intents & Intents.GUILD_MESSAGES and not self.intents & Intents.MESSAGE_CONTENT:
-        log.warning(f'message command {command.name}() may never run: missing intent, enable MESSAGE_CONTENT')
+        log.warning(f'message command {name}() may never run: missing intent, enable MESSAGE_CONTENT')
       self.command_handlers[command.name] = command
 
   def event(self, func = None, *, name = None):
@@ -69,12 +72,15 @@ class Bot(AppBase):
       if not isinstance(event, Event):
         raise ValueError(f'not an event: {event!r}')
     for event in events:
+      name = event.func.__name__
+      if event.name != name:
+        name = f'"{event.name}" {name}'
       member = EventIntents.__members__.get(event.gateway_name)
       if not member and event.gateway_name != ANY_EVENT:
         log.warning(f'{event.name} is not a valid gateway event')
       elif member and member.value and not self.intents & member.value:
         names = ' / '.join(flag.name for flag in member.value if flag.name)
-        log.warning(f'event handler {event.name}() will never run: missing intents, enable one of {names}')
+        log.warning(f'event handler {name}() will never run: missing intents, enable one of {names}')
       self.event_handlers.setdefault(event.gateway_name, set()).add(event)
 
   def spawn(self, coro):
