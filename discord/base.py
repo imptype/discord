@@ -1,18 +1,22 @@
 from typing import cast
-from . import command
 from .http import HTTPClient
 from .proxy import CommandProxy
 from .interaction import Interaction
+from .command import CommandNamespace, InteractionCommand, command
 
 class AppBase:
   def __init__(self, token = None, application_id = None):
     self.http = HTTPClient(token, application_id)
-    self.command = cast(command, CommandProxy(self, command))
     self.registry = {}
+    self.set_proxy()
+
+  def set_proxy(self):
+    self.command = cast(CommandNamespace, CommandProxy(self, command))
 
   def add_command(self, command):
+    if not isinstance(command, InteractionCommand):
+      raise ValueError(f'not an interaction command: {command!r}')
     self.registry[command.name] = command
-    return command
 
   async def sync(self):
     body = [c.to_json() for c in self.registry.values()]

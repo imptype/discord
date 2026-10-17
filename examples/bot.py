@@ -1,9 +1,9 @@
 import os
-from funcs import on_message_create as func_event, ping_command
+from funcs import another_message_command, on_message_create as func_event, ping_command
 import discord
 
 discord.enable_logs(truncate_after = 100)
-bot = discord.Bot(token = os.environ['TOKEN'])
+bot = discord.Bot(token = os.environ['TOKEN'], intents = discord.Intents.all())
 
 @bot.event
 async def on_message_create(data):
@@ -20,6 +20,12 @@ async def on_ready(data):
   print('bot is ready', data)
 
 bot.add_command(ping_command)
+
+@bot.command
+async def foo(data):
+  print('did !foo')
+
+bot.add_command(another_message_command)
 
 @bot.command.slash()
 async def hello(interaction):

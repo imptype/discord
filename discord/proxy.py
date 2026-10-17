@@ -2,25 +2,26 @@
 proxy.py - allows for "@app/bot.command.slash" syntax.
 """
 
-from . import command
+from .command import BaseCommand
 
 class CommandProxy:
-  def __init__(self, app, module):
+  def __init__(self, app, target):
     self.app = app
-    self.module = module
+    self.target = target
 
+  # for namespace lookup app.command.slash or bot.command.slash
   def __getattr__(self, name):
-    attr = getattr(self.module, name)
-    if not callable(attr):
-      return attr
+    attr = getattr(self.target, name)
 
     def wrapper(*args, **kwargs):
       result = attr(*args, **kwargs)
 
-      if isinstance(result, command.Command):
+      # decorator without brackets: @bot.command, @app/bot.command.slash
+      if isinstance(result, BaseCommand):
         self.app.add_command(result)
         return result
 
+      # decorator with brackets: @bot.command(...), @app/bot.command.slash(...)
       if callable(result):
         def decorator(func):
           command = result(func)
