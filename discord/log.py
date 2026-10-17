@@ -6,12 +6,17 @@ import json
 import logging
 import orjson
 
+def ansi(hex_color):
+  hex_color = hex_color.lstrip('#')
+  red, green, blue = (int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+  return f'\033[38;2;{red};{green};{blue}m'
+
 COLORS = {
-  logging.DEBUG: '\033[90m',
-  logging.INFO: '\033[36m',
-  logging.WARNING: '\033[33m',
-  logging.ERROR: '\033[91m',
-  logging.CRITICAL: '\033[31m'
+  logging.DEBUG: ansi('#808080'),
+  logging.INFO: ansi('#00cdcd'),
+  logging.WARNING: ansi('#cdcd00'),
+  logging.ERROR: ansi('#ff5555'),
+  logging.CRITICAL: ansi('#cd0000')
 }
 RESET = '\033[0m'
 
