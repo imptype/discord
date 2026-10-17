@@ -8,7 +8,7 @@ app = discord.App(
   application_id = os.environ['APPLICATION_ID']
 )
 
-app.add_command(ping_command)
+app.add_commands(ping_command)
 
 @app.command.slash()
 async def hello(interaction):

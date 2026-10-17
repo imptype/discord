@@ -13,10 +13,12 @@ class AppBase:
   def set_proxy(self):
     self.command = cast(CommandNamespace, CommandProxy(self, command))
 
-  def add_command(self, command):
-    if not isinstance(command, InteractionCommand):
-      raise ValueError(f'not an interaction command: {command!r}')
-    self.registry[command.name] = command
+  def add_commands(self, *commands):
+    for command in commands: # noqa: F402
+      if not isinstance(command, InteractionCommand):
+        raise ValueError(f'not an interaction command: {command!r}')
+    for command in commands:
+      self.registry[command.name] = command
 
   async def sync(self):
     body = [c.to_json() for c in self.registry.values()]

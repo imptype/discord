@@ -7,7 +7,7 @@ from .intents import Intents
 
 ANY_EVENT = 'ANY_EVENT'
 
-class Event(Enum):
+class EventIntents(Enum):
   READY = None
   RESUMED = None
   USER_UPDATE = None
@@ -102,8 +102,18 @@ class Event(Enum):
   MESSAGE_POLL_VOTE_ADD = Intents.GUILD_MESSAGE_POLLS | Intents.DIRECT_MESSAGE_POLLS
   MESSAGE_POLL_VOTE_REMOVE = Intents.GUILD_MESSAGE_POLLS | Intents.DIRECT_MESSAGE_POLLS
 
+class Event:
+  def __init__(self, func, name = None):
+    self.func = func
+    self.name = name or func.__name__
+    if not self.name.startswith('on_'):
+      raise ValueError(f'event name must start with on_: {self.name}')
+    self.gateway_name = self.name[3:].upper()
+
+  async def __call__(self, *args):
+    return await self.func(*args)
+
 def event(func = None, *, name = None):
   def wrap(f):
-    f.name = name or f.__name__
-    return f
+    return Event(f, name)
   return wrap(func) if func else wrap

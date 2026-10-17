@@ -18,14 +18,14 @@ class CommandProxy:
 
       # decorator without brackets: @bot.command, @app/bot.command.slash
       if isinstance(result, BaseCommand):
-        self.app.add_command(result)
+        self.app.add_commands(result)
         return result
 
       # decorator with brackets: @bot.command(...), @app/bot.command.slash(...)
       if callable(result):
         def decorator(func):
           command = result(func)
-          self.app.add_command(command)
+          self.app.add_commands(command)
           return command
         return decorator
 
