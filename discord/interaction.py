@@ -14,4 +14,4 @@ class Interaction:
     if self.is_from_http:
       self.response = data
     else:
-      await self.app.http.request('POST', f'/interactions/{self.id}/{self.token}/callback', json = data)
+      await self.app.http.create_interaction_response(self.id, self.token, data)

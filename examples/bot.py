@@ -15,6 +15,11 @@ async def another_event_func(data):
 
 bot.add_events(func_event)
 
+@bot.command
+async def echo(data):
+  print('echo', data)
+  await bot.http.create_message(data['channel_id'], {'content': 'echo'})
+
 @bot.event
 async def on_ready(data):
   print('bot is ready', data)

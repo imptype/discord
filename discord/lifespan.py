@@ -11,8 +11,7 @@ class Lifespan:
     return callback
 
   async def startup(self):
-    await self.http.start()
-    self.stack.push_async_callback(self.http.close)
+    await self.stack.enter_async_context(self.http)
     if self.callback:
       await self.stack.enter_async_context(self.callback())
 

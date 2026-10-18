@@ -1,28 +1,55 @@
+from typing import Any
+import orjson
 import aiohttp
-from .enums import HTTPStatus
+from .api import Route, API
 
 URL = 'https://discord.com/api/v10'
+USER_AGENT = 'DiscordBot (https://github.com/imptype/discord, v0.1.1)'
 
-class HTTPClient:
+class HTTPClient(API):
   def __init__(self, token = None, application_id = None):
+    super().__init__()
     self.token = token
     self.application_id = application_id
-    self.session = None
 
-  async def start(self): # TODO: don't auth every request, use api params
-    headers = {'authorization': f'Bot {self.token}'} if self.token else {}
-    self.session = aiohttp.ClientSession(headers = headers)
-    return self.session
+  async def __aenter__(self):
+    self.session = aiohttp.ClientSession(json_serialize_bytes = orjson.dumps)
+    return self
 
-  async def close(self):
-    if self.session:
-      await self.session.close()
-      self.session = None
+  async def __aexit__(self, *exc_info):
+    await self.session.close()
 
-  async def request(self, method, route, **kwargs):
-    session = self.session or await self.start()
-    async with session.request(method, URL + route, **kwargs) as response:
-      response.raise_for_status()
-      if response.status == HTTPStatus.NO_CONTENT_204:
-        return None
-      return await response.json()
+  async def request(
+    self,
+    route: Route,
+    *,
+    body: Any = None,
+    authorize: bool = False,
+    reason: str | None = None,
+    **params: Any
+  ):
+    headers = {'User-Agent': USER_AGENT}
+    if authorize:
+      headers['Authorization'] = f'Bot {self.token}'
+    if reason:
+      headers['X-Audit-Log-Reason'] = reason
+    is_form = isinstance(body, (aiohttp.FormData, aiohttp.MultipartWriter))
+
+    # aiohttp doesn't convert booleans in query string
+    params = {
+      k: str(v).lower() if isinstance(v, bool) else v
+      for k, v in params.items() if v is not None
+    }
+
+    response = await self.session.request(
+      route.method,
+      f'{URL}{route.path}',
+      params = params,
+      headers = headers,
+      data = body if is_form else None,
+      json = None if is_form else body
+    )
+    if response.status >= 400:
+      text = await response.text()
+      raise ValueError(f'HTTP {response.status}: {text}')
+    return response

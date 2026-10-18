@@ -32,7 +32,7 @@ class AppBase(CogMixin):
 
   async def sync(self):
     body = [c.to_json() for c in self.registry.values()]
-    return await self.http.request('PUT', f'/applications/{self.http.application_id}/commands', json = body)
+    return await self.http.bulk_overwrite_global_commands(self.http.application_id, body)
 
   async def run_command(self, payload, is_from_http):
     name = payload['data']['name']
