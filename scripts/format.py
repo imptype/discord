@@ -30,10 +30,10 @@ This is a hybrid because Ruff can either expand or collapse lines, but
 not leave them alone! We also could use other Ruff stuff.
 
 Usage (run from the project root):
-  uv run python format.py             fix files in place
-  uv run python format.py --check     report problems, change nothing, exit 1 if any
-  uv run python format.py --diff      show what would change, change nothing
-  uv run python format.py --selftest  run the built-in tests
+  uv run python scripts/format.py             fix files in place
+  uv run python scripts/format.py --check     report problems, change nothing, exit 1 if any
+  uv run python scripts/format.py --diff      show what would change, change nothing
+  uv run python scripts/format.py --selftest  run the built-in tests
 
 No pass ever joins or splits lines. Each pass only changes whitespace, quotes and import order.
 """
