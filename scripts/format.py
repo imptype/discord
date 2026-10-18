@@ -53,7 +53,7 @@ NAMING_IGNORE = '# naming: ignore'
 MODES = ('', '--check', '--diff', '--selftest')
 
 EXCLUDE_DIRS = {'.git', '.venv', 'venv', 'node_modules', '__pycache__', '.mypy_cache', '.ruff_cache'}
-TEXT_GLOBS = ('*.md', '*.toml', '*.lock', '*.env', '.gitignore', 'LICENSE', 'LICENSE.*')
+TEXT_GLOBS = ('*.md', '*.toml', '*.lock', '*.env', '*.yml', '*.yaml', '.gitignore', 'LICENSE', 'LICENSE.*')
 
 SKIP_TYPES = {
   tokenize.COMMENT,
@@ -490,9 +490,10 @@ def fix_whitespace(src):
 
 # --- pass: newline normalization (non-Python text files) ---
 
-def normalize_text(text):
-  """Convert CRLF/CR to LF and ensure exactly one trailing newline. Leaves mid-file content alone."""
+def normalize_text(text, keep_trailing = False):
   text = text.replace('\r\n', '\n').replace('\r', '\n')
+  if not keep_trailing:
+    text = '\n'.join(line.rstrip(' \t') for line in text.split('\n'))
   stripped = text.rstrip('\n')
   return stripped + '\n' if stripped else ''
 
@@ -617,7 +618,8 @@ TEXT_CASES = [
   ('crlf', 'a = 1\r\nb = 2', 'a = 1\nb = 2\n'),
   ('many trailing blanks collapse to one newline', 'a\n\n\n\n', 'a\n'),
   ('mid-file blanks kept', 'a\n\nb\n', 'a\n\nb\n'),
-  ('empty file stays empty', '', '')
+  ('empty file stays empty', '', ''),
+  ('trailing spaces', '- run: uv build \nname: x\t\n', '- run: uv build\nname: x\n')
 ]
 
 def selftest():
@@ -750,7 +752,7 @@ def main(argv):
       current = read(path)
     except UnicodeDecodeError:
       continue
-    new = normalize_text(current)
+    new = normalize_text(current, path.suffix == '.md')
     if new == current:
       continue
     if mode == '--check':
