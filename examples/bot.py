@@ -1,5 +1,4 @@
 import os
-from utils import Utils
 from funcs import another_message_command, on_message_create as func_event
 import discord
 
@@ -23,12 +22,12 @@ async def on_ready(data):
 @bot.command
 async def loadcog(data):
   print('loaded math cog')
-  await bot.add_cogs(Utils)
+  await bot.load_extensions('cogs.utils')
 
 @bot.command
 async def unloadcog(data):
   print('unloaded math cog')
-  await bot.remove_cogs(Utils)
+  await bot.unload_extensions('cogs.utils')
 
 bot.add_commands(another_message_command)
 

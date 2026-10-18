@@ -19,3 +19,9 @@ class Utils(discord.Cog):
   @discord.command.slash(name = 'ping')
   async def ping_command(self, interaction): # custom func name
     await interaction.respond('pong')
+
+async def setup(bot):
+  await bot.add_cogs(Utils)
+
+async def teardown(bot):
+  print('teardown ran')
