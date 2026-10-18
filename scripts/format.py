@@ -24,7 +24,7 @@ Then it runs some extra things outside:
    A comment or docstring outside an import line, are not touched (they stay in that line index).
 9. It also removes the trailing commas (but ignores 1 size tuples). (one, two,) -> (one, two)
 It also ensures all tracked text (.gitignore, *.md, *.toml, *.lock,
-*.env, LICENSE) files use LF and end with 1 newline.
+*.env, *.yml, LICENSE) files use LF and end with 1 newline.
 
 This is a hybrid because Ruff can either expand or collapse lines, but
 not leave them alone! We also could use other Ruff stuff.
@@ -76,6 +76,7 @@ ALWAYS_SPACED = {
 BINARY_OPS = {'+', '-', '*', '/', '//', '%', '**', '@', '<<', '>>', '&', '|', '^'}
 # Operators that hug the next token when not binary (-x, *args, **kw, ~x, @decorator).
 HUG_AFTER = {'+', '-', '*', '**', '~', '@'}
+OPENERS = {'(', '[', '{'}
 CLOSERS = {')', ']', '}'}
 
 # --- helpers ---
@@ -284,7 +285,7 @@ def fix_trailing_commas(src):
       prev is not None and prev.type == tokenize.NAME and
       keyword.iskeyword(prev.string) and prev.string in NO_TUPLE_KEYWORDS
     )
-    if kind == tokenize.OP and tok.string in ('(', '[', '{'):
+    if kind == tokenize.OP and tok.string in OPENERS:
       if stack:
         stack[-1]['last_comma'] = None
       stack.append({
@@ -323,6 +324,8 @@ def fix_trailing_commas(src):
 
 # --- pass: indentation ---
 
+NO_ROW = SKIP_TYPES - {tokenize.COMMENT}
+
 def statements(tokens, lines):
   """List of (first_row, last_row, old_indent, new_indent) for every logical line."""
   found = []
@@ -359,23 +362,77 @@ def comment_indent(row, old, stmts):
     return old
   return max(0, old + stmt[3] - stmt[2])
 
+def ends_line(tokens, i):
+  """True if the bracket at tokens[i] is the last thing on its line (a hanging bracket)."""
+  after = tokens[i + 1].type if i + 1 < len(tokens) else None
+  if after == tokenize.COMMENT and i + 2 < len(tokens):
+    after = tokens[i + 2].type
+  return after == tokenize.NL
+
+def indent_targets(tokens, lines, stmts, begins_in):
+  """New indent for the first token of each row. Returns (targets, covered_rows).
+  Inside a hanging bracket (one that ends its line) contents go one INDENT in from the row
+  holding the bracket, and a closing bracket goes back to that row. Any other continuation
+  line keeps its alignment and is just shifted along with its statement."""
+  starts = {first: (last, old, new) for first, last, old, new in stmts}
+  covered = set()
+  targets = {}
+  shifts = {}
+  stack = []
+  depth = 0
+  done = 0
+  delta = 0
+  for i, tok in enumerate(tokens):
+    kind = tok.type
+    if kind in STR_ENDS:
+      depth -= 1
+      continue
+    if depth > 0:
+      if kind in STR_STARTS:
+        depth += 1
+      continue
+    row = tok.start[0]
+    if row > done and kind not in NO_ROW and row not in begins_in:
+      done = row
+      line = lines[row - 1]
+      target = None
+      if row in starts:
+        last, old, new = starts[row]
+        covered.update(range(row, last + 1))
+        delta = new - old
+        stack = []
+        target = new
+      elif row in covered:
+        if not stack:
+          target = max(0, width(line) + delta)
+        else:
+          base, hanging, moved = stack[-1]
+          if hanging:
+            closing = kind == tokenize.OP and tok.string in CLOSERS
+            target = base if closing else base + INDENT
+          else:
+            target = max(0, width(line) + moved)
+      if target is not None:
+        targets[row] = target
+        shifts[row] = target - width(line)
+    if kind == tokenize.OP and tok.string in OPENERS:
+      base = targets.get(row, width(lines[row - 1]))
+      stack.append((base, ends_line(tokens, i), shifts.get(row, delta)))
+    elif kind == tokenize.OP and tok.string in CLOSERS and stack:
+      stack.pop()
+    if kind in STR_STARTS:
+      depth += 1
+  return targets, covered
+
 def fix_indent(src):
   tokens = tokens_of(src)
   lines = io.StringIO(src).readlines()
   begins_in, _ = string_rows(tokens)
   stmts = statements(tokens, lines)
-  covered = set()
+  targets, covered = indent_targets(tokens, lines, stmts, begins_in)
   out = list(lines)
-  for first, last, old, new in stmts:
-    covered.update(range(first, last + 1))
-    delta = new - old
-    for row in range(first, last + 1):
-      line = lines[row - 1]
-      body = line.lstrip(' \t')
-      if row in begins_in or not body.strip():
-        continue
-      target = new if row == first else max(0, width(line) + delta)
-      out[row - 1] = ' ' * target + body
+  for row, target in targets.items():
+    out[row - 1] = ' ' * target + lines[row - 1].lstrip(' \t')
   for row, line in enumerate(lines, 1):
     if row in covered or row in begins_in:
       continue
@@ -592,6 +649,7 @@ CASES = [
   ('except star', 'try:\n  pass\nexcept* E:\n  pass\n', 'try:\n  pass\nexcept* E:\n  pass\n'),
   ('indent', 'if a:\n    b = (1,\n        2)\n    # note\n    c = 1\n', 'if a:\n  b = (1,\n      2)\n  # note\n  c = 1\n'),
   ('hanging layout kept', "if a:\n  await send({'t': 1, 's': 2,\n      'h': [3]})\n", "if a:\n  await send({'t': 1, 's': 2,\n      'h': [3]})\n"),
+  ('hanging brackets', 'def f(\n      a,\n      b\n):\n  return g(\n    h(\n        1\n    ),\n    2\n  )\n', 'def f(\n  a,\n  b\n):\n  return g(\n    h(\n      1\n    ),\n    2\n  )\n'),
   ('blank lines', 'a = 1   \n\n\n\nb = 2\n\n\n', 'a = 1\n\nb = 2\n'),
   ('crlf to lf', 'a = 1\r\nb = 2\r\n', 'a = 1\nb = 2\n'),
   ('strings untouched', 's = """\n\n\n  x   \n"""\n', 's = """\n\n\n  x   \n"""\n'),
