@@ -48,7 +48,7 @@ class LogSettings:
   def truncate(cls, text):
     limit = cls.TRUNCATE_AFTER
     if limit is not None and len(text) > limit:
-      return f'{text[:limit]}... (truncated, {len(text)} chars total)'
+      return f'{text[:limit]}... ({len(text) - limit} chars left)'
     return text
 
   @classmethod
