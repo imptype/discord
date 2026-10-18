@@ -1,6 +1,8 @@
+import os
 import sys
 import copy
 import types
+import asyncio
 import logging
 import importlib
 from .command import BaseCommand, Handler
@@ -9,6 +11,7 @@ log = logging.getLogger(__name__)
 
 SETUP = 'setup'
 TEARDOWN = 'teardown'
+RELOAD_INTERVAL = 1
 
 class Cog:
   def __init__(self, app):
@@ -18,11 +21,14 @@ class Cog:
   async def cog_unload(self): ...
 
 class CogMixin:
-  def __init__(self):
+  def __init__(self, reload = False):
+    self.reload = reload
     self.cogs = {} # loaded cogs {Cog: instance}
     self.cog_handlers = {} # {Cog: [copy.copy of handlers]}
     self.extra_registrars = {} # discord.Bot sets this
     self.extensions = {} # loaded extensions {name: [Cog]}
+    self.extension_files = {} # {name: (path, mtime)} used when reload is on
+    self.reload_task = None
 
   def add_commands(self, *commands): ...
   def remove_commands(self, *commands): ...
@@ -78,13 +84,13 @@ class CogMixin:
       if not isinstance(name, str):
         raise ValueError(f'not an extension name: {name!r}')
       if name in self.extensions:
-        raise ValueError(f'extension already loaded: {name}')
+        raise ValueError(f'extension already loaded: {name!r}')
     for name in names:
       module = importlib.import_module(name)
       setup = getattr(module, SETUP, None)
       if setup is None:
         sys.modules.pop(name, None)
-        raise ValueError(f'extension {name} has no {SETUP}(app)')
+        raise ValueError(f'extension {name!r} has no {SETUP}(app)')
       before = set(self.cogs)
       try:
         await setup(self)
@@ -93,14 +99,43 @@ class CogMixin:
         sys.modules.pop(name, None)
         raise
       self.extensions[name] = [cog for cog in self.cogs if cog not in before]
+      path = getattr(module, '__file__', None)
+      if self.reload and path:
+        self.extension_files[name] = (path, os.stat(path).st_mtime)
+        if self.reload_task is None:
+          self.reload_task = asyncio.create_task(self.watch_extensions())
 
   async def unload_extensions(self, *names):
     for name in names:
       if name not in self.extensions:
-        raise ValueError(f'extension not loaded: {name}')
+        raise ValueError(f'extension not loaded: {name!r}')
     for name in names:
       cogs = self.extensions.pop(name)
+      self.extension_files.pop(name, None)
       await self.remove_cogs(*[cog for cog in cogs if cog in self.cogs])
       teardown = getattr(sys.modules.pop(name, None), TEARDOWN, None)
       if teardown:
         await teardown(self)
+
+  async def watch_extensions(self):
+    while self.extension_files:
+      await asyncio.sleep(RELOAD_INTERVAL)
+      for name, (path, mtime) in list(self.extension_files.items()):
+        if name not in self.extension_files:
+          continue
+        try:
+          current = os.stat(path).st_mtime
+        except OSError:
+          continue
+        if current == mtime:
+          continue
+        log.warning(f'detected change in extension {name!r}, reloading...')
+        try:
+          if name in self.extensions:
+            await self.unload_extensions(name)
+          await self.load_extensions(name)
+          log.warning(f'extension {name!r} was reloaded!')
+        except Exception:
+          log.exception(f'failed to reload extension {name!r}')
+          self.extension_files[name] = (path, current)
+    self.reload_task = None

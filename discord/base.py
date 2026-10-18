@@ -6,8 +6,8 @@ from .interaction import Interaction
 from .command import CommandNamespace, InteractionCommand, command
 
 class AppBase(CogMixin):
-  def __init__(self, token = None, application_id = None):
-    super().__init__()
+  def __init__(self, token = None, application_id = None, reload = False):
+    super().__init__(reload)
     self.http = HTTPClient(token, application_id)
     self.registry = {}
     self.set_proxy()
@@ -31,7 +31,7 @@ class AppBase(CogMixin):
         del self.registry[command.name]
 
   async def sync(self):
-    body = [command.to_json() for command in self.registry.values()]
+    body = [c.to_json() for c in self.registry.values()]
     return await self.http.request('PUT', f'/applications/{self.http.application_id}/commands', json = body)
 
   async def run_command(self, payload, is_from_http):

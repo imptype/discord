@@ -3,7 +3,7 @@ from funcs import another_message_command, on_message_create as func_event
 import discord
 
 discord.enable_logs(truncate_after = 100)
-bot = discord.Bot(token = os.environ['TOKEN'], intents = discord.Intents.all())
+bot = discord.Bot(token = os.environ['TOKEN'], intents = discord.Intents.all(), reload = True)
 
 @bot.event
 async def on_message_create(data):

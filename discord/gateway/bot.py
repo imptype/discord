@@ -18,8 +18,8 @@ class BotCommandProxy(CommandProxy):
     return self.__getattr__('__call__')(*args, **kwargs)
 
 class Bot(AppBase):
-  def __init__(self, token, application_id = None, intents = DEFAULT_INTENTS, prefix = '!'):
-    super().__init__(token, application_id)
+  def __init__(self, token, application_id = None, intents = DEFAULT_INTENTS, prefix = '!', reload = False):
+    super().__init__(token, application_id, reload)
     self.lifespan = Lifespan(self.http)
     self.intents = intents
     self.prefix = prefix

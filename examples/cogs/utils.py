@@ -14,7 +14,7 @@ class Utils(discord.Cog):
 
   @discord.command(name = 'math')
   async def a_cog_command(self, data):
-    print('did !math command')
+    print('did !math command 3')
 
   @discord.command.slash(name = 'ping')
   async def ping_command(self, interaction): # custom func name

@@ -7,8 +7,8 @@ from ..enums import HTTPStatus
 from ..lifespan import Lifespan
 
 class App(AppBase):
-  def __init__(self, public_key, token = None, application_id = None):
-    super().__init__(token, application_id)
+  def __init__(self, public_key, token = None, application_id = None, reload = False):
+    super().__init__(token, application_id, reload)
     self.verify_key = VerifyKey(bytes.fromhex(public_key))
     self.lifespan = Lifespan(self.http)
 
