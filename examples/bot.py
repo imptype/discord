@@ -21,8 +21,14 @@ async def on_ready(data):
   print('bot is ready', data)
 
 @bot.command
-async def foo(data):
-  print('did !foo')
+async def loadcog(data):
+  print('loaded math cog')
+  await bot.add_cogs(Utils)
+
+@bot.command
+async def unloadcog(data):
+  print('unloaded math cog')
+  await bot.remove_cogs(Utils)
 
 bot.add_commands(another_message_command)
 
@@ -35,7 +41,6 @@ async def lifespan():
   print('startup')
   print(bot.registry)
   # print(await app.sync())
-  await bot.add_cogs(Utils)
   yield
   print('shutdown')
 

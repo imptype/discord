@@ -26,7 +26,7 @@ class Bot(AppBase):
     self.connection = Connection(self.http, token, intents, self.on_event)
     self.event_handlers = {}
     self.command_handlers = {}
-    self.extra_handlers = {Event: self.add_events}
+    self.extra_registrars = {Event: (self.add_events, self.remove_events)}
     self.tasks = set()
 
   def set_proxy(self):
@@ -61,6 +61,12 @@ class Bot(AppBase):
         log.warning(f'message command {name}() may never run: missing intent, enable MESSAGE_CONTENT')
       self.command_handlers[command.name] = command
 
+  def remove_commands(self, *commands):
+    super().remove_commands(*[command for command in commands if not isinstance(command, MessageCommand)])
+    for command in commands: # noqa: F402
+      if isinstance(command, MessageCommand) and self.command_handlers.get(command.name) is command:
+        del self.command_handlers[command.name]
+
   def event(self, func = None, *, name = None):
     def wrap(f):
       event = f if isinstance(f, Event) else Event(f, name)
@@ -83,6 +89,16 @@ class Bot(AppBase):
         names = ' / '.join(flag.name for flag in member.value if flag.name)
         log.warning(f'event handler {name}() will never run: missing intents, enable one of {names}')
       self.event_handlers.setdefault(event.gateway_name, set()).add(event)
+
+  def remove_events(self, *events):
+    for event in events:
+      if not isinstance(event, Event):
+        raise ValueError(f'not an event: {event!r}')
+    for event in events:
+      handlers = self.event_handlers.get(event.gateway_name, set())
+      handlers.discard(event)
+      if not handlers:
+        self.event_handlers.pop(event.gateway_name, None)
 
   def spawn(self, coro):
     task = asyncio.create_task(coro)
