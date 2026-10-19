@@ -6,7 +6,7 @@ from .log import enable_logs
 from .gateway import Bot, Intents, event
 from .enums import CommandType, InteractionType, ResponseType
 from .models import (
-  Channel, Guild, Member, Message, User, PartialChannel,
+  Channel, Context, Guild, Member, Message, User, PartialChannel,
   PartialGuild, PartialMember, PartialMessage, PartialUser,
   PartialModel, Snowflake, snowflake_time
 )

@@ -1,6 +1,6 @@
 from functools import partial
 from .models import (
-  Channel, Guild, Member, Message, PartialChannel, PartialGuild,
+  Channel, Context, Guild, Member, Message, PartialChannel, PartialGuild,
   PartialMember, PartialMessage, PartialUser, User
 )
 
@@ -39,3 +39,4 @@ class ModelFactory:
     self.user = partial(User, app)
     self.member = partial(Member, app)
     self.message = partial(Message, app)
+    self.context = partial(Context, app)

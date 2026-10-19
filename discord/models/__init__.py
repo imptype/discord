@@ -1,3 +1,4 @@
+from .context import Context
 from .user import PartialUser, User
 from .guild import Guild, PartialGuild
 from .member import Member, PartialMember

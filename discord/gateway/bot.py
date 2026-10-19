@@ -116,7 +116,7 @@ class Bot(AppBase):
       return
     command = self.command_handlers.get(parts[0].lower())
     if command:
-      self.spawn(command(message))
+      self.spawn(command(self.model.context(message)))
 
   async def on_event(self, name, data):
     payload = data # what handlers receive, a model if one exists for the event

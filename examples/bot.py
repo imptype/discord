@@ -6,12 +6,8 @@ discord.enable_logs(truncate_after = 100)
 bot = discord.Bot(token = os.environ['TOKEN'], intents = discord.Intents.all())
 
 @bot.command
-async def echo(message):
-  print('echo', message)
-  await message.channel.send('aa')
-  channel = await message.author.create_dm()
-  print('channel', channel)
-  await channel.send('qwewqeqwe')
+async def echo(context):
+  await context.send('aa')
 
 @bot.event
 async def on_message_create(data):
