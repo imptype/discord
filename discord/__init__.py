@@ -1,4 +1,5 @@
 from .cog import Cog
+from .file import File
 from .server import App
 from .embed import Embed
 from .command import command

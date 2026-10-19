@@ -33,7 +33,7 @@ class HTTPClient(API):
       headers['Authorization'] = f'Bot {self.token}'
     if reason:
       headers['X-Audit-Log-Reason'] = reason
-    is_form = isinstance(body, (aiohttp.FormData, aiohttp.MultipartWriter))
+    is_form = isinstance(body, aiohttp.FormData)
 
     # aiohttp doesn't convert booleans in query string
     params = {

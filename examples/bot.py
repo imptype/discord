@@ -1,5 +1,6 @@
 import os
 import datetime
+from pathlib import Path
 from funcs import another_message_command, on_message_create as func_event
 import discord
 
@@ -27,6 +28,15 @@ async def echo(context):
   embed2 = discord.Embed(title = 'second title')
   await context.send(embed = embed)
   await context.send('many', embeds = [embed, embed2])
+
+  data = (Path(__file__).parent / 'image.png').read_bytes()
+  file = discord.File(data, 'idk.png')
+  await context.send('file', file = file)
+  await context.send('same file', file = file)
+
+  embed3 = discord.Embed(title = 'files + embed')
+  embed3.set_image(url = 'attachment://image.png')
+  await context.send('two files and an embed', embed = embed3, files = [file, file])
 
 @bot.event
 async def on_message_create(data):
