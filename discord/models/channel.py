@@ -8,8 +8,19 @@ class PartialChannel(PartialModel):
   async def fetch(self):
     return await self.app.model.http.channel(self.id, self.guild)
 
-  async def send(self, content):
-    data = await self.app.http.create_message(self.id, {'content': content})
+  async def send(self, content = None, *, embed = None, embeds = None):
+    if embed is not None and embeds is not None:
+      raise ValueError('cannot send both embed and embeds')
+
+    body = {}
+    if content is not None:
+      body['content'] = content
+    if embed:
+      embeds = [embed]
+    if embeds:
+      body['embeds'] = [embed.to_json() for embed in embeds]
+
+    data = await self.app.http.create_message(self.id, body)
     return self.app.model.message(data)
 
 class Channel(PartialChannel):

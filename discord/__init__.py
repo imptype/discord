@@ -1,4 +1,5 @@
 from .cog import Cog
+from .embed import Embed
 from .server import App
 from .command import command
 from .http import HTTPClient

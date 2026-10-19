@@ -1,6 +1,7 @@
 import os
 from funcs import another_message_command, on_message_create as func_event
 import discord
+import datetime
 
 discord.enable_logs(truncate_after = 100)
 bot = discord.Bot(token = os.environ['TOKEN'], intents = discord.Intents.all())
@@ -8,6 +9,20 @@ bot = discord.Bot(token = os.environ['TOKEN'], intents = discord.Intents.all())
 @bot.command
 async def echo(context):
   await context.send('aa')
+  iurl = 'https://www.python.org/static/img/python-logo.png'
+  embed = discord.Embed(
+    title = 'titlea',
+    description = 'descrip',
+    url = 'https://python.org',
+    color = 0x123123,
+    timestamp = datetime.datetime.now()
+  )
+  embed.add_field('f1', 'v1', True)
+  embed.add_field('f2', 'v2', True)
+  embed.add_field('f3', 'v3', True)
+  embed2 = discord.Embed(title = 'second title')
+  await context.send(embed = embed)
+  await context.send('many', embeds = [embed, embed2])
 
 @bot.event
 async def on_message_create(data):
