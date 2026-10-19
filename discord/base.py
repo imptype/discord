@@ -1,6 +1,7 @@
 from typing import cast
 from .cog import CogMixin
 from .http import HTTPClient
+from .model import ModelFactory
 from .proxy import CommandProxy
 from .interaction import Interaction
 from .command import CommandNamespace, InteractionCommand, command
@@ -9,6 +10,7 @@ class AppBase(CogMixin):
   def __init__(self, token = None, application_id = None, reload = False):
     super().__init__(reload)
     self.http = HTTPClient(token, application_id)
+    self.model = ModelFactory(self)
     self.registry = {}
     self.set_proxy()
 

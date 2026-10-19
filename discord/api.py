@@ -7,7 +7,7 @@ class Route:
     self.method = method
     self.path = path.format(**params)
     self.key = f'{method} {path}' # TODO: key and major for ratelimit handling later
-    self.major = '+'.join(params[key] for key in MAJOR_PARAMS if key in params)
+    self.major = '+'.join(str(params[key]) for key in MAJOR_PARAMS if key in params)
 
 class API:
   async def request(
@@ -47,6 +47,65 @@ class API:
         channel_id = channel_id
       ),
       body = data,
+      authorize = True
+    )
+
+  async def get_guild(self, guild_id):
+    return await self.request(
+      Route(
+        'GET',
+        '/guilds/{guild_id}',
+        guild_id = guild_id
+      ),
+      authorize = True
+    )
+
+  async def get_channel(self, channel_id):
+    return await self.request(
+      Route(
+        'GET',
+        '/channels/{channel_id}',
+        channel_id = channel_id
+      ),
+      authorize = True
+    )
+
+  async def get_user(self, user_id):
+    return await self.request(
+      Route(
+        'GET',
+        '/users/{user_id}',
+        user_id = user_id
+      ),
+      authorize = True
+    )
+
+  async def get_guild_member(self, guild_id, user_id):
+    return await self.request(
+      Route(
+        'GET',
+        '/guilds/{guild_id}/members/{user_id}',
+        guild_id = guild_id,
+        user_id = user_id
+      ),
+      authorize = True
+    )
+
+  async def get_message(self, channel_id, message_id):
+    return await self.request(
+      Route(
+        'GET',
+        '/channels/{channel_id}/messages/{message_id}',
+        channel_id = channel_id,
+        message_id = message_id
+      ),
+      authorize = True
+    )
+
+  async def create_dm(self, recipient_id):
+    return await self.request(
+      Route('POST', '/users/@me/channels'),
+      body = {'recipient_id': recipient_id},
       authorize = True
     )
 

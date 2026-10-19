@@ -52,4 +52,6 @@ class HTTPClient(API):
     if response.status >= 400:
       text = await response.text()
       raise ValueError(f'HTTP {response.status}: {text}')
-    return response
+    if response.status == 204:
+      return None
+    return await response.json(loads = orjson.loads)

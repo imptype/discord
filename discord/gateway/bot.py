@@ -105,29 +105,31 @@ class Bot(AppBase):
     self.tasks.add(task)
     task.add_done_callback(self.tasks.discard)
 
-  def handle_message_command(self, data):
+  def handle_message_command(self, message):
+    data = message.data
     if data.get('webhook_id') or data.get('author', {}).get('bot'):
       return
-    content = data.get('content', '')
-    if not content.startswith(self.prefix):
+    if not message.content.startswith(self.prefix):
       return
-    parts = content[len(self.prefix):].split(maxsplit = 1)
+    parts = message.content[len(self.prefix):].split(maxsplit = 1)
     if not parts:
       return
     command = self.command_handlers.get(parts[0].lower())
     if command:
-      self.spawn(command(data))
+      self.spawn(command(message))
 
   async def on_event(self, name, data):
+    payload = data # what handlers receive, a model if one exists for the event
     if name == 'READY':
       self.http.application_id = data['application']['id']
     elif name == 'INTERACTION_CREATE':
       self.spawn(self.run_command(data, is_from_http = False))
     elif name == 'MESSAGE_CREATE':
-      self.handle_message_command(data)
+      payload = self.model.message(data)
+      self.handle_message_command(payload)
 
     for handler in self.event_handlers.get(name, ()):
-      self.spawn(handler(data))
+      self.spawn(handler(payload))
 
     for handler in self.event_handlers.get(ANY_EVENT, ()):
-      self.spawn(handler(name, data))
+      self.spawn(handler(name, payload))

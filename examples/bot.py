@@ -3,7 +3,15 @@ from funcs import another_message_command, on_message_create as func_event
 import discord
 
 discord.enable_logs(truncate_after = 100)
-bot = discord.Bot(token = os.environ['TOKEN'], intents = discord.Intents.all(), reload = True)
+bot = discord.Bot(token = os.environ['TOKEN'], intents = discord.Intents.all())
+
+@bot.command
+async def echo(message):
+  print('echo', message)
+  await message.channel.send('aa')
+  channel = await message.author.create_dm()
+  print('channel', channel)
+  await channel.send('qwewqeqwe')
 
 @bot.event
 async def on_message_create(data):
@@ -14,11 +22,6 @@ async def another_event_func(data):
   print('got a message2')
 
 bot.add_events(func_event)
-
-@bot.command
-async def echo(data):
-  print('echo', data)
-  await bot.http.create_message(data['channel_id'], {'content': 'echo'})
 
 @bot.event
 async def on_ready(data):
