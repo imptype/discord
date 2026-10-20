@@ -3,13 +3,16 @@ import datetime
 from pathlib import Path
 from funcs import another_message_command, on_message_create as func_event
 import discord
+import asyncio
 
 discord.enable_logs(truncate_after = 100)
 bot = discord.Bot(token = os.environ['TOKEN'], intents = discord.Intents.all())
 
 @bot.command
 async def echo(context):
-  await context.send('aa')
+  message = await context.send('text')
+  await asyncio.sleep(1)
+
   iurl = 'https://www.python.org/static/img/python-logo.png'
   embed = discord.Embed(
     title = 'titlea',
@@ -26,17 +29,26 @@ async def echo(context):
   embed.set_thumbnail(url = iurl)
   embed.set_footer(text = 'footer text', icon_url = iurl)
   embed2 = discord.Embed(title = 'second title')
-  await context.send(embed = embed)
-  await context.send('many', embeds = [embed, embed2])
+
+  await message.edit(embed = embed)
+  await asyncio.sleep(1)
+  await message.edit('many', embeds = [embed, embed2])
+  await asyncio.sleep(1)
 
   data = (Path(__file__).parent / 'image.png').read_bytes()
-  file = discord.File(data, 'idk.png')
-  await context.send('file', file = file)
-  await context.send('same file', file = file)
+  file = discord.File(data, 'image.png')
+
+  await message.edit('image, embeds gone', embeds = None, file = file)
+  await asyncio.sleep(1)
+  await message.edit('same file idk', file = file)
+  await asyncio.sleep(1)
 
   embed3 = discord.Embed(title = 'files + embed')
   embed3.set_image(url = 'attachment://image.png')
-  await context.send('two files and an embed', embed = embed3, files = [file, file])
+
+  await message.edit(content = None, embed = embed3, files = [file, file])
+  await asyncio.sleep(1)
+  await message.edit('files gone.', files = None)
 
 @bot.event
 async def on_message_create(data):

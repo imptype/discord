@@ -1,6 +1,4 @@
-import orjson
-import aiohttp
-from .abc import PartialModel
+from .abc import PartialModel, make_form
 
 class PartialChannel(PartialModel):
   def __init__(self, app, channel_id, guild = None):
@@ -26,17 +24,7 @@ class PartialChannel(PartialModel):
     if file:
       files = [file]
     if files:
-      body['attachments'] = []
-      for index, file in enumerate(files):
-        attachment = {'id': index, 'filename': file.filename}
-        if file.description:
-          attachment['description'] = file.description
-        body['attachments'].append(attachment)
-      form = aiohttp.FormData()
-      form.add_field('payload_json', orjson.dumps(body).decode(), content_type = 'application/json')
-      for index, file in enumerate(files):
-        form.add_field(f'files[{index}]', file.data, filename = file.filename, content_type = file.content_type)
-      body = form
+      body = make_form(body, files)
 
     data = await self.app.http.create_message(self.id, body)
     return self.app.model.message(data)

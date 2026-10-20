@@ -50,6 +50,18 @@ class API:
       authorize = True
     )
 
+  async def edit_message(self, channel_id, message_id, data):
+    return await self.request(
+      Route(
+        'PATCH',
+        '/channels/{channel_id}/messages/{message_id}',
+        channel_id = channel_id,
+        message_id = message_id
+      ),
+      body = data,
+      authorize = True
+    )
+
   async def get_guild(self, guild_id):
     return await self.request(
       Route(
