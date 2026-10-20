@@ -1,7 +1,6 @@
 from .cog import Cog
-from .file import File
 from .server import App
-from .embed import Embed
+from .ui import Embed, File
 from .command import command
 from .http import HTTPClient
 from .log import enable_logs
