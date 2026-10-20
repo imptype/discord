@@ -1,4 +1,4 @@
-from .abc import MISSING, PartialModel, make_form
+from .abc import PartialModel, make_form, MISSING
 
 class PartialMessage(PartialModel):
   def __init__(self, app, message_id, channel):

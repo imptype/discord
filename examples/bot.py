@@ -1,9 +1,9 @@
 import os
+import asyncio
 import datetime
 from pathlib import Path
 from funcs import another_message_command, on_message_create as func_event
 import discord
-import asyncio
 
 discord.enable_logs(truncate_after = 100)
 bot = discord.Bot(token = os.environ['TOKEN'], intents = discord.Intents.all())

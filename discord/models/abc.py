@@ -1,8 +1,8 @@
+from typing import Any
 from datetime import datetime, UTC
 from functools import cached_property
 import orjson
 import aiohttp
-from typing import Any
 
 DISCORD_EPOCH = 1420070400000
 MISSING: Any = object()
