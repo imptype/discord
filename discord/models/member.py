@@ -24,7 +24,6 @@ class Member(PartialMember):
     self.data = payload
     self.username = user['username']
     self.joined_at = None
-    joined_at = payload.get('joined_at')
 
-    if joined_at:
+    if joined_at := payload.get('joined_at'):
       self.joined_at = datetime.fromisoformat(joined_at)

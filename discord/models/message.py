@@ -1,4 +1,7 @@
-from .abc import PartialModel, make_form, MISSING
+from .. import MISSING
+from .abc import PartialModel
+from .enums import MessageFlags
+from .params import edit_params
 
 class PartialMessage(PartialModel):
   def __init__(self, app, message_id, channel):
@@ -8,36 +11,22 @@ class PartialMessage(PartialModel):
   async def fetch(self):
     return await self.app.model.http.message(self.id, self.channel)
 
-  async def edit(self, content = MISSING, *, embed = MISSING, embeds = MISSING, file = MISSING, files = MISSING):
+  async def edit(self, content = MISSING, *, embed = MISSING, embeds = MISSING, file = MISSING, files = MISSING, view = MISSING, components = MISSING, flags = MISSING):
     if embed is not MISSING and embeds is not MISSING:
       raise ValueError('cannot edit both embed and embeds')
     if file is not MISSING and files is not MISSING:
       raise ValueError('cannot edit both file and files')
+    if view is not MISSING and components is not MISSING:
+      raise ValueError('cannot edit both view and components')
 
-    body = {}
-    if content is not MISSING:
-      body['content'] = content
-    if embed is not MISSING:
-      if embed is None:
-        embeds = None
-      else:
-        embeds = [embed]
-    if embeds is not MISSING:
-      if embeds is None: # pass embed/s = None to clear embeds (sends [])
-        body['embeds'] = []
-      else:
-        body['embeds'] = [embed.to_json() for embed in embeds]
-    if file is not MISSING:
-      if file is None:
-        files = None
-      else:
-        files = [file]
-    if files is not MISSING:
-      if files:
-        body = make_form(body, files)
-      else:
-        body['attachments'] = [] # pass none to clear files (sends [])
-
+    body = edit_params(
+      content, embed = embed, embeds = embeds, file = file, files = files,
+      view = view, components = components, flags = flags
+    )
+    if view not in (MISSING, None):
+      self.app.add_views(view)
+    if components is not MISSING and components:
+      self.app.add_components(*components)
     data = await self.app.http.edit_message(self.channel.id, self.id, body)
     return self.app.model.message(data, channel = self.channel, guild = self.channel.guild)
 
@@ -57,6 +46,7 @@ class Message(PartialMessage):
     self.data = payload
     self.guild = guild
     self.content = payload.get('content', '')
+    self.flags = MessageFlags(payload.get('flags', 0))
 
     # for DMs, .guild is None, and .author is User instead of Member
     user = payload['author']

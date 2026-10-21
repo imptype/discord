@@ -8,6 +8,26 @@ import discord
 discord.enable_logs(truncate_after = 100)
 bot = discord.Bot(token = os.environ['TOKEN'], intents = discord.Intents.all())
 
+class TestView(discord.View):
+  @discord.button('aaa')
+  async def a_button(self, button, interaction):
+    await interaction.respond('clicked a')
+
+class PersistView(discord.View):
+  @discord.button('persist', timeout = None, custom_id = 'persist:v1')
+  async def persist_button(self, button, interaction):
+    await interaction.respond('clicked persist')
+
+bot.add_views(PersistView())
+
+@bot.command
+async def button(context):
+  await context.send(view = TestView())
+
+@bot.command
+async def pers(context):
+  await context.send(view = PersistView())
+
 @bot.command
 async def echo(context):
   message = await context.send('text')
@@ -68,6 +88,7 @@ async def on_ready(data):
 async def loadcog(data):
   print('loaded math cog')
   await bot.load_extensions('cogs.utils')
+  bot.add_commands(1)
 
 @bot.command
 async def unloadcog(data):

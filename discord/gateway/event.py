@@ -1,10 +1,10 @@
 """
-events.py - lets you prefix a function name with on_ so MESSAGE_CREATE is on_message_create too
+events.py - lets you prefix a function name with on_ so MESSAGE_CREATE is on_message_create too.
 """
 
 from enum import Enum
+from ..core import Handler
 from .intents import Intents
-from ..command import Handler
 
 ANY_EVENT = 'ANY_EVENT'
 
@@ -108,7 +108,7 @@ class Event(Handler):
     super().__init__(func, name)
     if not self.name.startswith('on_'):
       raise ValueError(f'event name must start with on_: {self.name}')
-    self.gateway_name = self.name[3:].upper()
+    self.gateway_name = self.name.removeprefix('on_').upper()
 
   async def __call__(self, *args):
     return await self.func(*args)

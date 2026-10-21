@@ -3,6 +3,7 @@ from enum import IntEnum
 class InteractionType(IntEnum):
   PING = 1
   APPLICATION_COMMAND = 2
+  MESSAGE_COMPONENT = 3
 
 class ResponseType(IntEnum):
   PONG = 1

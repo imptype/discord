@@ -10,5 +10,8 @@ class Context:
     self.channel = message.channel
     self.guild = message.guild
 
-  async def send(self, content = None, *, embed = None, embeds = None, file = None, files = None):
-    return await self.channel.send(content, embed = embed, embeds = embeds, file = file, files = files)
+  async def send(self, content = None, *, embed = None, embeds = None, file = None, files = None, view = None, components = None, flags = None):
+    return await self.channel.send(
+      content, embed = embed, embeds = embeds, file = file, files = files,
+      view = view, components = components, flags = flags
+    )

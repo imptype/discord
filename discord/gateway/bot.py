@@ -1,13 +1,10 @@
 import asyncio
 import logging
 from typing import cast
-from ..base import AppBase
 from .intents import Intents
-from ..lifespan import Lifespan
-from ..proxy import CommandProxy
 from .connection import Connection
 from .event import Event, EventIntents, ANY_EVENT
-from ..command import CommandNamespace, MessageCommand, command
+from ..core import AppBase, CommandNamespace, CommandProxy, InteractionType, MessageCommand, command_namespace
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +17,6 @@ class BotCommandProxy(CommandProxy):
 class Bot(AppBase):
   def __init__(self, token, application_id = None, intents = DEFAULT_INTENTS, prefix = '!', reload = False):
     super().__init__(token, application_id, reload)
-    self.lifespan = Lifespan(self.http)
     self.intents = intents
     self.prefix = prefix
     self.connection = Connection(self.http, token, intents, self.on_event)
@@ -30,7 +26,7 @@ class Bot(AppBase):
     self.tasks = set()
 
   def set_proxy(self):
-    self.command = cast(CommandNamespace, BotCommandProxy(self, command))
+    self.command = cast(CommandNamespace, BotCommandProxy(self, command_namespace))
 
   def run(self):
     try:
@@ -48,7 +44,7 @@ class Bot(AppBase):
   def add_commands(self, *commands):
     super().add_commands(*[command for command in commands if not isinstance(command, MessageCommand)])
     intents = EventIntents.MESSAGE_CREATE.value
-    for command in commands: # noqa: F402
+    for command in commands:
       if not isinstance(command, MessageCommand):
         continue
       name = command.func.__name__
@@ -63,7 +59,7 @@ class Bot(AppBase):
 
   def remove_commands(self, *commands):
     super().remove_commands(*[command for command in commands if not isinstance(command, MessageCommand)])
-    for command in commands: # noqa: F402
+    for command in commands:
       if isinstance(command, MessageCommand) and self.command_handlers.get(command.name) is command:
         del self.command_handlers[command.name]
 
@@ -111,22 +107,26 @@ class Bot(AppBase):
       return
     if not message.content.startswith(self.prefix):
       return
-    parts = message.content[len(self.prefix):].split(maxsplit = 1)
+    parts = message.content.removeprefix(self.prefix).split(maxsplit = 1)
     if not parts:
       return
-    command = self.command_handlers.get(parts[0].lower())
-    if command:
+    if command := self.command_handlers.get(parts[0].lower()):
       self.spawn(command(self.model.context(message)))
 
   async def on_event(self, name, data):
     payload = data # what handlers receive, a model if one exists for the event
-    if name == 'READY':
-      self.http.application_id = data['application']['id']
-    elif name == 'INTERACTION_CREATE':
-      self.spawn(self.run_command(data, is_from_http = False))
-    elif name == 'MESSAGE_CREATE':
-      payload = self.model.message(data)
-      self.handle_message_command(payload)
+    match name:
+      case 'READY':
+        self.http.application_id = data['application']['id']
+      case 'INTERACTION_CREATE':
+        match data['type']:
+          case InteractionType.APPLICATION_COMMAND:
+            self.spawn(self.run_command(data, is_from_http = False))
+          case InteractionType.MESSAGE_COMPONENT:
+            self.spawn(self.run_component(data, is_from_http = False))
+      case 'MESSAGE_CREATE':
+        payload = self.model.message(data)
+        self.handle_message_command(payload)
 
     for handler in self.event_handlers.get(name, ()):
       self.spawn(handler(payload))

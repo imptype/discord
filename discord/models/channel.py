@@ -1,4 +1,5 @@
-from .abc import PartialModel, make_form
+from .abc import PartialModel
+from .params import send_params
 
 class PartialChannel(PartialModel):
   def __init__(self, app, channel_id, guild = None):
@@ -8,24 +9,22 @@ class PartialChannel(PartialModel):
   async def fetch(self):
     return await self.app.model.http.channel(self.id, self.guild)
 
-  async def send(self, content = None, *, embed = None, embeds = None, file = None, files = None):
+  async def send(self, content = None, *, embed = None, embeds = None, file = None, files = None, view = None, components = None, flags = None):
     if embed is not None and embeds is not None:
       raise ValueError('cannot send both embed and embeds')
     if file is not None and files is not None:
       raise ValueError('cannot send both file and files')
+    if view is not None and components is not None:
+      raise ValueError('cannot send both view and components')
 
-    body = {}
-    if content is not None:
-      body['content'] = content
-    if embed:
-      embeds = [embed]
-    if embeds:
-      body['embeds'] = [embed.to_json() for embed in embeds]
-    if file:
-      files = [file]
-    if files:
-      body = make_form(body, files)
-
+    body = send_params(
+      content, embed = embed, embeds = embeds, file = file, files = files,
+      view = view, components = components, flags = flags
+    )
+    if view is not None:
+      self.app.add_views(view)
+    if components:
+      self.app.add_components(*components)
     data = await self.app.http.create_message(self.id, body)
     return self.app.model.message(data)
 

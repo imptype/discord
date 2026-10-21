@@ -40,6 +40,6 @@ class Intents(IntFlag):
     text = f'{len(privileged)} privileged'
     if privileged:
       text += ': ' + ', '.join(privileged)
-    return f'intents={int(self)} {len(list(self))}/{len(Intents)} enabled ({text})'
+    return f'intents={int(self)} {int(self).bit_count()}/{len(Intents)} enabled ({text})'
 
 PRIVILEGED = Intents.GUILD_MEMBERS | Intents.GUILD_PRESENCES | Intents.MESSAGE_CONTENT

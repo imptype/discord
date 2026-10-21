@@ -5,6 +5,7 @@ import types
 import asyncio
 import logging
 import importlib
+from typing import TYPE_CHECKING
 from .command import BaseCommand, Handler
 
 log = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ class Cog:
 
 class CogMixin:
   def __init__(self, reload = False):
+    super().__init__()
     self.reload = reload
     self.cogs = {} # loaded cogs {Cog: instance}
     self.cog_handlers = {} # {Cog: [copy.copy of handlers]}
@@ -30,11 +32,12 @@ class CogMixin:
     self.extension_files = {} # {name: (path, mtime)} used when reload is on
     self.reload_task = None
 
-  def add_commands(self, *commands): ...
-  def remove_commands(self, *commands): ...
+  if TYPE_CHECKING:
+    def add_commands(self, *commands): ... # implemented by CommandMixin
+    def remove_commands(self, *commands): ...
 
   def registrars(self):
-    return {BaseCommand: (self.add_commands, self.remove_commands), **self.extra_registrars}
+    return {BaseCommand: (self.add_commands, self.remove_commands)} | self.extra_registrars
 
   async def add_cogs(self, *cogs):
     registrars = self.registrars()
@@ -47,16 +50,17 @@ class CogMixin:
     for cog in cogs:
       instance = cog(self)
       await instance.cog_load()
-      found = {}
-      for cls in reversed(cog.__mro__):
-        for name, value in vars(cls).items():
-          if isinstance(value, Handler):
-            found[name] = value
+      found = {
+        name: value
+        for cls in reversed(cog.__mro__)
+        for name, value in vars(cls).items()
+        if isinstance(value, Handler)
+      }
       handlers = []
       for name, value in found.items():
         handler = copy.copy(value)
         handler.func = types.MethodType(value.func, instance)
-        if any(isinstance(handler, kind) for kind in registrars):
+        if isinstance(handler, tuple(registrars)):
           handlers.append(handler)
         else:
           log.warning(f'{cog.__name__}.{name}() was not loaded: {type(handler).__name__} is not supported by {type(self).__name__}')
@@ -87,8 +91,7 @@ class CogMixin:
         raise ValueError(f'extension already loaded: {name!r}')
     for name in names:
       module = importlib.import_module(name)
-      setup = getattr(module, SETUP, None)
-      if setup is None:
+      if (setup := getattr(module, SETUP, None)) is None:
         sys.modules.pop(name, None)
         raise ValueError(f'extension {name!r} has no {SETUP}(app)')
       before = set(self.cogs)
@@ -99,8 +102,7 @@ class CogMixin:
         sys.modules.pop(name, None)
         raise
       self.extensions[name] = [cog for cog in self.cogs if cog not in before]
-      path = getattr(module, '__file__', None)
-      if self.reload and path:
+      if self.reload and (path := getattr(module, '__file__', None)):
         self.extension_files[name] = (path, os.stat(path).st_mtime)
         if self.reload_task is None:
           self.reload_task = asyncio.create_task(self.watch_extensions())
@@ -113,8 +115,7 @@ class CogMixin:
       cogs = self.extensions.pop(name)
       self.extension_files.pop(name, None)
       await self.remove_cogs(*[cog for cog in cogs if cog in self.cogs])
-      teardown = getattr(sys.modules.pop(name, None), TEARDOWN, None)
-      if teardown:
+      if teardown := getattr(sys.modules.pop(name, None), TEARDOWN, None):
         await teardown(self)
 
   async def watch_extensions(self):

@@ -1,8 +1,10 @@
 from functools import partial
-from .models import (
-  Channel, Context, Guild, Member, Message, PartialChannel, PartialGuild,
-  PartialMember, PartialMessage, PartialUser, User
-)
+from .context import Context
+from .user import PartialUser, User
+from .guild import Guild, PartialGuild
+from .member import Member, PartialMember
+from .channel import Channel, PartialChannel
+from .message import Message, PartialMessage
 
 class ModelHTTP:
   def __init__(self, app, model):

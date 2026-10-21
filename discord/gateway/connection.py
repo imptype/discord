@@ -6,7 +6,7 @@ import logging
 from enum import IntEnum
 import orjson
 import aiohttp
-from ..log import format_json
+from ..core import format_json
 
 log = logging.getLogger(__name__)
 
@@ -47,8 +47,7 @@ def format_debug(payload, redact = None):
   except ValueError:
     name = 'UNKNOWN'
   text = f'op {int(op)} {name}'
-  event = payload.get('t')
-  if event:
+  if event := payload.get('t'):
     seq = payload.get('s')
     text += f' seq={seq} {event}'
   data = format_json(payload.get('d'), redact = redact)
@@ -80,7 +79,7 @@ class Connection:
         log.warning(f'connection error: {e!r}')
         failed = True
 
-      log.warning(f'closed (code {close_code})')
+      log.warning(f'closed ({close_code = })')
       if close_code in FATAL_CODES:
         raise ConnectionError(f'gateway closed with fatal code {CloseCode(close_code).name}')
 
@@ -117,33 +116,35 @@ class Connection:
     if payload.get('s') is not None:
       self.sequence = payload['s']
 
-    if op == Opcode.HELLO:
-      interval = payload['d']['heartbeat_interval'] / 1000
-      log.info(f'connected, heartbeat is every {interval:.1f}s')
-      self.heartbeat_task = asyncio.create_task(self.heartbeat(interval))
-      if self.session_id:
-        await self.resume()
-      else:
-        await self.identify()
-    elif op == Opcode.HEARTBEAT:
-      log.info(f'server asked for heartbeat {self.since_beat()}')
-      await self.beat()
-    elif op == Opcode.HEARTBEAT_ACK:
-      log.info(f'heartbeat ack {self.since_beat()}')
-      self.acked = True
-    elif op in (Opcode.RECONNECT, Opcode.INVALID_SESSION):
-      log.warning(f'server sent {Opcode(op).name}, reconnecting')
-      if op == Opcode.INVALID_SESSION and not payload['d']:
-        self.reset()
-      await self.ws.close(code = ReconnectCode.UNKNOWN_ERROR)
-    elif op == Opcode.DISPATCH:
-      event = payload['t']
-      if event == 'READY':
-        self.session_id = payload['d']['session_id']
-        self.resume_url = payload['d']['resume_gateway_url']
-      elif event == 'RESUMED':
-        log.info('resumed')
-      await self.on_event(event, payload['d'])
+    match op:
+      case Opcode.HELLO:
+        interval = payload['d']['heartbeat_interval'] / 1000
+        log.info(f'connected, heartbeat is every {interval:.1f}s')
+        self.heartbeat_task = asyncio.create_task(self.heartbeat(interval))
+        if self.session_id:
+          await self.resume()
+        else:
+          await self.identify()
+      case Opcode.HEARTBEAT:
+        log.info(f'server asked for heartbeat {self.since_beat()}')
+        await self.beat()
+      case Opcode.HEARTBEAT_ACK:
+        log.info(f'heartbeat ack {self.since_beat()}')
+        self.acked = True
+      case Opcode.RECONNECT | Opcode.INVALID_SESSION:
+        log.warning(f'server sent {Opcode(op).name}, reconnecting')
+        if op == Opcode.INVALID_SESSION and not payload['d']:
+          self.reset()
+        await self.ws.close(code = ReconnectCode.UNKNOWN_ERROR)
+      case Opcode.DISPATCH:
+        event = payload['t']
+        match event:
+          case 'READY':
+            self.session_id = payload['d']['session_id']
+            self.resume_url = payload['d']['resume_gateway_url']
+          case 'RESUMED':
+            log.info('resumed')
+        await self.on_event(event, payload['d'])
 
   async def heartbeat(self, interval):
     await asyncio.sleep(interval * random.random())
@@ -157,7 +158,7 @@ class Connection:
       await asyncio.sleep(interval)
 
   def since_beat(self):
-    return self.last_beat and f'{time.monotonic() - self.last_beat:.1f}s' or 'N/A'
+    return f'{time.monotonic() - self.last_beat:.1f}s' if self.last_beat else 'N/A'
 
   async def beat(self):
     log.info(f'heartbeat {self.since_beat()}')

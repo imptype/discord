@@ -7,8 +7,7 @@ import logging
 import orjson
 
 def ansi(hex_color):
-  hex_color = hex_color.lstrip('#')
-  red, green, blue = (int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+  red, green, blue = bytes.fromhex(hex_color.removeprefix('#'))
   return f'\033[38;2;{red};{green};{blue}m'
 
 COLORS = {
@@ -22,7 +21,7 @@ RESET = '\033[0m'
 
 class Formatter(logging.Formatter):
   def format(self, record):
-    return f'{COLORS.get(record.levelno, "")}{super().format(record)}{RESET}'
+    return f'{COLORS.get(record.levelno, '')}{super().format(record)}{RESET}'
 
 log = logging.getLogger('discord')
 handler = logging.StreamHandler()
@@ -53,15 +52,16 @@ class LogSettings:
 
   @classmethod
   def expand_json_strings(cls, value):
-    if isinstance(value, dict):
-      return {key: cls.expand_json_strings(item) for key, item in value.items()}
-    if isinstance(value, list):
-      return [cls.expand_json_strings(item) for item in value]
-    if isinstance(value, str) and value[:1] in ('[', '{'):
-      try:
-        return cls.expand_json_strings(orjson.loads(value))
-      except orjson.JSONDecodeError:
-        pass
+    match value:
+      case dict():
+        return {key: cls.expand_json_strings(item) for key, item in value.items()}
+      case list():
+        return [cls.expand_json_strings(item) for item in value]
+      case str() if value.startswith(('[', '{')):
+        try:
+          return cls.expand_json_strings(orjson.loads(value))
+        except orjson.JSONDecodeError:
+          pass
     return value
 
   @classmethod

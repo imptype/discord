@@ -1,16 +1,13 @@
 import orjson
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
-from ..base import AppBase
 from .handler import handler
-from ..enums import HTTPStatus
-from ..lifespan import Lifespan
+from ..core import AppBase, HTTPStatus
 
 class App(AppBase):
   def __init__(self, public_key, token = None, application_id = None, reload = False):
     super().__init__(token, application_id, reload)
     self.verify_key = VerifyKey(bytes.fromhex(public_key))
-    self.lifespan = Lifespan(self.http)
 
   async def run_lifespan(self, receive, send):
     while True:
@@ -46,7 +43,7 @@ class App(AppBase):
     try:
       self.verify_key.verify(headers.get('x-signature-timestamp', '').encode() + body,
         bytes.fromhex(headers.get('x-signature-ed25519', '')))
-    except (BadSignatureError, ValueError):
+    except BadSignatureError, ValueError:
       return await self.json(send, HTTPStatus.UNAUTHORIZED_401, {'error': 'invalid signature'})
 
     payload = orjson.loads(body)
