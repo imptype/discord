@@ -1,6 +1,10 @@
 import sys
 
+def lazy_filter(importing_module, imported_module, fromlist):
+  return imported_module.partition('.')[0] != __name__
+sys.set_lazy_imports_filter(lazy_filter)
 sys.set_lazy_imports('all')
+
 MISSING = sentinel('MISSING')
 
 from .server import App
