@@ -25,6 +25,8 @@ Then it runs some extra things outside:
 9. It also removes the trailing commas (but ignores 1 size tuples). (one, two,) -> (one, two)
 It also ensures all tracked text (.gitignore, *.md, *.toml, *.lock,
 *.env, *.yml, LICENSE) files use LF and end with 1 newline.
+10. For *.toml files (like pyproject.toml) it enforces the same 2-space indent for multi-line arrays
+  and inline tables, and removes trailing commas before a closing ] or }.
 
 This is a hybrid because Ruff can either expand or collapse lines, but
 not leave them alone! We also could use other Ruff stuff.
@@ -554,6 +556,92 @@ def normalize_text(text, keep_trailing = False):
   stripped = text.rstrip('\n')
   return stripped + '\n' if stripped else ''
 
+# --- pass: TOML indentation and trailing commas ---
+
+TOML_QUOTES = ('"', "'")
+
+def toml_scan(lines):
+  """Walk TOML lines once. Returns (indents, cuts): the wanted indent for each row that
+  starts outside a multiline string, and the column spans to delete on each row."""
+  indents = {}
+  cuts = {}
+  stack = []  # one slot per open bracket: (row, col) of a comma waiting for its closer, or None
+  quote = None  # delimiter of the multiline string we are inside
+  for row, line in enumerate(lines):
+    if quote is None:
+      body = line.lstrip(' \t')
+      if body:
+        closing = bool(stack) and body[0] in ']}'
+        indents[row] = INDENT * (len(stack) - int(closing))
+    col = 0
+    while col < len(line):
+      char = line[col]
+      if quote:
+        if quote[0] == '"' and char == '\\':
+          col += 2
+        elif line.startswith(quote, col):
+          quote = None
+          col += 3
+        else:
+          col += 1
+        continue
+      if char in ' \t':
+        col += 1
+        continue
+      if char == '#':
+        break
+      if char == ',' and stack:
+        stack[-1] = (row, col)
+        col += 1
+        continue
+      if char in ']}' and stack:
+        pending = stack.pop()
+        if pending:
+          pending_row, pending_col = pending
+          end = col if pending_row == row else pending_col + 1
+          cuts.setdefault(pending_row, []).append((pending_col, end))
+        if stack:
+          stack[-1] = None
+        col += 1
+        continue
+      if stack:
+        stack[-1] = None
+      if char in '[{':
+        stack.append(None)
+        col += 1
+      elif char in TOML_QUOTES:
+        triple = char * 3
+        if line.startswith(triple, col):
+          quote = triple
+          col += 3
+        else:
+          col += 1
+          while col < len(line) and line[col] != char:
+            col += 2 if char == '"' and line[col] == '\\' else 1
+          col += 1
+      else:
+        col += 1
+  return indents, cuts
+
+def fix_toml(text):
+  """Indent array and inline table contents by INDENT per bracket level (a closing bracket
+  goes back one level, everything else starts at column 0) and drop commas right before a
+  closing bracket."""
+  lines = text.split('\n')
+  indents, cuts = toml_scan(lines)
+  for row, spans in cuts.items():
+    for begin, end in sorted(spans, reverse = True):
+      lines[row] = lines[row][:begin] + lines[row][end:]
+  for row, indent in indents.items():
+    lines[row] = ' ' * indent + lines[row].lstrip(' \t')
+  return '\n'.join(lines)
+
+def format_text(path, text):
+  text = normalize_text(text, path.suffix == '.md')
+  if path.suffix == '.toml':
+    text = normalize_text(fix_toml(text))  # again, since removing a comma can leave a trailing space
+  return text
+
 # --- pipeline ---
 
 PASSES = [fix_quotes, fix_trailing_commas, fix_spacing, fix_indent, fix_imports, fix_whitespace]
@@ -679,6 +767,15 @@ TEXT_CASES = [
   ('empty file stays empty', '', ''),
   ('trailing spaces', '- run: uv build \nname: x\t\n', '- run: uv build\nname: x\n')
 ]
+TOML_CASES = [
+  ('toml indent', "a = [\n'x',\n    'y'\n]\n", "a = [\n  'x',\n  'y'\n]\n"),
+  ('toml comma multiline', "a = [\n  'x',\n  'y',\n]\n", "a = [\n  'x',\n  'y'\n]\n"),
+  ('toml comma one line', "a = ['x', 'y', ]\nb = ['x', 'y',]\n", "a = ['x', 'y']\nb = ['x', 'y']\n"),
+  ('toml comment after comma', "a = [\n  'x', # one\n  'y', # two\n]\n", "a = [\n  'x', # one\n  'y' # two\n]\n"),
+  ('toml headers and keys', '[tool.x]\n  a = 1\n  [tool.y]\nb = 2\n', '[tool.x]\na = 1\n[tool.y]\nb = 2\n'),
+  ('toml strings untouched', "a = '''\n  x,\n   ]\n'''\nb = ['#', 'a,]']\n", "a = '''\n  x,\n   ]\n'''\nb = ['#', 'a,]']\n"),
+  ('toml inline table', 'a = {x = [1, 2,], y = 3,}\n', 'a = {x = [1, 2], y = 3}\n')
+]
 
 def selftest():
   failures = 0
@@ -698,10 +795,15 @@ def selftest():
     if got != want:
       failures += 1
       print(f'FAIL text {label}: want {want!r}, got {got!r}')
+  for label, before, want in TOML_CASES:
+    got = format_text(Path('x.toml'), before)
+    if got != want or format_text(Path('x.toml'), got) != got:
+      failures += 1
+      print(f'FAIL {label}: want {want!r}, got {got!r}')
   if 'No newline' not in diff('x', 'a', 'a\n') or '\\r' not in diff('x', 'a\r\n', 'a\n'):
     failures += 1
     print('FAIL diff output')
-  total = len(CASES) + len(NAME_CASES) + len(TEXT_CASES)
+  total = len(CASES) + len(NAME_CASES) + len(TEXT_CASES) + len(TOML_CASES)
   print(f'{total - failures} passed, {failures} failed')
   return 1 if failures else 0
 
@@ -810,17 +912,17 @@ def main(argv):
       current = read(path)
     except UnicodeDecodeError:
       continue
-    new = normalize_text(current, path.suffix == '.md')
+    new = format_text(path, current)
     if new == current:
       continue
     if mode == '--check':
-      print(f'Would fix newline in {path}')
+      print(f'Would fix formatting in {path}')
       failed = True
     elif mode == '--diff':
       print(diff(path, current, new))
     else:
       write(path, new)
-      print(f'Fixed newline in {path}')
+      print(f'Fixed formatting in {path}')
 
   return 1 if failed else 0
 
