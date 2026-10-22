@@ -15,8 +15,10 @@ from .models import (
   PartialModel, Snowflake, snowflake_time
 )
 from .ui import (
-  ActionRow, BaseView, Button, ButtonStyle, ChannelSelect, Component, ComponentType,
-  Container, ContentComponent, Embed, File, FileComponent, Interactable,
-  LayoutComponent, LayoutView, MediaGallery, MentionableSelect, RoleSelect, SelectMenu,
-  Section, Separator, StringSelect, TextDisplay, Thumbnail, UserSelect, View, button
+  ActionRow, BaseSelect, BaseView, Button, ButtonStyle, ChannelSelect, ChannelType,
+  Component, ComponentType, Container, ContentComponent, Embed, File, FileComponent,
+  Interactable, LayoutComponent, LayoutView, MediaGallery, MediaGalleryItem,
+  MentionableSelect, RoleSelect, Section, Separator, SelectOption, SeparatorSpacing,
+  StringSelect, TextDisplay, Thumbnail, UserSelect, View, button, channel_select,
+  mentionable_select, role_select, string_select, user_select
 )

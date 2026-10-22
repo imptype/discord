@@ -18,6 +18,101 @@ class PersistView(discord.View):
   async def persist_button(self, button, interaction):
     await interaction.respond('clicked persist')
 
+@bot.command
+async def selects(context):
+  async def show(select, interaction):
+    values = interaction.payload['data']['values']
+    await interaction.respond(f'{type(select).__name__}: {values}')
+
+  @discord.string_select(
+    'plain string',
+    discord.SelectOption('with extras', 'v2', description = 'desc', emoji = '🔥', default = True),
+    discord.SelectOption('third', description = 'no emoji'),
+    placeholder = 'string select', min_values = 1, max_values = 2, id = 10
+  )
+  async def string(select, interaction):
+    await show(select, interaction)
+
+  @discord.user_select(default_values = [context.author.id], placeholder = 'user select', max_values = 3)
+  async def user(select, interaction):
+    await show(select, interaction)
+
+  @discord.role_select(placeholder = 'role select', max_values = 3)
+  async def role(select, interaction):
+    await show(select, interaction)
+
+  @discord.mentionable_select(default_users = [context.author.id], placeholder = 'mentionable select', max_values = 3)
+  async def mentionable(select, interaction):
+    await show(select, interaction)
+
+  @discord.channel_select(
+    channel_types = [discord.ChannelType.GUILD_TEXT, discord.ChannelType.GUILD_VOICE],
+    default_values = [context.channel.id],
+    placeholder = 'channel select'
+  )
+  async def channel(select, interaction):
+    await show(select, interaction)
+
+  disabled = discord.StringSelect('a', 'b', placeholder = 'disabled select', disabled = True)
+
+  await context.send(view = discord.LayoutView(
+    discord.TextDisplay('# Select test'),
+    discord.ActionRow(string),
+    discord.ActionRow(user),
+    discord.ActionRow(role),
+    discord.ActionRow(mentionable),
+    discord.ActionRow(channel),
+    discord.ActionRow(disabled)
+  ))
+
+@bot.command
+async def testlayout(context):
+  iurl = 'https://www.python.org/static/img/python-logo.png'
+  data = (Path(__file__).parent / 'image.png').read_bytes()
+  file = discord.File(data, 'image.png')
+
+  async def on_click(button, interaction):
+    await interaction.respond(f'clicked {button.label}')
+
+  view = discord.LayoutView(
+    discord.TextDisplay('# LayoutView test', id = 1),
+    discord.Container(
+      discord.TextDisplay('**TextDisplay** inside a container'),
+      discord.Separator(),
+      discord.Section(
+        discord.TextDisplay('Section with a Thumbnail accessory'),
+        discord.TextDisplay('second line of text'),
+        accessory = discord.Thumbnail(iurl, description = 'python logo')
+      ),
+      discord.Separator(divider = False, spacing = discord.SeparatorSpacing.LARGE),
+      discord.Section(
+        discord.TextDisplay('Section with a Button accessory'),
+        accessory = discord.Button('section btn', callback = on_click)
+      ),
+      discord.Separator(),
+      discord.MediaGallery(
+        iurl,
+        discord.MediaGalleryItem(iurl, description = 'with alt text'),
+        discord.MediaGalleryItem('attachment://image.png', spoiler = True)
+      ),
+      discord.FileComponent('attachment://image.png'),
+      discord.Separator(),
+      discord.ActionRow(
+        discord.Button('one', callback = on_click),
+        discord.Button('two', style = discord.ButtonStyle.SECONDARY, callback = on_click),
+        discord.Button('disabled', disabled = True)
+      ),
+      accent_color = 0x5865F2,
+      id = 2
+    ),
+    discord.Container(
+      discord.TextDisplay('spoilered container'),
+      discord.FileComponent('attachment://image.png', spoiler = True),
+      spoiler = True
+    )
+  )
+  await context.send(view = view, file = file)
+
 bot.add_views(PersistView())
 
 @bot.command

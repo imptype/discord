@@ -1,7 +1,5 @@
 from datetime import datetime
-
-def clean(data):
-  return {key: value for key, value in data.items() if value is not None}
+from .abc import clean
 
 class Embed:
   def __init__(self, title = None, description = None, url = None, color = None, timestamp = None):

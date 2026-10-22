@@ -3,6 +3,9 @@ from .. import MISSING
 
 DEFAULT_TIMEOUT = 180
 
+def clean(data):
+  return {key: value for key, value in data.items() if value is not None}
+
 class Component:
   def children(self):
     return []
@@ -18,12 +21,13 @@ class Component:
   def to_json(self) -> dict: ...
 
 class Interactable(Component):
-  def __init__(self, *, custom_id = None, disabled = False, timeout = MISSING, callback = None):
+  def __init__(self, *, custom_id = None, disabled = False, timeout = MISSING, callback = None, id = None):
     self.has_custom_id = bool(custom_id)
     self.custom_id = custom_id or uuid.uuid4().hex
     self.disabled = disabled
     self.timeout = timeout
     self.callback = callback
+    self.id = id
 
   async def __call__(self, interaction):
     if self.callback:

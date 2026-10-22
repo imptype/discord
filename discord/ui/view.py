@@ -3,7 +3,7 @@ import uuid
 import types
 from .button import Button
 from .layout import ActionRow
-from .select import SelectMenu
+from .select import BaseSelect
 from .abc import Component, Interactable, DEFAULT_TIMEOUT
 
 MAX_BUTTONS_PER_ROW = 5
@@ -52,7 +52,7 @@ class View(BaseView):
 
   def add_interactables(self, *components):
     for component in components:
-      if isinstance(component, SelectMenu):
+      if isinstance(component, BaseSelect):
         self.add_select(component)
       else:
         self.add_buttons(component)
@@ -73,9 +73,7 @@ class View(BaseView):
       row.components.append(button)
 
   def add_select(self, select):
-    row = ActionRow(select) # a select takes a whole row
-    self.rows.append(row)
-    return row
+    self.rows.append(ActionRow(select))
 
 class LayoutView(BaseView):
   def __init__(self, *components, timeout = DEFAULT_TIMEOUT):
