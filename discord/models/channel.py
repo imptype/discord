@@ -17,10 +17,8 @@ class PartialChannel(PartialModel):
     if view is not None and components is not None:
       raise ValueError('cannot send both view and components')
 
-    body = send_params(
-      content, embed = embed, embeds = embeds, file = file, files = files,
-      view = view, components = components, flags = flags
-    )
+    body = send_params(content, embed = embed, embeds = embeds, file = file,
+      files = files, view = view, components = components, flags = flags)
     if view is not None:
       self.app.add_views(view)
     if components:

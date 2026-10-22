@@ -19,10 +19,8 @@ class PartialMessage(PartialModel):
     if view is not MISSING and components is not MISSING:
       raise ValueError('cannot edit both view and components')
 
-    body = edit_params(
-      content, embed = embed, embeds = embeds, file = file, files = files,
-      view = view, components = components, flags = flags
-    )
+    body = edit_params(content, embed = embed, embeds = embeds, file = file,
+      files = files, view = view, components = components, flags = flags)
     if view not in (MISSING, None):
       self.app.add_views(view)
     if components is not MISSING and components:

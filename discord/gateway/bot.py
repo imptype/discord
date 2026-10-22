@@ -124,6 +124,8 @@ class Bot(AppBase):
             self.spawn(self.run_command(data, is_from_http = False))
           case InteractionType.MESSAGE_COMPONENT:
             self.spawn(self.run_component(data, is_from_http = False))
+          case InteractionType.MODAL_SUBMIT:
+            self.spawn(self.run_modal(data, is_from_http = False))
       case 'MESSAGE_CREATE':
         payload = self.model.message(data)
         self.handle_message_command(payload)

@@ -12,7 +12,7 @@ app = discord.App(
 
 @app.command.slash()
 async def hello(interaction):
-  await interaction.respond('hi')
+  await interaction.response.send('hi')
 
 @app.lifespan
 async def lifespan():

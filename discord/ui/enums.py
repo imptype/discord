@@ -4,6 +4,7 @@ class ComponentType(IntEnum):
   ACTION_ROW = 1
   BUTTON = 2
   STRING_SELECT = 3
+  TEXT_INPUT = 4
   USER_SELECT = 5
   ROLE_SELECT = 6
   MENTIONABLE_SELECT = 7
@@ -15,6 +16,11 @@ class ComponentType(IntEnum):
   FILE = 13
   SEPARATOR = 14
   CONTAINER = 17
+  LABEL = 18
+  FILE_UPLOAD = 19
+  RADIO_GROUP = 21
+  CHECKBOX_GROUP = 22
+  CHECKBOX = 23
 
 class ButtonStyle(IntEnum):
   PRIMARY = 1
@@ -25,6 +31,10 @@ class ButtonStyle(IntEnum):
 class SeparatorSpacing(IntEnum):
   SMALL = 1
   LARGE = 2
+
+class TextInputStyle(IntEnum):
+  SHORT = 1
+  PARAGRAPH = 2
 
 class ChannelType(IntEnum):
   GUILD_TEXT = 0

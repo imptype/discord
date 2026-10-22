@@ -69,3 +69,22 @@ class Container(LayoutComponent):
       'accent_color': self.accent_color,
       'spoiler': self.spoiler
     })
+
+class Label(LayoutComponent):
+  def __init__(self, component, *, label, description = None, id = None):
+    super().__init__(id = id)
+    self.component = component
+    self.label = label
+    self.description = description
+
+  def children(self):
+    return [self.component]
+
+  def to_json(self):
+    return clean({
+      'type': ComponentType.LABEL,
+      'id': self.id,
+      'label': self.label,
+      'description': self.description,
+      'component': self.component.to_json()
+    })

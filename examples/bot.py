@@ -2,27 +2,30 @@ import os
 import asyncio
 import datetime
 from pathlib import Path
+from modal import testmodal
 from funcs import another_message_command, on_message_create as func_event
 import discord
 
 discord.enable_logs(truncate_after = 100)
 bot = discord.Bot(token = os.environ['TOKEN'], intents = discord.Intents.all())
 
+bot.add_commands(testmodal)
+
 class TestView(discord.View):
   @discord.button('aaa')
   async def a_button(self, button, interaction):
-    await interaction.respond('clicked a')
+    await interaction.response.send('clicked a')
 
 class PersistView(discord.View):
   @discord.button('persist', timeout = None, custom_id = 'persist:v1')
   async def persist_button(self, button, interaction):
-    await interaction.respond('clicked persist')
+    await interaction.response.send('clicked persist')
 
 @bot.command
 async def selects(context):
   async def show(select, interaction):
     values = interaction.payload['data']['values']
-    await interaction.respond(f'{type(select).__name__}: {values}')
+    await interaction.response.send(f'{type(select).__name__}: {values}')
 
   @discord.string_select(
     'plain string',
@@ -72,7 +75,7 @@ async def testlayout(context):
   file = discord.File(data, 'image.png')
 
   async def on_click(button, interaction):
-    await interaction.respond(f'clicked {button.label}')
+    await interaction.response.send(f'clicked {button.label}')
 
   view = discord.LayoutView(
     discord.TextDisplay('# LayoutView test', id = 1),
@@ -194,7 +197,7 @@ bot.add_commands(another_message_command)
 
 @bot.command.slash()
 async def hello(interaction):
-  await interaction.respond('hi')
+  await interaction.response.send('hi')
 
 @bot.lifespan
 async def lifespan():

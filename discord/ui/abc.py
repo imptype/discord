@@ -22,7 +22,7 @@ class Component:
 
 class Interactable(Component):
   def __init__(self, *, custom_id = None, disabled = False, timeout = MISSING, callback = None, id = None):
-    self.has_custom_id = bool(custom_id)
+    self.has_custom_id = bool(custom_id) # helps debug if it needs to be persistent
     self.custom_id = custom_id or uuid.uuid4().hex
     self.disabled = disabled
     self.timeout = timeout

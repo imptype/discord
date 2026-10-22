@@ -1,9 +1,9 @@
 import os
 import asyncio
 from .. import MISSING
-from ..ui import BaseView, Component
 from ..ui.abc import DEFAULT_TIMEOUT
 from .interaction import Interaction
+from ..ui import BaseView, Component, Modal
 
 def resolve_timeout(component, view = None):
   if component.timeout is not MISSING: # component timeout takes priority
@@ -21,6 +21,8 @@ class ComponentMixin:
   def __init__(self):
     self.component_cache = {}
     self.component_timers = {}
+    self.modal_cache = {}
+    self.modal_timers = {}
 
   def add_views(self, *views): # also used by send() and edit()
     for view in views:
@@ -75,10 +77,43 @@ class ComponentMixin:
       if resolve_timeout(component, view) is None and not component.has_custom_id:
         raise ValueError(f'{describe(component)} must set a custom_id to be persistent')
 
+  def add_modals(self, *modals): # used by send_modal
+    for modal in modals:
+      if not isinstance(modal, Modal):
+        raise ValueError(f'not a modal: {modal!r}')
+      if modal.timeout is None and not modal.has_custom_id:
+        raise ValueError(f'{type(modal).__name__} must set a custom_id to be persistent')
+    for modal in modals:
+      if timer := self.modal_timers.pop(modal.custom_id, None):
+        timer.cancel()
+      self.modal_cache[modal.custom_id] = modal
+      if modal.timeout is not None:
+        loop = asyncio.get_running_loop()
+        self.modal_timers[modal.custom_id] = loop.call_later(modal.timeout, self.remove_modals, modal)
+
+  def remove_modals(self, *modals):
+    for modal in modals:
+      if not isinstance(modal, Modal):
+        raise ValueError(f'not a modal: {modal!r}')
+    for modal in modals:
+      if self.modal_cache.get(modal.custom_id) is not modal:
+        continue
+      if timer := self.modal_timers.pop(modal.custom_id, None):
+        timer.cancel()
+      del self.modal_cache[modal.custom_id]
+
   async def run_component(self, payload, is_from_http):
     custom_id = payload['data']['custom_id']
     if (component := self.component_cache.get(custom_id)) is None:
       raise ValueError(f'component not found: {custom_id}')
     interaction = Interaction(payload, self, is_from_http)
     await component(interaction)
+    return interaction
+
+  async def run_modal(self, payload, is_from_http): # filter out params?
+    custom_id = payload['data']['custom_id']
+    if (modal := self.modal_cache.get(custom_id)) is None:
+      raise ValueError(f'modal not found: {custom_id}')
+    interaction = Interaction(payload, self, is_from_http)
+    await modal(interaction)
     return interaction

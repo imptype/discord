@@ -4,11 +4,13 @@ class InteractionType(IntEnum):
   PING = 1
   APPLICATION_COMMAND = 2
   MESSAGE_COMPONENT = 3
+  MODAL_SUBMIT = 5
 
 class ResponseType(IntEnum):
   PONG = 1
   MESSAGE = 4
   DEFERRED_MESSAGE = 5
+  MODAL = 9
 
 class CommandType(IntEnum):
   CHAT_INPUT = 1

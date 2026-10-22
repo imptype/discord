@@ -32,12 +32,12 @@ def view_params(body, view):
   if isinstance(view, LayoutView):
     body['flags'] = body.get('flags', 0) | int(MessageFlags.IS_COMPONENTS_V2)
 
-def send_params(content = None, *, embed = None, embeds = None, file = None, files = None, view = None, components = None, flags = None):
+def send_params(content = None, *, embed = None, embeds = None, file = None, files = None, view = None, components = None, flags = None, allowed = SEND_MESSAGE_FLAGS):
   body = {}
   if content is not None:
     body['content'] = content
   if flags is not None:
-    body['flags'] = check_flags(flags, SEND_MESSAGE_FLAGS, 'send')
+    body['flags'] = check_flags(flags, allowed, 'send')
   if embed:
     embeds = [embed]
   if embeds:
