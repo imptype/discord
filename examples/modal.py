@@ -17,7 +17,8 @@ async def testform(context):
   async def open_button(button, interaction):
     await interaction.response.send_modal(form_modal)
 
-  await context.send(view = discord.LayoutView(discord.ActionRow(open_button)))
+  # await context.send(view = discord.LayoutView(discord.ActionRow(open_button)))
+  await context.send(components = [discord.ActionRow(open_button)]) # comp sets cv2 flag
 
 async def show_modal(modal, interaction):
   lines = []
