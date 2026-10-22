@@ -21,5 +21,5 @@ from .ui import (
   LayoutView, MediaGallery, MediaGalleryItem, MentionableSelect, Modal, ModalInput,
   RadioGroup, RoleSelect, Section, Separator, SelectOption, SeparatorSpacing, StringSelect,
   TextDisplay, TextInput, TextInputStyle, Thumbnail, UserSelect, View, button,
-  channel_select, mentionable_select, role_select, string_select, user_select
+  channel_select, mentionable_select, modal, role_select, string_select, user_select
 )

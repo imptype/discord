@@ -2,7 +2,7 @@ import os
 import asyncio
 import datetime
 from pathlib import Path
-from modal import testmodal
+from modal import testform, testmodal
 from funcs import another_message_command, on_message_create as func_event
 import discord
 
@@ -10,6 +10,7 @@ discord.enable_logs(truncate_after = 100)
 bot = discord.Bot(token = os.environ['TOKEN'], intents = discord.Intents.all())
 
 bot.add_commands(testmodal)
+bot.add_commands(testform)
 
 class TestView(discord.View):
   @discord.button('aaa')

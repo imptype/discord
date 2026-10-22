@@ -9,7 +9,8 @@ from .content import (
   ContentComponent, FileComponent, MediaGallery, MediaGalleryItem, TextDisplay, Thumbnail
 )
 from .modal import (
-  Checkbox, CheckboxGroup, FileUpload, GroupOption, Modal, ModalInput, RadioGroup, TextInput
+  Checkbox, CheckboxGroup, FileUpload, GroupOption, Modal, ModalInput,
+  RadioGroup, TextInput, modal
 )
 from .select import (
   BaseSelect, ChannelSelect, MentionableSelect, RoleSelect, SelectOption, StringSelect,

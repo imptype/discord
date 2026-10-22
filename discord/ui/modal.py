@@ -147,3 +147,8 @@ class Modal:
       'title': self.title,
       'components': [component.to_json() for component in self.components]
     }
+
+def modal(callback = None, *, title = None, components = (), custom_id = None, timeout = DEFAULT_TIMEOUT):
+  def wrap(func):
+    return Modal(*components, title = title or func.__name__, custom_id = custom_id, timeout = timeout, callback = func)
+  return wrap(callback) if callback is not None else wrap

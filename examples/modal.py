@@ -1,5 +1,24 @@
 import discord
 
+@discord.command
+async def testform(context):
+
+  @discord.modal(
+    title = 'Quick form',
+    components = [discord.Label(discord.TextInput(custom_id = 'answer'), label = 'what is 6 + 7')]
+  )
+  async def form_modal(modal, interaction):
+    label = interaction.data['data']['components'][0]
+    name = label['component']['value'] # labels wrap their component
+    print(f'submitted! {name}')
+    await interaction.response.send(f'submitted! your answer {name}')
+
+  @discord.button('Open form')
+  async def open_button(button, interaction):
+    await interaction.response.send_modal(form_modal)
+
+  await context.send(view = discord.LayoutView(discord.ActionRow(open_button)))
+
 async def show_modal(modal, interaction):
   lines = []
   for row in interaction.data['data']['components']:
