@@ -10,15 +10,10 @@ readme = 'README.md'
 license = 'MIT'
 license-files = ['LICENSE']
 requires-python = '>=3.15'
-dependencies = ['aiohttp>=3.14.5', 'orjson>=3.13.0']
+dependencies = ['aiohttp>=3.14.5', 'orjson>=3.13.0', 'pynacl>=1.6.2', 'uvicorn>=0.54.0']
 
 [project.urls]
 Repository = 'https://github.com/imptype/discord'
-
-[project.optional-dependencies]
-server = ['uvicorn>=0.54.0', 'pynacl>=1.6.2']
-voice = ['pynacl>=1.6.2']
-all = ['idiscord[server,voice]']
 
 [tool.uv.build-backend]
 module-name = 'discord'
