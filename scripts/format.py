@@ -42,13 +42,19 @@ No pass ever joins or splits lines. Each pass only changes whitespace, quotes an
 
 import io
 import os
+import re
 import ast
 import sys
-import difflib
+import copy
+import fnmatch
 import keyword
 import tokenize
+import sysconfig
 import subprocess
 from pathlib import Path
+from itertools import accumulate
+from functools import cache, lru_cache
+from bisect import bisect_left, bisect_right
 
 INDENT = 2
 NAMING_IGNORE = '# naming: ignore'
@@ -56,6 +62,7 @@ MODES = ('', '--check', '--diff', '--selftest')
 
 EXCLUDE_DIRS = {'.git', '.venv', 'venv', 'node_modules', '__pycache__', '.mypy_cache', '.ruff_cache'}
 TEXT_GLOBS = ('*.md', '*.toml', '*.lock', '*.env', '*.yml', '*.yaml', '.gitignore', 'LICENSE', 'LICENSE.*')
+TEXT_NAME = re.compile('|'.join(fnmatch.translate(os.path.normcase(glob)) for glob in TEXT_GLOBS))
 
 SKIP_TYPES = {
   tokenize.COMMENT,
@@ -83,33 +90,51 @@ CLOSERS = {')', ']', '}'}
 
 # --- helpers ---
 
+# Every pass is handed the text the previous pass returned, which is usually the very same text
+# (a formatted file changes nothing), so whatever only depends on the text is worked out once and
+# shared. The results are shared too, so nothing may modify them.
+@lru_cache(maxsize = 1)
 def tokens_of(src):
-  return list(tokenize.generate_tokens(io.StringIO(src).readline))
+  return tuple(tokenize.generate_tokens(io.StringIO(src).readline))
 
+@lru_cache(maxsize = 1)
+def source_lines(src):
+  return tuple(io.StringIO(src).readlines())
+
+@lru_cache(maxsize = 1)
+def parse(src):
+  return ast.parse(src)
+
+@lru_cache(maxsize = 1)
 def line_starts(src):
-  starts = [0]
-  for line in io.StringIO(src).readlines():
-    starts.append(starts[-1] + len(line))
-  return starts
+  return (0, *accumulate(map(len, source_lines(src))))
 
 def offset(starts, pos):
   return starts[pos[0] - 1] + pos[1]
 
 def splice(src, edits):
-  for begin, end, text in sorted(edits, reverse = True):
-    src = src[:begin] + text + src[end:]
-  return src
+  if not edits:
+    return src
+  parts = []
+  done = 0
+  for begin, end, text in sorted(edits):
+    parts.append(src[done:begin])
+    parts.append(text)
+    done = end
+  parts.append(src[done:])
+  return ''.join(parts)
 
 def width(line):
   body = line.lstrip(' \t')
   return len(line[: len(line) - len(body)].expandtabs(8))
 
-def string_rows(tokens):
+@lru_cache(maxsize = 1)
+def string_rows(src):
   """Rows that start inside a string, and rows that end inside one."""
   begins_in = set()
   ends_in = set()
   stack = []
-  for tok in tokens:
+  for tok in tokens_of(src):
     if tok.type in STR_STARTS:
       stack.append(tok.start[0])
     elif tok.type in STR_ENDS:
@@ -119,7 +144,7 @@ def string_rows(tokens):
     elif tok.type == tokenize.STRING:
       begins_in.update(range(tok.start[0] + 1, tok.end[0] + 1))
       ends_in.update(range(tok.start[0], tok.end[0]))
-  return begins_in, ends_in
+  return frozenset(begins_in), frozenset(ends_in)
 
 # --- pass: quotes ---
 
@@ -155,16 +180,18 @@ def fix_quotes(src):
   depth = 0
   first = None
   for tok in tokens_of(src):
-    if tok.type in STR_STARTS:
+    kind = tok.type
+    if kind == tokenize.STRING:
+      if depth == 0 and '"' in tok.string[:3]:  # only a double quote right after the prefix can change
+        edits += quote_edit(src, starts, tok, tok)
+    elif kind in STR_STARTS:
       if depth == 0:
         first = tok
       depth += 1
-    elif tok.type in STR_ENDS:
+    elif kind in STR_ENDS:
       depth -= 1
-      if depth == 0:
+      if depth == 0 and '"' in first.string[:3]:
         edits += quote_edit(src, starts, first, tok)
-    elif tok.type == tokenize.STRING and depth == 0:
-      edits += quote_edit(src, starts, tok, tok)
   return splice(src, edits)
 
 # --- pass: operator and comma spacing ---
@@ -235,8 +262,12 @@ def fix_spacing(src):
     elif depth > 0:
       adjacent = False
       continue
-    before, after = wants(tok, prev)
-    if prev is not None and adjacent and prev.end[0] == tok.start[0]:
+    if kind == tokenize.OP:
+      before, after = wants(tok, prev)
+    else:
+      before = after = None
+    # gap() has nothing to say unless one of the two tokens wants a say in the spacing
+    if prev is not None and adjacent and (before is not None or prev_after is not None) and prev.end[0] == tok.start[0]:
       want = gap(prev, prev_after, tok, before)
       if want is not None:
         begin = offset(starts, prev.end)
@@ -278,16 +309,16 @@ def fix_trailing_commas(src):
       continue
     if kind in SKIP_TYPES:
       continue
-    callable_before = prev is not None and (
-      (prev.type == tokenize.NAME and not keyword.iskeyword(prev.string)) or
-      (prev.type == tokenize.OP and prev.string in CLOSERS) or
-      prev.type == tokenize.STRING or prev.type in STR_ENDS
-    )
-    list_keyword_before = (
-      prev is not None and prev.type == tokenize.NAME and
-      keyword.iskeyword(prev.string) and prev.string in NO_TUPLE_KEYWORDS
-    )
     if kind == tokenize.OP and tok.string in OPENERS:
+      callable_before = prev is not None and (
+        (prev.type == tokenize.NAME and not keyword.iskeyword(prev.string)) or
+        (prev.type == tokenize.OP and prev.string in CLOSERS) or
+        prev.type == tokenize.STRING or prev.type in STR_ENDS
+      )
+      list_keyword_before = (
+        prev is not None and prev.type == tokenize.NAME and
+        keyword.iskeyword(prev.string) and prev.string in NO_TUPLE_KEYWORDS
+      )
       if stack:
         stack[-1]['last_comma'] = None
       stack.append({
@@ -349,13 +380,11 @@ def statements(tokens, lines):
 
 def comment_indent(row, old, stmts):
   """New indent for a comment-only line, based on the statements around it."""
-  prev = None
-  nxt = None
-  for stmt in stmts:
-    if stmt[1] < row:
-      prev = stmt
-    elif stmt[0] > row and nxt is None:
-      nxt = stmt
+  # stmts is in file order, so the statements above and below the row are found by bisecting
+  above = bisect_left(stmts, row, key = lambda stmt: stmt[1])  # how many end before this row
+  below = bisect_right(stmts, row, key = lambda stmt: stmt[0])  # first one that starts after it
+  prev = stmts[above - 1] if above else None
+  nxt = stmts[below] if below < len(stmts) else None
   for stmt in (nxt, prev):
     if stmt is not None and stmt[2] == old:
       return stmt[3]
@@ -428,8 +457,8 @@ def indent_targets(tokens, lines, stmts, begins_in):
 
 def fix_indent(src):
   tokens = tokens_of(src)
-  lines = io.StringIO(src).readlines()
-  begins_in, _ = string_rows(tokens)
+  lines = source_lines(src)
+  begins_in, _ = string_rows(src)
   stmts = statements(tokens, lines)
   targets, covered = indent_targets(tokens, lines, stmts, begins_in)
   out = list(lines)
@@ -445,6 +474,10 @@ def fix_indent(src):
 
 # --- pass: import order ---
 
+@cache
+def is_local(top):
+  return Path(top).is_dir() or Path(top + '.py').is_file()
+
 def import_group(node):
   """0 = __future__, 1 = system libs, 2 = 3rd party libs, 3 = local files."""
   if isinstance(node, ast.ImportFrom):
@@ -457,7 +490,7 @@ def import_group(node):
     return 0
   if top in sys.stdlib_module_names:
     return 1
-  if top and (Path(top).is_dir() or Path(top + '.py').is_file()):
+  if top and is_local(top):
     return 3
   return 2
 
@@ -475,13 +508,15 @@ def name_kind(name):
   return 1
 
 def import_lines(node, lines):
-  """Source lines of an import. A simple one-line 'from' import also gets its names sorted."""
+  """Source lines of an import, and the text it is sorted by. A simple one-line 'from' import
+  also gets its names sorted. The tree is shared, so the node is copied rather than changed."""
   chunk = lines[node.lineno - 1 : node.end_lineno]
   simple = len(chunk) == 1 and not any(mark in chunk[0] for mark in '#(;')
   if isinstance(node, ast.ImportFrom) and simple:
-    node.names.sort(key = lambda alias: (name_kind(alias.name), alias.name.lower(), alias.name))
-    chunk = [ast.unparse(node) + '\n']
-  return chunk
+    names = sorted(node.names, key = lambda alias: (name_kind(alias.name), alias.name.lower(), alias.name))
+    text = ast.unparse(copy.replace(node, names = names))
+    return [text + '\n'], text
+  return chunk, ast.unparse(node)
 
 def import_runs(tree):
   """Lists of consecutive top-level import statements."""
@@ -494,11 +529,11 @@ def import_runs(tree):
   return [run for run in runs if run]
 
 def fix_imports(src):
-  lines = io.StringIO(src).readlines()
+  lines = list(source_lines(src))
   if lines and not lines[-1].endswith('\n'):
     lines[-1] += '\n'
   edits = []
-  for run in import_runs(ast.parse(src)):
+  for run in import_runs(parse(src)):
     first = run[0].lineno
     last = run[-1].end_lineno
     inside = {row for node in run for row in range(node.lineno, node.end_lineno + 1)}
@@ -508,9 +543,9 @@ def fix_imports(src):
       continue
     items = []
     for node in run:
-      chunk = import_lines(node, lines)
+      chunk, text = import_lines(node, lines)
       is_from = isinstance(node, ast.ImportFrom)
-      items.append((import_group(node), is_from, *length_key(ast.unparse(node)), chunk))
+      items.append((import_group(node), is_from, *length_key(text), chunk))
     items.sort(key = lambda item: item[:5])
     new = [line for item in items for line in item[5]]
     after = lines[last:]
@@ -529,10 +564,10 @@ def fix_imports(src):
 
 def fix_whitespace(src):
   """Strip trailing spaces, collapse blank-line runs to one, end with a single newline."""
-  begins_in, ends_in = string_rows(tokens_of(src))
+  begins_in, ends_in = string_rows(src)
   out = []
   prev_blank = False
-  for row, line in enumerate(io.StringIO(src).readlines(), 1):
+  for row, line in enumerate(source_lines(src), 1):
     body = line.rstrip('\r\n')
     eol = '\n' if line != body else ''
     if row not in ends_in:
@@ -646,12 +681,26 @@ def format_text(path, text):
 
 PASSES = [fix_quotes, fix_trailing_commas, fix_spacing, fix_indent, fix_imports, fix_whitespace]
 
+STATEMENT_FIELDS = ('body', 'orelse', 'finalbody', 'handlers', 'cases')
+
+def import_nodes(tree):
+  """Every import statement in the tree. Statements only ever sit in these list fields, so
+  there is no need to look inside the expressions."""
+  todo = [tree]
+  while todo:
+    node = todo.pop()
+    for field in STATEMENT_FIELDS:
+      for child in getattr(node, field, ()):
+        if isinstance(child, (ast.Import, ast.ImportFrom)):
+          yield child
+        else:
+          todo.append(child)
+
 def canonical(src):
   """AST dump that ignores import order, so the import pass is allowed to reorder them."""
-  tree = ast.parse(src)
-  for node in ast.walk(tree):
-    if isinstance(node, (ast.Import, ast.ImportFrom)):
-      node.names.sort(key = ast.dump)
+  tree = ast.parse(src)  # not parse(), this tree gets modified
+  for node in import_nodes(tree):
+    node.names.sort(key = ast.dump)
   body = []
   run = []
   for node in [*tree.body, None]:
@@ -671,8 +720,9 @@ def same_tree(old, new):
   except SyntaxError:
     return False
 
-def format_source(src):
-  """Run every Python pass. Returns (new_src, error); on error the source is unchanged."""
+def format_source_checked(src):
+  """Run every Python pass, checking after each one that the tree is the same. Slow, but it
+  can say which pass broke it."""
   try:
     ast.parse(src)
   except SyntaxError as exc:
@@ -685,16 +735,42 @@ def format_source(src):
     current = new
   return current, None
 
+def format_source(src):
+  """Run every Python pass. Returns (new_src, error); on error the source is unchanged.
+  The tree is only compared once, after the last pass. If that fails (or a pass chokes on the
+  broken text an earlier one left), the checked version works out which pass is to blame."""
+  try:
+    parse(src)
+  except SyntaxError as exc:
+    return src, f'syntax error: {exc.msg}'
+  current = src
+  try:
+    for step in PASSES:
+      current = step(current)
+  except Exception:  # noqa: BLE001
+    return format_source_checked(src)
+  if current == src or same_tree(src, current):
+    return current, None
+  return format_source_checked(src)
+
 # --- naming checks ---
 
+@cache
 def ok_name(name):
   """Every _-separated part must be all uppercase or all lowercase."""
   return all(part == part.upper() or part == part.lower() for part in name.split('_'))
 
+NAMED_NODES = {
+  ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef, ast.arg, ast.Name,
+  ast.Attribute, ast.ExceptHandler, ast.MatchAs, ast.MatchStar
+}
+
 def check_names(src, path):
   ignored = {n for n, line in enumerate(src.split('\n'), 1) if NAMING_IGNORE in line}
   found = []
-  for node in ast.walk(ast.parse(src)):
+  for node in ast.walk(parse(src)):
+    if type(node) not in NAMED_NODES:
+      continue
     if isinstance(node, ast.ClassDef):
       first = node.name.lstrip('_')[:1]
       if first and not first.isupper():
@@ -750,7 +826,11 @@ CASES = [
   ('imports comment left alone', 'import sys\n# note\nimport os\n', 'import sys\n# note\nimport os\n'),
   ('imports multiline kept', 'import sys\nfrom enum import (\n  IntEnum,\n  auto,\n)\nimport os\n', 'import os\nimport sys\nfrom enum import (\n  IntEnum,\n  auto\n)\n'),
   ('imports not at top', 'def f():\n  import sys\n  import os\n', 'def f():\n  import sys\n  import os\n'),
-  ('imports import before from', 'from a import b\nimport numpy_extra\n', 'import numpy_extra\nfrom a import b\n')
+  ('imports import before from', 'from a import b\nimport numpy_extra\n', 'import numpy_extra\nfrom a import b\n'),
+  ('imports lazy', 'lazy import sys\nimport os\nlazy from enum import IntEnum, auto, Flag as F\n', 'import os\nlazy import sys\nlazy from enum import Flag as F, IntEnum, auto\n'),
+  ('comments around statements', '# head\nif a:\n    b = 1\n      # between\n    c = 2\n# tail\n', '# head\nif a:\n  b = 1\n    # between\n  c = 2\n# tail\n'),
+  ('comments between blocks', 'class A:\n    def f(self):\n        return 1\n        # end of f\n    # between\n\n# top\n', 'class A:\n  def f(self):\n    return 1\n    # end of f\n# between\n\n# top\n'),
+  ('comment above a dedent', 'if a:\n    if b:\n        c = 1\n  # odd\n    d = 2\n', 'if a:\n  if b:\n    c = 1\n# odd\n  d = 2\n')
 ]
 NAME_CASES = [
   ('thing = 1\npoint_RTS = 2\nRTS_point = 3\nRTS = 4\nclass ABC: pass\nclass CoolCar: pass\n', 0),
@@ -803,30 +883,48 @@ def selftest():
   if 'No newline' not in diff('x', 'a', 'a\n') or '\\r' not in diff('x', 'a\r\n', 'a\n'):
     failures += 1
     print('FAIL diff output')
-  total = len(CASES) + len(NAME_CASES) + len(TEXT_CASES) + len(TOML_CASES)
+
+  def breaks_tree(src):
+    return src.replace('1', '2')
+
+  saved = PASSES[:]
+  PASSES[:] = [fix_quotes, breaks_tree]
+  try:
+    got = format_source('x = "a" + 1\n')
+  finally:
+    PASSES[:] = saved
+  want = ('x = "a" + 1\n', 'breaks_tree changed the AST')
+  if got != want:
+    failures += 1
+    print(f'FAIL error names the pass: want {want!r}, got {got!r}')
+  total = len(CASES) + len(NAME_CASES) + len(TEXT_CASES) + len(TOML_CASES) + 2  # + the diff and AST checks
   print(f'{total - failures} passed, {failures} failed')
   return 1 if failures else 0
 
 # --- file discovery ---
 
-def excluded(path):
-  return any(part in EXCLUDE_DIRS for part in path.parts)
-
-def python_files():
-  """Every tracked *.py file in the repo, wherever it lives."""
-  return sorted(p for p in Path('.').rglob('*.py') if not excluded(p))
-
-def text_files():
-  """Non-Python text files that should still end with exactly one LF."""
-  found = set()
-  for pattern in TEXT_GLOBS:
-    found.update(p for p in Path('.').rglob(pattern) if not excluded(p))
-  return sorted(found)
+def find_files():
+  """Every *.py file in the repo, and the other text files that should still end with exactly
+  one LF. One walk that never goes into EXCLUDE_DIRS, instead of one full walk per pattern."""
+  python = []
+  text = []
+  for folder, dirs, names in os.walk('.'):
+    dirs[:] = [name for name in dirs if name not in EXCLUDE_DIRS]
+    for name in names:
+      lowered = os.path.normcase(name)
+      if lowered.endswith('.py'):
+        python.append(Path(folder, name))
+      elif TEXT_NAME.match(lowered):
+        text.append(Path(folder, name))
+  return sorted(python), sorted(text)
 
 # --- command line ---
 
 def ruff(*args):
-  return subprocess.run([sys.executable, '-m', 'ruff', *args], check = False).returncode
+  # run the binary itself when it sits next to Python, 'python -m ruff' just starts another interpreter
+  binary = Path(sysconfig.get_path('scripts'), 'ruff.exe' if os.name == 'nt' else 'ruff')
+  command = [str(binary)] if binary.is_file() else [sys.executable, '-m', 'ruff']
+  return subprocess.run([*command, *args], check = False).returncode
 
 def read(path):
   with path.open(encoding = 'utf-8', newline = '') as file:
@@ -836,6 +934,7 @@ def write(path, text):
   with path.open('w', encoding = 'utf-8', newline = '') as file:
     file.write(text)
 
+@cache
 def use_color():
   if not sys.stdout.isatty() or 'NO_COLOR' in os.environ:
     return False
@@ -845,6 +944,7 @@ def use_color():
 
 def diff(path, old, new):
   """Unified diff, colored like git when printing to a terminal."""
+  import difflib  # only --diff needs it, and on 3.15 importing it costs ~20 ms (it pulls in dataclasses)
   color = use_color()
   before = io.StringIO(old).readlines()
   after = io.StringIO(new).readlines()
@@ -875,8 +975,7 @@ def main(argv):
   if mode == '--selftest':
     return selftest()
 
-  py_files = python_files()
-  txt_files = text_files()
+  py_files, txt_files = find_files()
   before_py = {p: read(p) for p in py_files}
 
   if mode == '--check':
