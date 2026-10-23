@@ -2,6 +2,7 @@ from typing import Any
 import orjson
 import aiohttp
 from .api import Route, API
+from ..models.params import Payload
 
 URL = 'https://discord.com/api/v10'
 USER_AGENT = 'DiscordBot (https://github.com/imptype/discord, v0.1.1)'
@@ -33,7 +34,12 @@ class HTTPClient(API):
       headers['Authorization'] = f'Bot {self.token}'
     if reason:
       headers['X-Audit-Log-Reason'] = reason
-    is_form = isinstance(body, aiohttp.FormData)
+    data = None
+    json = None
+    if isinstance(body, Payload):
+      headers['Content-Type'], data = body.encode()
+    else:
+      json = body
 
     # aiohttp doesn't convert booleans in query string
     params = {
@@ -46,8 +52,8 @@ class HTTPClient(API):
       f'{URL}{route.path}',
       params = params,
       headers = headers,
-      data = body if is_form else None,
-      json = None if is_form else body
+      data = data,
+      json = json
     )
     if response.status >= 400:
       text = await response.text()

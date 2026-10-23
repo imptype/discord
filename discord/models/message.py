@@ -12,13 +12,6 @@ class PartialMessage(PartialModel):
     return await self.app.model.http.message(self.id, self.channel)
 
   async def edit(self, content = MISSING, *, embed = MISSING, embeds = MISSING, file = MISSING, files = MISSING, view = MISSING, components = MISSING, flags = MISSING):
-    if embed is not MISSING and embeds is not MISSING:
-      raise ValueError('cannot edit both embed and embeds')
-    if file is not MISSING and files is not MISSING:
-      raise ValueError('cannot edit both file and files')
-    if view is not MISSING and components is not MISSING:
-      raise ValueError('cannot edit both view and components')
-
     body = edit_params(content, embed = embed, embeds = embeds, file = file,
       files = files, view = view, components = components, flags = flags)
     if view not in (MISSING, None):

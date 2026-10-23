@@ -11,3 +11,9 @@ class File:
     self.filename = filename
     self.description = description # alt text
     self.content_type = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+
+  def to_json(self, index):
+    body = {'id': index, 'filename': self.filename}
+    if self.description:
+      body['description'] = self.description
+    return body

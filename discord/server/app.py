@@ -2,6 +2,7 @@ import orjson
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
 from .handler import handler
+from ..models.params import Payload
 from ..core import AppBase, HTTPStatus
 
 class App(AppBase):
@@ -30,10 +31,10 @@ class App(AppBase):
     if scope['type'] != 'http':
       return
     if scope['path'] != '/interactions' or scope['method'] != 'POST':
-      return await self.json(send, HTTPStatus.NOT_FOUND_404, {'error': 'not found'})
+      return await self.respond(send, HTTPStatus.NOT_FOUND_404, {'error': 'not found'})
 
     body = b''
-    while True:
+    while True: # TODO: add security
       event = await receive()
       body += event.get('body', b'')
       if not event.get('more_body'):
@@ -44,12 +45,19 @@ class App(AppBase):
       self.verify_key.verify(headers.get('x-signature-timestamp', '').encode() + body,
         bytes.fromhex(headers.get('x-signature-ed25519', '')))
     except BadSignatureError, ValueError:
-      return await self.json(send, HTTPStatus.UNAUTHORIZED_401, {'error': 'invalid signature'})
+      return await self.respond(send, HTTPStatus.UNAUTHORIZED_401, {'error': 'invalid signature'})
 
     payload = orjson.loads(body)
-    await self.json(send, HTTPStatus.OK_200, await handler(self, payload))
+    await self.respond(send, HTTPStatus.OK_200, await handler(self, payload))
 
-  async def json(self, send, status, obj):
+  async def respond(self, send, status, obj): # obj is a Payload (json or multipart), or a plain dict
+    if isinstance(obj, Payload):
+      content_type, body = obj.encode()
+    else:
+      content_type, body = 'application/json', orjson.dumps(obj)
     await send({'type': 'http.response.start', 'status': status,
-      'headers': [(b'content-type', b'application/json')]})
-    await send({'type': 'http.response.body', 'body': orjson.dumps(obj)})
+      'headers': [
+        (b'content-type', content_type.encode()),
+        (b'content-length', str(len(body)).encode())
+      ]})
+    await send({'type': 'http.response.body', 'body': body})

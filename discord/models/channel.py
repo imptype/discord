@@ -10,13 +10,6 @@ class PartialChannel(PartialModel):
     return await self.app.model.http.channel(self.id, self.guild)
 
   async def send(self, content = None, *, embed = None, embeds = None, file = None, files = None, view = None, components = None, flags = None):
-    if embed is not None and embeds is not None:
-      raise ValueError('cannot send both embed and embeds')
-    if file is not None and files is not None:
-      raise ValueError('cannot send both file and files')
-    if view is not None and components is not None:
-      raise ValueError('cannot send both view and components')
-
     body = send_params(content, embed = embed, embeds = embeds, file = file,
       files = files, view = view, components = components, flags = flags)
     if view is not None:
