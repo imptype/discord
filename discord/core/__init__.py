@@ -6,11 +6,12 @@ from .component import ComponentMixin
 from .log import enable_logs, format_json
 from .enums import CommandType, HTTPStatus, InteractionType, ResponseType
 from .command import (
-  BaseCommand, CommandMixin, CommandNamespace, CommandProxy, Handler,
-  InteractionCommand, MessageCommand, command_namespace
+  BaseCommand, CommandMixin, CommandNamespace, CommandProxy, GatewayCommand, Handler,
+  InteractionCommand, MessageCommand, SlashCommand, UserCommand, command_namespace
 )
 from .interaction import (
   AutocompleteInteraction, AutocompleteResponse, CommandInteraction, CommandResponse,
   ComponentInteraction, ComponentResponse, Interaction, InteractionResponse,
-  MessageMixin, ModalInteraction, ModalMixin, ModalResponse, UpdateMixin
+  MessageInteraction, MessageMixin, ModalInteraction, ModalMixin, ModalResponse,
+  SlashInteraction, UpdateMixin, UserInteraction
 )

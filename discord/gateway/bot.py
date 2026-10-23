@@ -4,7 +4,7 @@ from typing import cast
 from .intents import Intents
 from .connection import Connection
 from .event import Event, EventIntents, ANY_EVENT
-from ..core import AppBase, CommandNamespace, CommandProxy, InteractionType, MessageCommand, command_namespace
+from ..core import AppBase, CommandNamespace, CommandProxy, GatewayCommand, InteractionType, command_namespace
 
 log = logging.getLogger(__name__)
 
@@ -42,25 +42,25 @@ class Bot(AppBase):
       await self.lifespan.shutdown()
 
   def add_commands(self, *commands):
-    super().add_commands(*[command for command in commands if not isinstance(command, MessageCommand)])
+    super().add_commands(*[command for command in commands if not isinstance(command, GatewayCommand)])
     intents = EventIntents.MESSAGE_CREATE.value
     for command in commands:
-      if not isinstance(command, MessageCommand):
+      if not isinstance(command, GatewayCommand):
         continue
       name = command.func.__name__
       if command.name != name:
         name = f'"{command.name}" {name}'
       if not self.intents & intents:
         names = ' / '.join(flag.name for flag in intents if flag.name)
-        log.warning(f'message command {name}() will never run: missing intents, enable one of {names}')
+        log.warning(f'gateway command {name}() will never run: missing intents, enable one of {names}')
       elif self.intents & Intents.GUILD_MESSAGES and not self.intents & Intents.MESSAGE_CONTENT:
-        log.warning(f'message command {name}() may never run: missing intent, enable MESSAGE_CONTENT')
+        log.warning(f'gateway command {name}() may never run: missing intent, enable MESSAGE_CONTENT')
       self.command_handlers[command.name] = command
 
   def remove_commands(self, *commands):
-    super().remove_commands(*[command for command in commands if not isinstance(command, MessageCommand)])
+    super().remove_commands(*[command for command in commands if not isinstance(command, GatewayCommand)])
     for command in commands:
-      if isinstance(command, MessageCommand) and self.command_handlers.get(command.name) is command:
+      if isinstance(command, GatewayCommand) and self.command_handlers.get(command.name) is command:
         del self.command_handlers[command.name]
 
   def event(self, func = None, *, name = None):
@@ -101,7 +101,7 @@ class Bot(AppBase):
     self.tasks.add(task)
     task.add_done_callback(self.tasks.discard)
 
-  def handle_message_command(self, message):
+  def handle_gateway_command(self, message):
     data = message.data
     if data.get('webhook_id') or data.get('author', {}).get('bot'):
       return
@@ -130,7 +130,7 @@ class Bot(AppBase):
             self.spawn(self.run_modal(data, is_from_http = False))
       case 'MESSAGE_CREATE':
         payload = self.model.message(data)
-        self.handle_message_command(payload)
+        self.handle_gateway_command(payload)
 
     for handler in self.event_handlers.get(name, ()):
       self.spawn(handler(payload))

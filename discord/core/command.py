@@ -1,6 +1,6 @@
 from typing import cast
 from .enums import CommandType
-from .interaction import CommandInteraction
+from .interaction import MessageInteraction, SlashInteraction, UserInteraction
 
 class Handler:
   def __init__(self, func, name = None):
@@ -11,29 +11,64 @@ class BaseCommand(Handler):
   async def __call__(self, data):
     return await self.func(data)
 
-class InteractionCommand(BaseCommand):
-  def __init__(self, func, name = None, description = None):
-    super().__init__(func, name)
-    self.description = description or self.name
-
-  def to_json(self):
-    return {'name': self.name, 'type': CommandType.CHAT_INPUT, 'description': self.description}
-
-class MessageCommand(BaseCommand):
+class GatewayCommand(BaseCommand):
   def __init__(self, func, name = None):
     super().__init__(func, name)
     self.name = self.name.lower()
 
+class InteractionCommand(BaseCommand):
+  def __init__(self, func, name = None, type = None):
+    super().__init__(func, name)
+    self.type = type
+    self.key = (type, self.name)
+
+  def to_json(self):
+    return {'name': self.name, 'type': self.type}
+
+class SlashCommand(InteractionCommand):
+  def __init__(self, func, name = None, description = None):
+    super().__init__(func, name, CommandType.CHAT_INPUT)
+    self.description = description or self.name
+
+  def to_json(self):
+    return {'name': self.name, 'type': self.type, 'description': self.description}
+
+class UserCommand(InteractionCommand):
+  def __init__(self, func, name = None):
+    super().__init__(func, name, CommandType.USER)
+
+  async def __call__(self, interaction):
+    return await self.func(interaction, interaction.user)
+
+class MessageCommand(InteractionCommand):
+  def __init__(self, func, name = None):
+    super().__init__(func, name, CommandType.MESSAGE)
+
+  async def __call__(self, interaction):
+    return await self.func(interaction, interaction.message)
+
 class CommandNamespace:
   def __call__(self, func = None, *, name = None):
     def wrap(f):
-      return MessageCommand(f, name)
+      return GatewayCommand(f, name)
     return wrap(func) if func else wrap
 
   @staticmethod
   def slash(func = None, *, name = None, description = None):
     def wrap(f):
-      return InteractionCommand(f, name, description)
+      return SlashCommand(f, name, description)
+    return wrap(func) if func else wrap
+
+  @staticmethod
+  def user(func = None, *, name = None):
+    def wrap(f):
+      return UserCommand(f, name)
+    return wrap(func) if func else wrap
+
+  @staticmethod
+  def message(func = None, *, name = None):
+    def wrap(f):
+      return MessageCommand(f, name)
     return wrap(func) if func else wrap
 
 command_namespace = CommandNamespace()
@@ -70,7 +105,7 @@ class CommandProxy:
 class CommandMixin:
   def __init__(self):
     super().__init__()
-    self.registry = {}
+    self.registry = {} # {(kind, name): InteractionCommand}
     self.set_proxy()
 
   def set_proxy(self):
@@ -81,21 +116,31 @@ class CommandMixin:
       if not isinstance(command, InteractionCommand):
         raise ValueError(f'not an interaction command: {command!r}')
     for command in commands:
-      self.registry[command.name] = command
+      self.registry[command.key] = command
 
   def remove_commands(self, *commands):
     for command in commands: # noqa: F402
       if not isinstance(command, InteractionCommand):
         raise ValueError(f'not an interaction command: {command!r}')
     for command in commands:
-      if self.registry.get(command.name) is command:
-        del self.registry[command.name]
+      if self.registry.get(command.key) is command:
+        del self.registry[command.key]
 
   async def run_command(self, payload, is_from_http):
-    name = payload['data']['name']
-    if (command := self.registry.get(name)) is None:
-      raise ValueError(f'unknown command: {name}')
-    interaction = CommandInteraction(payload, self, is_from_http)
+    data = payload['data']
+    kind = CommandType(data['type'])
+    name = data['name']
+    if (command := self.registry.get((kind, name))) is None:
+      raise ValueError(f'unknown {kind.name} command: {name}')
+    match kind:
+      case CommandType.CHAT_INPUT:
+        interaction = SlashInteraction(payload, self, is_from_http)
+      case CommandType.USER:
+        interaction = UserInteraction(payload, self, is_from_http)
+      case CommandType.MESSAGE:
+        interaction = MessageInteraction(payload, self, is_from_http)
+      case _:
+        raise ValueError(f'unsupported command type: {kind.name}')
     await command(interaction)
     return interaction
 

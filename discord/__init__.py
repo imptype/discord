@@ -16,9 +16,10 @@ from .models import (
 )
 from .core import (
   AutocompleteInteraction, AutocompleteResponse, Cog, CommandInteraction, CommandResponse,
-  CommandType, ComponentInteraction, ComponentResponse, HTTPClient, Interaction,
-  InteractionResponse, InteractionType, ModalInteraction, ModalResponse, ResponseType,
-  enable_logs, command_namespace as command
+  CommandType, ComponentInteraction, ComponentResponse, GatewayCommand, HTTPClient, Interaction,
+  InteractionCommand, InteractionResponse, InteractionType, MessageCommand, MessageInteraction,
+  ModalInteraction, ModalResponse, ResponseType, SlashCommand, SlashInteraction, UserCommand,
+  UserInteraction, enable_logs, command_namespace as command
 )
 from .ui import (
   ActionRow, BaseSelect, BaseView, Button, ButtonStyle, ChannelSelect, ChannelType,

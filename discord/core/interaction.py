@@ -83,6 +83,7 @@ class Interaction:
     self.id = data['id']
     self.token = data['token']
     self.type = data['type']
+    self.guild_id = data.get('guild_id')
     self.original_message = ... # TODO
     self.followup = ... # TODO
 
@@ -90,6 +91,30 @@ class CommandInteraction(Interaction):
   def __init__(self, data, app, is_from_http):
     super().__init__(data, app, is_from_http)
     self.response = CommandResponse(self)
+
+class SlashInteraction(CommandInteraction):
+  pass # TODO: add other slash cmd attributes
+
+class UserInteraction(CommandInteraction):
+  def __init__(self, data, app, is_from_http):
+    super().__init__(data, app, is_from_http)
+    command = data['data']
+    resolved = command['resolved']
+    user = resolved['users'][command['target_id']]
+    member = resolved.get('members', {}).get(command['target_id'])
+    guild = app.model.partial_guild(self.guild_id) if self.guild_id else None
+    if guild and member:
+      self.user = app.model.member(member, user = user, guild = guild)
+    else:
+      self.user = app.model.user(user)
+
+class MessageInteraction(CommandInteraction):
+  def __init__(self, data, app, is_from_http):
+    super().__init__(data, app, is_from_http)
+    command = data['data']
+    message = command['resolved']['messages'][command['target_id']]
+    guild = app.model.partial_guild(self.guild_id) if self.guild_id else None
+    self.message = app.model.message(message, guild = guild)
 
 class ComponentInteraction(Interaction):
   def __init__(self, data, app, is_from_http):
