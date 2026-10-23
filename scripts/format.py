@@ -179,6 +179,7 @@ def fix_quotes(src):
   edits = []
   depth = 0
   first = None
+  double = False  # whether the outermost f-string opened with a double quote
   for tok in tokens_of(src):
     kind = tok.type
     if kind == tokenize.STRING:
@@ -187,10 +188,11 @@ def fix_quotes(src):
     elif kind in STR_STARTS:
       if depth == 0:
         first = tok
+        double = '"' in tok.string[:3]
       depth += 1
     elif kind in STR_ENDS:
       depth -= 1
-      if depth == 0 and '"' in first.string[:3]:
+      if depth == 0 and double:
         edits += quote_edit(src, starts, first, tok)
   return splice(src, edits)
 
@@ -306,6 +308,9 @@ def fix_trailing_commas(src):
       prev = tok
       continue
     if str_depth > 0:
+      continue
+    if kind == tokenize.NEWLINE:
+      prev = None  # a new statement starts, so a bracket at its start is no call or subscript: (a,) = f()
       continue
     if kind in SKIP_TYPES:
       continue
@@ -807,6 +812,7 @@ CASES = [
   ('comma list always removed', 'w = [1,]\n', 'w = [1]\n'),
   ('comma dict always removed', 'd = {1: 2,}\n', 'd = {1: 2}\n'),
   ('comma subscript tuple kept', 'a[1,]\n', 'a[1,]\n'),
+  ('comma unpacking tuple kept', "x = a\n(v,) = f()\ny = [b]\n(w,) = f()\nz = 'c'\n(u,) = f()\n", "x = a\n(v,) = f()\ny = [b]\n(w,) = f()\nz = 'c'\n(u,) = f()\n"),
   ('comma multiline kept across lines', 'x = (\n  1,\n  2,\n)\n', 'x = (\n  1,\n  2\n)\n'),
   ('comma fstring element not eaten', "x = ['a', FENCE, f'{ROOT.name}/']\n", "x = ['a', FENCE, f'{ROOT.name}/']\n"),
   ('fstring untouched', "x = f'{a=}{b+1}'\n", "x = f'{a=}{b+1}'\n"),
