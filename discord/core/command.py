@@ -1,6 +1,6 @@
 from typing import cast
 from .enums import CommandType
-from .interaction import Interaction
+from .interaction import CommandInteraction
 
 class Handler:
   def __init__(self, func, name = None):
@@ -95,6 +95,9 @@ class CommandMixin:
     name = payload['data']['name']
     if (command := self.registry.get(name)) is None:
       raise ValueError(f'unknown command: {name}')
-    interaction = Interaction(payload, self, is_from_http)
+    interaction = CommandInteraction(payload, self, is_from_http)
     await command(interaction)
     return interaction
+
+  async def run_autocomplete(self, payload, is_from_http):
+    raise NotImplementedError # TODO

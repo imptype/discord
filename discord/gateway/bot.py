@@ -124,6 +124,8 @@ class Bot(AppBase):
             self.spawn(self.run_command(data, is_from_http = False))
           case InteractionType.MESSAGE_COMPONENT:
             self.spawn(self.run_component(data, is_from_http = False))
+          case InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE:
+            self.spawn(self.run_autocomplete(data, is_from_http = False))
           case InteractionType.MODAL_SUBMIT:
             self.spawn(self.run_modal(data, is_from_http = False))
       case 'MESSAGE_CREATE':

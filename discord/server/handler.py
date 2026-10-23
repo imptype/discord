@@ -8,6 +8,8 @@ async def handler(app, payload):
       interaction = await app.run_command(payload, is_from_http = True)
     case InteractionType.MESSAGE_COMPONENT:
       interaction = await app.run_component(payload, is_from_http = True)
+    case InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE:
+      interaction = await app.run_autocomplete(payload, is_from_http = True)
     case InteractionType.MODAL_SUBMIT:
       interaction = await app.run_modal(payload, is_from_http = True)
     case _:

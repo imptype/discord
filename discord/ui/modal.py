@@ -129,7 +129,8 @@ class Modal:
     if components:
       self.add_components(*components)
 
-  async def callback(self, interaction): ...
+  async def callback(self, interaction):
+    pass
 
   async def __call__(self, interaction):
     return await self.callback(interaction)

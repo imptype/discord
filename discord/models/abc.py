@@ -19,4 +19,5 @@ class PartialModel(Snowflake):
     super().__init__(id)
     self.app = app
 
-  async def fetch(self): ...
+  async def fetch(self):
+    pass

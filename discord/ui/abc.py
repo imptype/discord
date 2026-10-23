@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 from .. import MISSING
 
 DEFAULT_TIMEOUT = 180
@@ -18,7 +19,8 @@ class Component:
   def interactables(self):
     return [component for component in self.walk() if isinstance(component, Interactable)]
 
-  def to_json(self) -> dict: ...
+  def to_json(self) -> Any:
+    pass
 
 class Interactable(Component):
   def __init__(self, *, custom_id = None, disabled = False, timeout = MISSING, callback = None, id = None):

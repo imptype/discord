@@ -2,8 +2,8 @@ import os
 import asyncio
 from .. import MISSING
 from ..ui.abc import DEFAULT_TIMEOUT
-from .interaction import Interaction
 from ..ui import BaseView, Component, Modal
+from .interaction import ComponentInteraction, ModalInteraction
 
 def resolve_timeout(component, view = None):
   if component.timeout is not MISSING: # component timeout takes priority
@@ -106,7 +106,7 @@ class ComponentMixin:
     custom_id = payload['data']['custom_id']
     if (component := self.component_cache.get(custom_id)) is None:
       raise ValueError(f'component not found: {custom_id}')
-    interaction = Interaction(payload, self, is_from_http)
+    interaction = ComponentInteraction(payload, self, is_from_http)
     await component(interaction)
     return interaction
 
@@ -114,6 +114,6 @@ class ComponentMixin:
     custom_id = payload['data']['custom_id']
     if (modal := self.modal_cache.get(custom_id)) is None:
       raise ValueError(f'modal not found: {custom_id}')
-    interaction = Interaction(payload, self, is_from_http)
+    interaction = ModalInteraction(payload, self, is_from_http)
     await modal(interaction)
     return interaction

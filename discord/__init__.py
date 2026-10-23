@@ -9,14 +9,16 @@ MISSING = sentinel('MISSING')
 
 from .server import App
 from .gateway import Bot, Intents, event
-from .core import (
-  Cog, CommandType, HTTPClient, Interaction, InteractionResponse, InteractionType,
-  ResponseType, enable_logs, command_namespace as command
-)
 from .models import (
   Channel, Context, Guild, Member, Message, MessageFlags, User, PartialChannel,
   PartialGuild, PartialMember, PartialMessage, PartialUser,
   PartialModel, Snowflake, snowflake_time
+)
+from .core import (
+  AutocompleteInteraction, AutocompleteResponse, Cog, CommandInteraction, CommandResponse,
+  CommandType, ComponentInteraction, ComponentResponse, HTTPClient, Interaction,
+  InteractionResponse, InteractionType, ModalInteraction, ModalResponse, ResponseType,
+  enable_logs, command_namespace as command
 )
 from .ui import (
   ActionRow, BaseSelect, BaseView, Button, ButtonStyle, ChannelSelect, ChannelType,
