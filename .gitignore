@@ -4,12 +4,12 @@ __pycache__/
 dist/
 .ruff_cache/
 .git/
+temp/
 
 # Hide personal stuff
 .env
 !example.env
 test.py
 NOTES.md
-dump.py
-dump.txt
-monitor.py
+scripts/*
+!scripts/format.py
