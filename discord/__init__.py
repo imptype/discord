@@ -14,13 +14,6 @@ from .models import (
   PartialGuild, PartialMember, PartialMessage, PartialUser,
   PartialModel, Snowflake, snowflake_time
 )
-from .core import (
-  AutocompleteInteraction, AutocompleteResponse, Cog, CommandInteraction, CommandResponse,
-  CommandType, ComponentInteraction, ComponentResponse, GatewayCommand, HTTPClient, Interaction,
-  InteractionCommand, InteractionResponse, InteractionType, MessageCommand, MessageInteraction,
-  ModalInteraction, ModalResponse, ResponseType, SlashCommand, SlashInteraction, UserCommand,
-  UserInteraction, enable_logs, command_namespace as command
-)
 from .ui import (
   ActionRow, BaseSelect, BaseView, Button, ButtonStyle, ChannelSelect, ChannelType,
   Checkbox, CheckboxGroup, Component, ComponentType, Container, ContentComponent, Embed,
@@ -29,4 +22,13 @@ from .ui import (
   RadioGroup, RoleSelect, Section, Separator, SelectOption, SeparatorSpacing, StringSelect,
   TextDisplay, TextInput, TextInputStyle, Thumbnail, UserSelect, View, button,
   channel_select, mentionable_select, modal, role_select, string_select, user_select
+)
+from .core import (
+  AttachmentOption, AutocompleteInteraction, AutocompleteResponse, BooleanOption, ChannelOption,
+  Choice, Cog, CommandInteraction, CommandResponse, CommandType, ComponentInteraction,
+  ComponentResponse, GatewayCommand, HTTPClient, IntegerOption, Interaction, InteractionCommand,
+  InteractionResponse, InteractionType, MentionableOption, MessageCommand, MessageInteraction,
+  ModalInteraction, ModalResponse, NumberOption, Option, OptionType, ResponseType, RoleOption,
+  SlashCommand, SlashInteraction, StringOption, SubCommand, UserCommand, UserInteraction,
+  UserOption, enable_logs, command_namespace as command
 )

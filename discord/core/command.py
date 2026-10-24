@@ -1,11 +1,19 @@
-from typing import cast
-from .enums import CommandType
-from .interaction import MessageInteraction, SlashInteraction, UserInteraction
+import copy
+import types
+from typing import Any, cast
+from ..ui.abc import clean
+from .enums import CommandType, OptionType
+from .interaction import AutocompleteInteraction, MessageInteraction, SlashInteraction, UserInteraction
 
 class Handler:
   def __init__(self, func, name = None):
     self.func = func
     self.name = name or func.__name__
+
+  def bind(self, instance):
+    handler = copy.copy(self)
+    handler.func = types.MethodType(self.func, instance)
+    return handler
 
 class BaseCommand(Handler):
   async def __call__(self, data):
@@ -25,13 +33,74 @@ class InteractionCommand(BaseCommand):
   def to_json(self):
     return {'name': self.name, 'type': self.type}
 
-class SlashCommand(InteractionCommand):
-  def __init__(self, func, name = None, description = None):
-    super().__init__(func, name, CommandType.CHAT_INPUT)
+class SlashNode:
+  def __init__(self, func, name = None, description = None, options = (), level = 1):
+    self.func = func
+    self.name = name or func.__name__
     self.description = description or self.name
+    self.options = options
+    self.level = level
+    self.subcommands = {}
+    self.autocomplete: Any = None
+
+  def subcommand(self, func = None, *, name = None, description = None, options = ()):
+    if self.level >= 2:
+      raise ValueError(f'cannot add a subcommand to {self.name!r}, command > group > subcommand is the maximum depth')
+    def wrap(f):
+      subcommand = SubCommand(f, name, description, options, self.level + 1)
+      self.subcommands[subcommand.name] = subcommand
+      return subcommand
+    return wrap(func) if func else wrap
+
+  def on_autocomplete(self, func = None):
+    def wrap(f):
+      self.autocomplete = f
+      return f
+    return wrap(func) if func else wrap
+
+  def find(self, names):
+    node = self
+    for name in names:
+      if (node := node.subcommands.get(name)) is None:
+        raise ValueError(f'unknown subcommand: {name}')
+    return node
 
   def to_json(self):
-    return {'name': self.name, 'type': self.type, 'description': self.description}
+    if self.subcommands and self.options:
+      raise ValueError(f'{self.name!r} cannot have both options and subcommands')
+    if self.level == 0:
+      type = CommandType.CHAT_INPUT
+    elif self.subcommands:
+      type = OptionType.SUB_COMMAND_GROUP
+    else:
+      type = OptionType.SUB_COMMAND
+    children = self.subcommands.values() if self.subcommands else self.options
+    return clean({
+      'name': self.name,
+      'type': type,
+      'description': self.description,
+      'options': [child.to_json() for child in children] or None
+    })
+
+  def bind(self, instance):
+    node = copy.copy(self)
+    node.func = types.MethodType(self.func, instance)
+    node.subcommands = {name: subcommand.bind(instance) for name, subcommand in self.subcommands.items()}
+    if self.autocomplete:
+      node.autocomplete = types.MethodType(self.autocomplete, instance)
+    return node
+
+class SubCommand(SlashNode): # an alias for now
+  pass
+
+class SlashCommand(SlashNode, InteractionCommand):
+  def __init__(self, func, name = None, description = None, options = ()):
+    SlashNode.__init__(self, func, name, description, options, 0)
+    InteractionCommand.__init__(self, func, name, CommandType.CHAT_INPUT)
+
+  async def __call__(self, interaction):
+    node = self.find(interaction.names[1:])
+    return await node.func(interaction, **interaction.options)
 
 class UserCommand(InteractionCommand):
   def __init__(self, func, name = None):
@@ -54,9 +123,9 @@ class CommandNamespace:
     return wrap(func) if func else wrap
 
   @staticmethod
-  def slash(func = None, *, name = None, description = None):
+  def slash(func = None, *, name = None, description = None, options = ()):
     def wrap(f):
-      return SlashCommand(f, name, description)
+      return SlashCommand(f, name, description, options)
     return wrap(func) if func else wrap
 
   @staticmethod
@@ -145,4 +214,13 @@ class CommandMixin:
     return interaction
 
   async def run_autocomplete(self, payload, is_from_http):
-    raise NotImplementedError # TODO
+    name = payload['data']['name']
+    if (command := self.registry.get((CommandType.CHAT_INPUT, name))) is None:
+      raise ValueError(f'unknown command: {name}')
+    interaction = AutocompleteInteraction(payload, self, is_from_http)
+    node = command.find(interaction.names[1:])
+    if node.autocomplete is None:
+      raise ValueError(f'no autocomplete handler for: {node.name}')
+    name, value = interaction.focused
+    await node.autocomplete(interaction, name, value, options = interaction.options)
+    return interaction

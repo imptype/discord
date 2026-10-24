@@ -24,6 +24,19 @@ class CommandType(IntEnum):
   MESSAGE = 3
   PRIMARY_ENTRY_POINT = 4
 
+class OptionType(IntEnum):
+  SUB_COMMAND = 1
+  SUB_COMMAND_GROUP = 2
+  STRING = 3
+  INTEGER = 4
+  BOOLEAN = 5
+  USER = 6
+  CHANNEL = 7
+  ROLE = 8
+  MENTIONABLE = 9
+  NUMBER = 10
+  ATTACHMENT = 11
+
 class HTTPStatus(IntEnum):
   OK_200 = 200
   NO_CONTENT_204 = 204

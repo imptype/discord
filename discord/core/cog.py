@@ -1,7 +1,5 @@
 import os
 import sys
-import copy
-import types
 import asyncio
 import logging
 import importlib
@@ -58,8 +56,7 @@ class CogMixin:
       }
       handlers = []
       for name, value in found.items():
-        handler = copy.copy(value)
-        handler.func = types.MethodType(value.func, instance)
+        handler = value.bind(instance)
         if isinstance(handler, tuple(registrars)):
           handlers.append(handler)
         else:
