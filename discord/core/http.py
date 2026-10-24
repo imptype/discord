@@ -25,12 +25,14 @@ class HTTPClient(API):
     route: Route,
     *,
     body: Any = None,
-    authorize: bool = False,
+    authorize: bool | str = False,
     reason: str | None = None,
     **params: Any
   ):
     headers = {'User-Agent': USER_AGENT}
-    if authorize:
+    if isinstance(authorize, str):
+      headers['Authorization'] = authorize # supports 'Bearer <token>' string
+    elif authorize:
       headers['Authorization'] = f'Bot {self.token}'
     if reason:
       headers['X-Audit-Log-Reason'] = reason

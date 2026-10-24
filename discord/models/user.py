@@ -5,7 +5,8 @@ class PartialUser(PartialModel):
     return await self.app.model.http.user(self.id)
 
   async def create_dm(self):
-    return self.app.model.channel(await self.app.http.create_dm(self.id))
+    data = {'recipient_id': self.id}
+    return self.app.model.channel(await self.app.http.create_dm(data))
 
 class User(PartialUser):
   def __init__(self, app, payload):
