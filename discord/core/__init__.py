@@ -1,8 +1,8 @@
 from .api import Route, API
 from .http import HTTPClient
 from .cog import Cog, CogMixin
-from .base import AppBase, Lifespan
 from .factory import ModelFactory
+from .base import AppBase, Lifespan
 from .component import ComponentMixin
 from .log import enable_logs, format_json
 from .webhook import FollowupWebhook, PartialWebhook, SyncWebhook, Webhook

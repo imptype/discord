@@ -9,7 +9,7 @@ Then it runs some extra things outside:
 1. Enforce 2-space indents.
 2. Enforce single quotes (skipping strings with nested quotes).
 3. Enforce LF instead of CRLF newline character.
-4. Somewhat enforce PascalCase class names.
+4. Somewhat enforce PascalCase class names and type names.
 5. Somewhat enforce snake_case variable and function names.
 6. Enforce no double blank lines in a row (skipping strings).
 7. Enforce a space between operators like * + (includes = in parameters and assignments)
@@ -767,14 +767,25 @@ def ok_name(name):
 
 NAMED_NODES = {
   ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef, ast.arg, ast.Name,
-  ast.Attribute, ast.ExceptHandler, ast.MatchAs, ast.MatchStar
+  ast.Attribute, ast.ExceptHandler, ast.MatchAs, ast.MatchStar, ast.TypeAlias
 }
 
 def check_names(src, path):
   ignored = {n for n, line in enumerate(src.split('\n'), 1) if NAMING_IGNORE in line}
   found = []
+  aliases = set()  # ids of the Name nodes that hold a 'type X = ...' name
   for node in ast.walk(parse(src)):
     if type(node) not in NAMED_NODES:
+      continue
+    if isinstance(node, ast.TypeAlias):
+      # a type alias is a type, so it is checked like a class instead of like a variable
+      # (ast.walk reaches the alias before its name node, so the name is skipped below)
+      aliases.add(id(node.name))
+      first = node.name.id.lstrip('_')[:1]
+      if first and not first.isupper():
+        found.append((node.lineno, f'type {node.name.id}: must start with an uppercase letter'))
+      continue
+    if isinstance(node, ast.Name) and id(node) in aliases:
       continue
     if isinstance(node, ast.ClassDef):
       first = node.name.lstrip('_')[:1]
@@ -843,7 +854,9 @@ NAME_CASES = [
   ('blueThing = 1\n', 1),
   ('class aBC: pass\nclass cOOlCAr: pass\n', 2),
   ('def doThing(selfThing): pass\n', 2),
-  ('blueThing = 1  # naming: ignore\n', 0)
+  ('blueThing = 1  # naming: ignore\n', 0),
+  ('type Method[**P, R] = Callable[Concatenate[Any, P], R]\ntype Alias = int\ntype _Private = int\n', 0),
+  ('type method = int\n', 1)
 ]
 TEXT_CASES = [
   ('no trailing newline', 'readme body', 'readme body\n'),

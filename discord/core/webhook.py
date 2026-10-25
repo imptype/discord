@@ -1,9 +1,9 @@
 from typing import Any, Concatenate
 from collections.abc import Callable, Coroutine
 from .. import MISSING
+from ..models import Message
 from .http import HTTPClient
 from ..models.abc import PartialModel
-from ..models import Message
 from ..models.enums import RESPONSE_MESSAGE_FLAGS
 from ..models.params import edit_params, send_params
 
