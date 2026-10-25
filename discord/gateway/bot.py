@@ -36,10 +36,10 @@ class Bot(AppBase):
 
   async def start(self):
     try:
-      await self.lifespan.startup()
+      await self.startup_lifespans()
       await self.connection.run()
     finally:
-      await self.lifespan.shutdown()
+      await self.shutdown_lifespans()
 
   def add_commands(self, *commands):
     super().add_commands(*[command for command in commands if not isinstance(command, PrefixCommand)])

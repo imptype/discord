@@ -27,8 +27,9 @@ from .core import (
   AttachmentOption, AutocompleteInteraction, AutocompleteResponse, BooleanOption, ChannelOption,
   Choice, Cog, CommandInteraction, CommandResponse, CommandType, ComponentInteraction,
   ComponentResponse, FollowupWebhook, HTTPClient, IntegerOption, Interaction, InteractionCommand,
-  InteractionResponse, InteractionType, MentionableOption, MessageCommand, MessageInteraction,
-  ModalInteraction, ModalResponse, NumberOption, Option, OptionType, PartialWebhook, PrefixCommand,
-  ResponseType, RoleOption, SlashCommand, SlashInteraction, StringOption, SubCommand, SyncWebhook,
-  UserCommand, UserInteraction, UserOption, Webhook, enable_logs, command_namespace as command
+  InteractionResponse, InteractionType, Lifespan, MentionableOption, MessageCommand,
+  MessageInteraction, ModalInteraction, ModalResponse, NumberOption, Option, OptionType,
+  PartialWebhook, PrefixCommand, ResponseType, RoleOption, SlashCommand, SlashInteraction,
+  StringOption, SubCommand, SyncWebhook, UserCommand, UserInteraction, UserOption, Webhook,
+  enable_logs, lifespan, command_namespace as command
 )

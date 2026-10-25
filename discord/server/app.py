@@ -15,13 +15,13 @@ class App(AppBase):
       event = await receive()
       if event['type'] == 'lifespan.startup':
         try:
-          await self.lifespan.startup()
+          await self.startup_lifespans()
         except Exception as e: # noqa: BLE001
-          await self.lifespan.shutdown()
+          await self.shutdown_lifespans()
           return await send({'type': 'lifespan.startup.failed', 'message': str(e)})
         await send({'type': 'lifespan.startup.complete'})
       elif event['type'] == 'lifespan.shutdown':
-        await self.lifespan.shutdown()
+        await self.shutdown_lifespans()
         await send({'type': 'lifespan.shutdown.complete'})
         return
 

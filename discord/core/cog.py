@@ -1,10 +1,10 @@
 import os
 import sys
 import asyncio
+import inspect
 import logging
 import importlib
-from typing import TYPE_CHECKING
-from .command import BaseCommand, Handler
+from .command import BaseCommand, CommandMixin, Handler
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class Cog:
   async def cog_load(self): ...
   async def cog_unload(self): ...
 
-class CogMixin:
+class CogMixin(CommandMixin):
   def __init__(self, reload = False):
     super().__init__()
     self.reload = reload
@@ -30,12 +30,14 @@ class CogMixin:
     self.extension_files = {} # {name: (path, mtime)} used when reload is on
     self.reload_task = None
 
-  if TYPE_CHECKING:
-    def add_commands(self, *commands): ... # implemented by CommandMixin
-    def remove_commands(self, *commands): ...
-
-  def registrars(self):
+  def registrars(self): # {kind: (add, remove)}
     return {BaseCommand: (self.add_commands, self.remove_commands)} | self.extra_registrars
+
+  async def run_registrars(self, handlers, remove = False): # bool indexes (add, remove)
+    for kind, functions in self.registrars().items():
+      result = functions[remove](*[handler for handler in handlers if isinstance(handler, kind)])
+      if inspect.isawaitable(result):
+        await result
 
   async def add_cogs(self, *cogs):
     registrars = self.registrars()
@@ -61,23 +63,24 @@ class CogMixin:
           handlers.append(handler)
         else:
           log.warning(f'{cog.__name__}.{name}() was not loaded: {type(handler).__name__} is not supported by {type(self).__name__}')
-      for kind, (add, _) in registrars.items():
-        add(*[handler for handler in handlers if isinstance(handler, kind)])
       self.cogs[cog] = instance
       self.cog_handlers[cog] = handlers
+      try:
+        await self.run_registrars(handlers)
+      except Exception:
+        await self.remove_cogs(cog)
+        raise
       instances.append(instance)
     return instances
 
   async def remove_cogs(self, *cogs):
-    registrars = self.registrars()
     for cog in cogs:
       if cog not in self.cogs:
         raise ValueError(f'cog not loaded: {cog!r}')
     for cog in cogs:
       instance = self.cogs.pop(cog)
       handlers = self.cog_handlers.pop(cog)
-      for kind, (_, remove) in registrars.items():
-        remove(*[handler for handler in handlers if isinstance(handler, kind)])
+      await self.run_registrars(handlers, remove = True)
       await instance.cog_unload()
 
   async def load_extensions(self, *names):
