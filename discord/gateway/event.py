@@ -6,7 +6,7 @@ from enum import Enum, StrEnum
 from ..core import Handler
 from .intents import Intents
 
-class CustomEvent(StrEnum): # fired by Bot itself, not sent by the gateway
+class CustomEvent(StrEnum): # not sent by the gateway
   ANY_EVENT = 'ANY_EVENT'
   FIRST_READY = 'FIRST_READY'
 
