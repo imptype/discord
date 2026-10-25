@@ -29,6 +29,6 @@ from .core import (
   ComponentResponse, FollowupWebhook, GatewayCommand, HTTPClient, IntegerOption, Interaction, InteractionCommand,
   InteractionResponse, InteractionType, MentionableOption, MessageCommand, MessageInteraction,
   ModalInteraction, ModalResponse, NumberOption, Option, OptionType, PartialWebhook, ResponseType,
-  RoleOption, SlashCommand, SlashInteraction, StringOption, SubCommand, UserCommand, UserInteraction,
+  RoleOption, SlashCommand, SlashInteraction, StringOption, SubCommand, SyncWebhook, UserCommand, UserInteraction,
   UserOption, Webhook, enable_logs, command_namespace as command
 )

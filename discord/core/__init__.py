@@ -1,11 +1,11 @@
 from .api import Route, API
 from .http import HTTPClient
 from .cog import Cog, CogMixin
-from .factory import ModelFactory
 from .base import AppBase, Lifespan
+from .factory import ModelFactory
 from .component import ComponentMixin
 from .log import enable_logs, format_json
-from .webhook import FollowupWebhook, PartialWebhook, Webhook
+from .webhook import FollowupWebhook, PartialWebhook, SyncWebhook, Webhook
 from .enums import CommandType, HTTPStatus, InteractionType, OptionType, ResponseType
 from .response import (
   AutocompleteResponse, CommandResponse, ComponentResponse, InteractionResponse,

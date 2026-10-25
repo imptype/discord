@@ -1,15 +1,17 @@
+from typing import Any, Concatenate
+from collections.abc import Callable, Coroutine
 from .. import MISSING
-from ..models import Message
 from .http import HTTPClient
 from ..models.abc import PartialModel
+from ..models import Message
 from ..models.enums import RESPONSE_MESSAGE_FLAGS
 from ..models.params import edit_params, send_params
 
 class BaseWebhook(PartialModel):
-  def __init__(self, webhook_id, token = None, app = None):
+  def __init__(self, webhook_id, token = None, app = None, http = None):
     super().__init__(app, webhook_id)
     self.token = token
-    self.http = app.http if app else HTTPClient.implicit()
+    self.http = http or (app.http if app else HTTPClient.implicit())
 
   def require_token(self):
     if not self.token:
@@ -130,3 +132,31 @@ class FollowupWebhook(BaseWebhook):
     )
     if wait:
       return self.app.model.message(data)
+
+type Method[**P, R] = Callable[Concatenate[Any, P], R]
+def wrap_sync[**P, R](method: Method[P, Coroutine[Any, Any, R]]) -> Method[P, R]:
+  def wrapper(self, *args, **kwargs):
+    try:
+      method(self.webhook, *args, **kwargs).send(None)
+    except StopIteration as stop:
+      return stop.value
+    raise RuntimeError('coroutine tried to suspend')
+  return wrapper
+
+class SyncWebhook:
+  def __init__(self, webhook_id, token = None):
+    self.webhook = PartialWebhook(webhook_id, token, http = HTTPClient(use_sync = True))
+    self.id = self.webhook.id
+    self.token = token
+
+  send = wrap_sync(PartialWebhook.send)
+  fetch = wrap_sync(PartialWebhook.fetch)
+  edit = wrap_sync(PartialWebhook.edit)
+  delete = wrap_sync(PartialWebhook.delete)
+  fetch_message = wrap_sync(PartialWebhook.fetch_message)
+  edit_message = wrap_sync(PartialWebhook.edit_message)
+  delete_message = wrap_sync(PartialWebhook.delete_message)
+
+  @classmethod
+  def from_url(cls, url):
+    return cls(*url.split('/')[-2:])

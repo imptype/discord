@@ -1,4 +1,7 @@
 import asyncio
+import urllib.error
+import urllib.parse
+import urllib.request
 from typing import Any
 import orjson
 import aiohttp
@@ -9,10 +12,11 @@ URL = 'https://discord.com/api/v10'
 USER_AGENT = 'DiscordBot (https://github.com/imptype/discord, v0.1.1)'
 
 class HTTPClient(API):
-  def __init__(self, token = None, application_id = None):
+  def __init__(self, token = None, application_id = None, use_sync = False):
     super().__init__()
     self.token = token
     self.application_id = application_id
+    self.use_sync = use_sync # init for SyncWebhook
     self.cleanup_task = None
 
   @classmethod
@@ -45,7 +49,7 @@ class HTTPClient(API):
   ):
     headers = {'User-Agent': USER_AGENT}
     if isinstance(authorize, str):
-      headers['Authorization'] = authorize # used as is, like 'Bearer <token>'
+      headers['Authorization'] = authorize # supports 'Bearer <token>' string
     elif authorize:
       headers['Authorization'] = f'Bot {self.token}'
     if reason:
@@ -63,17 +67,35 @@ class HTTPClient(API):
       for k, v in params.items() if v is not None
     }
 
-    response = await self.session.request(
-      route.method,
-      f'{URL}{route.path}',
-      params = params,
-      headers = headers,
-      data = data,
-      json = json
-    )
-    if response.status >= 400:
-      text = await response.text()
-      raise ValueError(f'HTTP {response.status}: {text}')
-    if response.status == 204:
+    if self.use_sync: # used by SyncWebhook
+      if json is not None:
+        headers['Content-Type'] = 'application/json'
+        data = orjson.dumps(json)
+      url = f'{URL}{route.path}'
+      if params:
+        url += f'?{urllib.parse.urlencode(params)}'
+      request = urllib.request.Request(url, data = data, headers = headers, method = route.method)
+      try:
+        with urllib.request.urlopen(request) as response:
+          status = response.status
+          content = response.read()
+      except urllib.error.HTTPError as error: # urllib raises on 4xx/5xx unlike aiohttp
+        status = error.code
+        content = error.read()
+    else:
+      response = await self.session.request(
+        route.method,
+        f'{URL}{route.path}',
+        params = params,
+        headers = headers,
+        data = data,
+        json = json
+      )
+      status = response.status
+      content = await response.read()
+
+    if status >= 400:
+      raise ValueError(f'HTTP {status}: {content.decode()}')
+    if status == 204:
       return None
-    return await response.json(loads = orjson.loads)
+    return orjson.loads(content)
