@@ -4,7 +4,7 @@ from typing import cast
 from .intents import Intents
 from .connection import Connection
 from .event import Event, EventIntents, ANY_EVENT
-from ..core import AppBase, CommandNamespace, CommandProxy, GatewayCommand, InteractionType, command_namespace
+from ..core import AppBase, CommandNamespace, CommandProxy, InteractionType, PrefixCommand, command_namespace
 
 log = logging.getLogger(__name__)
 
@@ -42,10 +42,10 @@ class Bot(AppBase):
       await self.lifespan.shutdown()
 
   def add_commands(self, *commands):
-    super().add_commands(*[command for command in commands if not isinstance(command, GatewayCommand)])
+    super().add_commands(*[command for command in commands if not isinstance(command, PrefixCommand)])
     intents = EventIntents.MESSAGE_CREATE.value
     for command in commands:
-      if not isinstance(command, GatewayCommand):
+      if not isinstance(command, PrefixCommand):
         continue
       name = command.func.__name__
       if command.name != name:
@@ -58,9 +58,9 @@ class Bot(AppBase):
       self.command_handlers[command.name] = command
 
   def remove_commands(self, *commands):
-    super().remove_commands(*[command for command in commands if not isinstance(command, GatewayCommand)])
+    super().remove_commands(*[command for command in commands if not isinstance(command, PrefixCommand)])
     for command in commands:
-      if isinstance(command, GatewayCommand) and self.command_handlers.get(command.name) is command:
+      if isinstance(command, PrefixCommand) and self.command_handlers.get(command.name) is command:
         del self.command_handlers[command.name]
 
   def event(self, func = None, *, name = None):

@@ -26,9 +26,9 @@ from .ui import (
 from .core import (
   AttachmentOption, AutocompleteInteraction, AutocompleteResponse, BooleanOption, ChannelOption,
   Choice, Cog, CommandInteraction, CommandResponse, CommandType, ComponentInteraction,
-  ComponentResponse, FollowupWebhook, GatewayCommand, HTTPClient, IntegerOption, Interaction, InteractionCommand,
+  ComponentResponse, FollowupWebhook, HTTPClient, IntegerOption, Interaction, InteractionCommand,
   InteractionResponse, InteractionType, MentionableOption, MessageCommand, MessageInteraction,
-  ModalInteraction, ModalResponse, NumberOption, Option, OptionType, PartialWebhook, ResponseType,
-  RoleOption, SlashCommand, SlashInteraction, StringOption, SubCommand, SyncWebhook, UserCommand, UserInteraction,
-  UserOption, Webhook, enable_logs, command_namespace as command
+  ModalInteraction, ModalResponse, NumberOption, Option, OptionType, PartialWebhook, PrefixCommand,
+  ResponseType, RoleOption, SlashCommand, SlashInteraction, StringOption, SubCommand, SyncWebhook,
+  UserCommand, UserInteraction, UserOption, Webhook, enable_logs, command_namespace as command
 )

@@ -19,7 +19,7 @@ class BaseCommand(Handler):
   async def __call__(self, data):
     return await self.func(data)
 
-class GatewayCommand(BaseCommand):
+class PrefixCommand(BaseCommand):
   def __init__(self, func, name = None):
     super().__init__(func, name)
     self.name = self.name.lower()
@@ -119,7 +119,7 @@ class MessageCommand(InteractionCommand):
 class CommandNamespace:
   def __call__(self, func = None, *, name = None):
     def wrap(f):
-      return GatewayCommand(f, name)
+      return PrefixCommand(f, name)
     return wrap(func) if func else wrap
 
   @staticmethod

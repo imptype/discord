@@ -20,7 +20,7 @@ from .interaction import (
   MessageInteraction, ModalInteraction, SlashInteraction, UserInteraction
 )
 from .command import (
-  BaseCommand, CommandMixin, CommandNamespace, CommandProxy, GatewayCommand, Handler,
-  InteractionCommand, MessageCommand, SlashCommand, SlashNode, SubCommand, UserCommand,
+  BaseCommand, CommandMixin, CommandNamespace, CommandProxy, Handler, InteractionCommand,
+  MessageCommand, PrefixCommand, SlashCommand, SlashNode, SubCommand, UserCommand,
   command_namespace
 )
