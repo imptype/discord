@@ -1,9 +1,10 @@
+import time
 import asyncio
 import logging
 from typing import cast
 from .intents import Intents
 from .connection import Connection
-from .event import Event, EventIntents, ANY_EVENT
+from .event import CustomEvent, Event, EventIntents
 from ..core import AppBase, CommandNamespace, CommandProxy, InteractionType, PrefixCommand, command_namespace
 
 log = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ class Bot(AppBase):
     self.command_handlers = {}
     self.extra_registrars = {Event: (self.add_events, self.remove_events)}
     self.tasks = set()
+    self.ready_at = None # time.time() of the latest READY
 
   def set_proxy(self):
     self.command = cast(CommandNamespace, BotCommandProxy(self, command_namespace))
@@ -79,7 +81,7 @@ class Bot(AppBase):
       if event.name != name:
         name = f'"{event.name}" {name}'
       member = EventIntents.__members__.get(event.gateway_name)
-      if not member and event.gateway_name != ANY_EVENT:
+      if not member and event.gateway_name not in CustomEvent.__members__:
         log.warning(f'{event.name} is not a valid gateway event')
       elif member and member.value and not self.intents & member.value:
         names = ' / '.join(flag.name for flag in member.value if flag.name)
@@ -118,6 +120,10 @@ class Bot(AppBase):
     match name:
       case 'READY':
         self.http.application_id = data['application']['id']
+        if self.ready_at is None:
+          for handler in self.event_handlers.get(CustomEvent.FIRST_READY, ()):
+            self.spawn(handler(payload))
+        self.ready_at = time.time()
       case 'INTERACTION_CREATE':
         match data['type']:
           case InteractionType.APPLICATION_COMMAND:
@@ -135,5 +141,5 @@ class Bot(AppBase):
     for handler in self.event_handlers.get(name, ()):
       self.spawn(handler(payload))
 
-    for handler in self.event_handlers.get(ANY_EVENT, ()):
+    for handler in self.event_handlers.get(CustomEvent.ANY_EVENT, ()):
       self.spawn(handler(name, payload))

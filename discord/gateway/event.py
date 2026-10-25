@@ -2,11 +2,13 @@
 events.py - lets you prefix a function name with on_ so MESSAGE_CREATE is on_message_create too.
 """
 
-from enum import Enum
+from enum import Enum, StrEnum
 from ..core import Handler
 from .intents import Intents
 
-ANY_EVENT = 'ANY_EVENT'
+class CustomEvent(StrEnum): # fired by Bot itself, not sent by the gateway
+  ANY_EVENT = 'ANY_EVENT'
+  FIRST_READY = 'FIRST_READY'
 
 class EventIntents(Enum):
   READY = None

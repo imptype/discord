@@ -115,7 +115,6 @@ class Connection:
     op = payload['op']
     if payload.get('s') is not None:
       self.sequence = payload['s']
-
     match op:
       case Opcode.HELLO:
         interval = payload['d']['heartbeat_interval'] / 1000
