@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any
 import orjson
 import aiohttp
@@ -12,6 +13,19 @@ class HTTPClient(API):
     super().__init__()
     self.token = token
     self.application_id = application_id
+    self.cleanup_task = None
+
+  @classmethod
+  def implicit(cls): # init without context manager
+    self = cls()
+    self.session = aiohttp.ClientSession(json_serialize_bytes = orjson.dumps)
+    async def cleanup():
+      try:
+        await asyncio.get_running_loop().create_future()
+      finally:
+        await self.session.close()
+    self.cleanup_task = asyncio.create_task(cleanup())
+    return self
 
   async def __aenter__(self):
     self.session = aiohttp.ClientSession(json_serialize_bytes = orjson.dumps)
@@ -31,7 +45,7 @@ class HTTPClient(API):
   ):
     headers = {'User-Agent': USER_AGENT}
     if isinstance(authorize, str):
-      headers['Authorization'] = authorize # supports 'Bearer <token>' string
+      headers['Authorization'] = authorize # used as is, like 'Bearer <token>'
     elif authorize:
       headers['Authorization'] = f'Bot {self.token}'
     if reason:

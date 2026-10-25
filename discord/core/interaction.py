@@ -1,5 +1,8 @@
 from typing import Any
+from .. import MISSING
 from .enums import OptionType
+from ..models.abc import Snowflake
+from ..models.params import edit_params
 from .response import AutocompleteResponse, CommandResponse, ComponentResponse, ModalResponse
 
 def resolve_user(interaction, user_id):
@@ -50,17 +53,47 @@ def parse_options(interaction, is_autocomplete = False) -> Any:
     return names, values, focused
   return names, values
 
-class Interaction:
+class OriginalInteractionMessage:
+  def __init__(self, interaction):
+    self.interaction = interaction
+    self.app = interaction.app
+
+  async def fetch(self):
+    data = await self.app.http.get_original_webhook_message(
+      self.interaction.application_id, self.interaction.token
+    )
+    return self.app.model.message(data)
+
+  async def edit(self, content = MISSING, *, embed = MISSING, embeds = MISSING, file = MISSING, files = MISSING, view = MISSING, components = MISSING, flags = MISSING):
+    body = edit_params(content, embed = embed, embeds = embeds, file = file,
+      files = files, view = view, components = components, flags = flags)
+    if view not in (MISSING, None):
+      self.app.add_views(view)
+    if components is not MISSING and components:
+      self.app.add_components(*components)
+    data = await self.app.http.update_original_webhook_message(
+      self.interaction.application_id, self.interaction.token, body,
+      with_components = True if 'components' in body.body else None
+    )
+    return self.app.model.message(data)
+
+  async def delete(self):
+    await self.app.http.delete_original_webhook_message(
+      self.interaction.application_id, self.interaction.token
+    )
+
+class Interaction(Snowflake):
   def __init__(self, data, app, is_from_http):
+    super().__init__(data['id'])
     self.data = data
     self.app = app
     self.is_from_http = is_from_http
-    self.id = data['id']
     self.token = data['token']
+    self.application_id = data['application_id']
     self.type = data['type']
     self.guild_id = data.get('guild_id')
-    self.original_message = ... # TODO
-    self.followup = ... # TODO
+    self.followup = app.model.followup_webhook(self.application_id, self.token)
+    self.original_message = OriginalInteractionMessage(self)
 
 class CommandInteraction(Interaction):
   def __init__(self, data, app, is_from_http):

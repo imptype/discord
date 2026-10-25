@@ -1,7 +1,11 @@
 from .. import MISSING
+from .user import User
+from .member import Member
 from .abc import PartialModel
 from .enums import MessageFlags
+from .guild import PartialGuild
 from .params import edit_params
+from .channel import PartialChannel
 
 class PartialMessage(PartialModel):
   def __init__(self, app, message_id, channel):
@@ -21,17 +25,17 @@ class PartialMessage(PartialModel):
     data = await self.app.http.edit_message(self.channel.id, self.id, body)
     return self.app.model.message(data, channel = self.channel, guild = self.channel.guild)
 
-class Message(PartialMessage):
+class Message(PartialMessage): # app can be done for partial webhook messages
   def __init__(self, app, payload, *, channel = None, guild = None):
     message_id = payload['id']
     channel_id = payload['channel_id']
     guild_id = payload.get('guild_id')
 
     if guild is None and guild_id:
-      guild = app.model.partial_guild(guild_id)
+      guild = PartialGuild(app, guild_id)
 
     if channel is None:
-      channel = app.model.partial_channel(channel_id, guild)
+      channel = PartialChannel(app, channel_id, guild)
 
     super().__init__(app, message_id, channel)
     self.data = payload
@@ -43,6 +47,6 @@ class Message(PartialMessage):
     user = payload['author']
     member = payload.get('member')
     if guild and member:
-      self.author = app.model.member(member, user = user, guild = guild)
+      self.author = Member(app, member, user = user, guild = guild)
     else:
-      self.author = app.model.user(user)
+      self.author = User(app, user)

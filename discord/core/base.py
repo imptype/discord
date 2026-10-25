@@ -1,8 +1,8 @@
 from contextlib import AsyncExitStack, asynccontextmanager
 from .cog import CogMixin
 from .http import HTTPClient
-from ..models import ModelFactory
 from .command import CommandMixin
+from .factory import ModelFactory
 from .component import ComponentMixin
 
 class Lifespan:

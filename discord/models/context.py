@@ -1,5 +1,5 @@
 """
-context.py - a custom object for message commands, to access things quickly.
+context.py - a custom object for gateway commands, to access things quickly.
 """
 
 class Context:

@@ -1,10 +1,9 @@
 from functools import partial
-from .context import Context
-from .user import PartialUser, User
-from .guild import Guild, PartialGuild
-from .member import Member, PartialMember
-from .channel import Channel, PartialChannel
-from .message import Message, PartialMessage
+from .webhook import FollowupWebhook, PartialWebhook, Webhook
+from ..models import (
+  Channel, Context, Guild, Member, Message, PartialChannel, PartialGuild,
+  PartialMember, PartialMessage, PartialUser, User
+)
 
 class ModelHTTP:
   def __init__(self, app, model):
@@ -28,6 +27,13 @@ class ModelHTTP:
     data = await self.app.http.get_message(channel.id, message_id)
     return self.model.message(data, channel = channel, guild = channel.guild)
 
+  async def webhook(self, webhook_id, token = None):
+    if token:
+      data = await self.app.http.get_webhook_by_token(webhook_id, token)
+    else:
+      data = await self.app.http.get_webhook(webhook_id)
+    return self.model.webhook(data)
+
 class ModelFactory:
   def __init__(self, app):
     self.http = ModelHTTP(app, self)
@@ -36,9 +42,12 @@ class ModelFactory:
     self.partial_user = partial(PartialUser, app)
     self.partial_member = partial(PartialMember, app)
     self.partial_message = partial(PartialMessage, app)
+    self.partial_webhook = partial(PartialWebhook, app = app)
+    self.followup_webhook = partial(FollowupWebhook, app)
     self.guild = partial(Guild, app)
     self.channel = partial(Channel, app)
     self.user = partial(User, app)
     self.member = partial(Member, app)
     self.message = partial(Message, app)
+    self.webhook = partial(Webhook, app)
     self.context = partial(Context, app)
