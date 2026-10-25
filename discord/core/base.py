@@ -1,12 +1,10 @@
-from .http import HTTPClient
 from .factory import ModelFactory
 from .lifespan import LifespanMixin
 from .component import ComponentMixin
 
 class AppBase(LifespanMixin, ComponentMixin):
   def __init__(self, token = None, application_id = None, reload = False):
-    super().__init__(reload)
-    self.http = HTTPClient(token, application_id)
+    super().__init__(token, application_id, reload)
     self.model = ModelFactory(self)
 
   async def sync(self):

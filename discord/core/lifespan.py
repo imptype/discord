@@ -3,6 +3,7 @@ import inspect
 from contextlib import AsyncExitStack, asynccontextmanager
 from .cog import CogMixin
 from .command import Handler
+from .http import HTTPClient
 
 class Lifespan(Handler): # recognized by Cog
   def __init__(self, func, name = None):
@@ -16,8 +17,10 @@ def lifespan(func = None, *, name = None): # @discord.lifespan syntax
   return wrap(func) if func else wrap
 
 class LifespanMixin(CogMixin):
-  def __init__(self, *args, **kwargs):
+  def __init__(self, token, application_id, *args, **kwargs):
     super().__init__(*args, **kwargs)
+    self.http = HTTPClient(token, application_id)
+    self.stack = AsyncExitStack()
     self.lifespan_handlers = {} # {LifespanHandler: manager, or None if not running}, ordered
     self.started_at = None # time.time() of app start
 
@@ -64,6 +67,7 @@ class LifespanMixin(CogMixin):
   async def startup_lifespans(self):
     self.started_at = time.time()
     try:
+      await self.stack.enter_async_context(self.http)
       for handler in list(self.lifespan_handlers):
         await self.enter_lifespan(handler)
     except Exception:
@@ -71,10 +75,9 @@ class LifespanMixin(CogMixin):
       raise
 
   async def shutdown_lifespans(self):
-    stack = AsyncExitStack() # aexits in the correct order even if one raises
     for manager in self.lifespan_handlers.values():
       if manager is not None:
-        stack.push_async_exit(manager)
+        self.stack.push_async_exit(manager)
     self.lifespan_handlers = dict.fromkeys(self.lifespan_handlers)
     self.started_at = None
-    await stack.aclose()
+    await self.stack.aclose()
