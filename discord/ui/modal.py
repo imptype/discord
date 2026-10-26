@@ -1,5 +1,4 @@
 import uuid
-import types
 from typing import Any
 from .layout import Label
 from .content import TextDisplay
@@ -118,6 +117,29 @@ class FileUpload(ModalInput):
       'file_types': self.file_types
     })
 
+class ModalResult:
+  def __init__(self, data):
+    attachments = data.get('resolved', {}).get('attachments', {})
+    self.fields = [] # [(label id, input id, custom_id, value)]
+    for row in data['components']:
+      inner = row.get('component')
+      if inner is None: # text displays have no input
+        continue
+      if 'values' in inner:
+        value = inner['values']
+        if inner['type'] == ComponentType.FILE_UPLOAD:
+          value = [attachments[id] for id in value]
+      else:
+        value = inner.get('value')
+      self.fields.append((row.get('id'), inner.get('id'), inner['custom_id'], value))
+
+  def __getitem__(self, key): # result[1] id, result['text'] custom_id, result[component]
+    key = getattr(key, 'custom_id', key) # allows component indexing too
+    for label_id, input_id, custom_id, value in self.fields:
+      if key == custom_id or (isinstance(key, int) and key in (label_id, input_id)):
+        return value
+    raise KeyError(key)
+
 class Modal:
   def __init__(self, *components, title, custom_id = None, timeout = DEFAULT_TIMEOUT, callback = None):
     self.title = title
@@ -126,7 +148,7 @@ class Modal:
     self.timeout = timeout
     self.components = []
     if callback is not None:
-      self.callback = types.MethodType(callback, self)
+      self.callback = callback
     if components:
       self.add_components(*components)
 

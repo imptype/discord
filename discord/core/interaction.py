@@ -1,5 +1,6 @@
 from typing import Any
 from .. import MISSING
+from ..ui import ModalResult
 from .enums import OptionType
 from ..models.abc import Snowflake
 from ..models.params import edit_params
@@ -120,9 +121,11 @@ class ComponentInteraction(Interaction):
     self.response = ComponentResponse(self)
 
 class ModalInteraction(Interaction):
-  def __init__(self, data, app, is_from_http):
+  def __init__(self, data, app, is_from_http, modal):
     super().__init__(data, app, is_from_http)
     self.response = ModalResponse(self)
+    self.modal = modal
+    self.result = ModalResult(data['data'])
 
 class AutocompleteInteraction(Interaction):
   def __init__(self, data, app, is_from_http):
