@@ -1,5 +1,6 @@
 import uuid
 import types
+from typing import Any
 from .layout import Label
 from .content import TextDisplay
 from .enums import ComponentType, TextInputStyle
@@ -149,7 +150,7 @@ class Modal:
       'components': [component.to_json() for component in self.components]
     }
 
-def modal(callback = None, *, title = None, components = (), custom_id = None, timeout = DEFAULT_TIMEOUT):
+def modal(callback = None, *, title = None, components = (), custom_id = None, timeout = DEFAULT_TIMEOUT) -> Any:
   def wrap(func):
     return Modal(*components, title = title or func.__name__, custom_id = custom_id, timeout = timeout, callback = func)
   return wrap(callback) if callback is not None else wrap
