@@ -121,10 +121,11 @@ class Bot(AppBase):
     match name:
       case 'READY':
         self.http.application_id = data['application']['id']
-        if self.ready_at is None:
+        is_first_ready = self.ready_at is None
+        self.ready_at = time.time()
+        if is_first_ready:
           for handler in self.event_handlers.get(CustomEvent.FIRST_READY, ()):
             self.spawn(handler(payload))
-        self.ready_at = time.time()
       case 'INTERACTION_CREATE':
         match data['type']:
           case InteractionType.APPLICATION_COMMAND:
