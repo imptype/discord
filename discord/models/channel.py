@@ -10,12 +10,8 @@ class PartialChannel(PartialModel):
     return await self.app.model.http.channel(self.id, self.guild)
 
   async def send(self, content = None, *, embed = None, embeds = None, file = None, files = None, view = None, components = None, flags = None):
-    body = send_params(content, embed = embed, embeds = embeds, file = file,
+    body = send_params(content, app = self.app, embed = embed, embeds = embeds, file = file,
       files = files, view = view, components = components, flags = flags)
-    if view is not None:
-      self.app.add_views(view)
-    if components:
-      self.app.add_components(*components)
     data = await self.app.http.create_message(self.id, body)
     return self.app.model.message(data)
 

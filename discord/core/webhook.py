@@ -27,13 +27,8 @@ class BaseWebhook(PartialModel):
     files = MISSING, view = MISSING, components = MISSING, flags = MISSING, thread_id = None
   ):
     token = self.require_token()
-    body = edit_params(content, embed = embed, embeds = embeds, file = file,
+    body = edit_params(content, app = self.app, embed = embed, embeds = embeds, file = file,
       files = files, view = view, components = components, flags = flags)
-    if self.app:
-      if view not in (MISSING, None):
-        self.app.add_views(view)
-      if components is not MISSING and components:
-        self.app.add_components(*components)
     data = await self.http.update_webhook_message(
       self.id, token, message_id, body,
       thread_id = thread_id,
@@ -57,17 +52,12 @@ class PartialWebhook(BaseWebhook):
     components = None, flags = None, username = None, avatar_url = None, thread_id = None, wait = False
   ):
     token = self.require_token()
-    body = send_params(content, embed = embed, embeds = embeds, file = file, files = files,
+    body = send_params(content, app = self.app, embed = embed, embeds = embeds, file = file, files = files,
       view = view, components = components, flags = flags)
     if username is not None:
       body.body['username'] = username
     if avatar_url is not None:
       body.body['avatar_url'] = avatar_url
-    if self.app:
-      if view is not None:
-        self.app.add_views(view)
-      if components:
-        self.app.add_components(*components)
     data = await self.http.execute_webhook(
       self.id, token, body,
       wait = True if wait else None,
@@ -118,12 +108,8 @@ class FollowupWebhook(BaseWebhook):
     self, content = None, *, embed = None, embeds = None, file = None, files = None, view = None,
     components = None, flags = None, ephemeral = False, thread_id = None, wait = False
   ):
-    body = send_params(content, embed = embed, embeds = embeds, file = file, files = files,
+    body = send_params(content, app = self.app, embed = embed, embeds = embeds, file = file, files = files,
       view = view, components = components, flags = flags, ephemeral = ephemeral, allowed = RESPONSE_MESSAGE_FLAGS)
-    if view is not None:
-      self.app.add_views(view)
-    if components:
-      self.app.add_components(*components)
     data = await self.http.execute_webhook(
       self.id, self.token, body,
       wait = True if wait else None,

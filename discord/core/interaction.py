@@ -65,12 +65,8 @@ class OriginalInteractionMessage:
     return self.app.model.message(data)
 
   async def edit(self, content = MISSING, *, embed = MISSING, embeds = MISSING, file = MISSING, files = MISSING, view = MISSING, components = MISSING, flags = MISSING):
-    body = edit_params(content, embed = embed, embeds = embeds, file = file,
+    body = edit_params(content, app = self.app, embed = embed, embeds = embeds, file = file,
       files = files, view = view, components = components, flags = flags)
-    if view not in (MISSING, None):
-      self.app.add_views(view)
-    if components is not MISSING and components:
-      self.app.add_components(*components)
     data = await self.app.http.update_original_webhook_message(
       self.interaction.application_id, self.interaction.token, body,
       with_components = True if 'components' in body.body else None

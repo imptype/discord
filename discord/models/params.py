@@ -45,7 +45,7 @@ class Payload:
     parts.append(f'--{boundary}--\r\n'.encode())
     return f'multipart/form-data; boundary={boundary}', b''.join(parts)
 
-def send_params(content = None, *, embed = None, embeds = None, file = None, files = None, view = None, components = None, flags = None, ephemeral = False, allowed = SEND_MESSAGE_FLAGS):
+def send_params(content = None, *, app = None, embed = None, embeds = None, file = None, files = None, view = None, components = None, flags = None, ephemeral = False, allowed = SEND_MESSAGE_FLAGS):
   if embed is not None and embeds is not None:
     raise ValueError('cannot send both embed and embeds')
   if file is not None and files is not None:
@@ -75,9 +75,15 @@ def send_params(content = None, *, embed = None, embeds = None, file = None, fil
   files = list(files or [])
   if files: # attachment metadata and index matches the files[index] multipart name
     body['attachments'] = [file.to_json(index) for index, file in enumerate(files)]
+    
+  if app:
+    if view is not None:
+      app.add_views(view)
+    if components:
+      app.add_components(*components)
   return Payload(body, files)
 
-def edit_params(content = MISSING, *, embed = MISSING, embeds = MISSING, file = MISSING, files = MISSING, view = MISSING, components = MISSING, flags = MISSING):
+def edit_params(content = MISSING, *, app = None, embed = MISSING, embeds = MISSING, file = MISSING, files = MISSING, view = MISSING, components = MISSING, flags = MISSING):
   if embed is not MISSING and embeds is not MISSING:
     raise ValueError('cannot edit both embed and embeds')
   if file is not MISSING and files is not MISSING:
@@ -116,4 +122,10 @@ def edit_params(content = MISSING, *, embed = MISSING, embeds = MISSING, file = 
   else: # pass file/s = None to send attachments [] which clears them
     files = list(files or [])
     body['attachments'] = [file.to_json(index) for index, file in enumerate(files)]
+
+  if app:
+    if view not in (MISSING, None):
+      app.add_views(view)
+    if components is not MISSING and components:
+      app.add_components(*components)
   return Payload(body, files)

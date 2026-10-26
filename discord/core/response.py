@@ -29,12 +29,8 @@ class InteractionResponse:
 
 class MessageMixin(InteractionResponse):
   async def send(self, content = None, *, embed = None, embeds = None, file = None, files = None, view = None, components = None, flags = None, ephemeral = False):
-    data = send_params(content, embed = embed, embeds = embeds, file = file, files = files,
+    data = send_params(content, app = self.app, embed = embed, embeds = embeds, file = file, files = files,
       view = view, components = components, flags = flags, ephemeral = ephemeral, allowed = RESPONSE_MESSAGE_FLAGS)
-    if view is not None:
-      self.app.add_views(view)
-    if components:
-      self.app.add_components(*components)
     await self.create(ResponseType.MESSAGE, data)
 
   async def defer(self, *, ephemeral = False):
@@ -54,12 +50,8 @@ class ModalMixin(InteractionResponse):
 
 class UpdateMixin(InteractionResponse):
   async def update(self, content = MISSING, *, embed = MISSING, embeds = MISSING, file = MISSING, files = MISSING, view = MISSING, components = MISSING, flags = MISSING):
-    data = edit_params(content, embed = embed, embeds = embeds, file = file, files = files,
+    data = edit_params(content, app = self.app, embed = embed, embeds = embeds, file = file, files = files,
       view = view, components = components, flags = flags)
-    if view not in (MISSING, None):
-      self.app.add_views(view)
-    if components is not MISSING and components:
-      self.app.add_components(*components)
     await self.create(ResponseType.UPDATE_MESSAGE, data)
 
   async def defer_update(self):
