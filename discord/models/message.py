@@ -1,3 +1,4 @@
+from datetime import datetime
 from .. import MISSING
 from .user import User
 from .member import Member
@@ -42,6 +43,9 @@ class Message(PartialMessage): # app can be done for partial webhook messages
     self.guild = guild
     self.content = payload.get('content', '')
     self.flags = MessageFlags(payload.get('flags', 0))
+    self.edited_at = None
+    if edited_timestamp := payload.get('edited_timestamp'):
+      self.edited_at = datetime.fromisoformat(edited_timestamp)
 
     # for DMs, .guild is None, and .author is User instead of Member
     user = payload['author']
