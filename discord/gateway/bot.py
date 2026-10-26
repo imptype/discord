@@ -113,7 +113,8 @@ class Bot(AppBase):
     if not parts:
       return
     if command := self.command_handlers.get(parts[0].lower()):
-      self.spawn(command(self.model.context(message)))
+      arguments = parts[1] if len(parts) > 1 else ''
+      self.spawn(command(self.model.context(message, arguments)))
 
   async def on_event(self, name, data):
     payload = data # what handlers receive, a model if one exists for the event

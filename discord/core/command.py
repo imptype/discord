@@ -1,8 +1,11 @@
 import copy
 import types
+import inspect
 from typing import Any, cast
+from functools import cached_property
 from ..ui.abc import clean
 from .enums import CommandType, OptionType
+from ..models.context import parse_arguments
 from .interaction import AutocompleteInteraction, MessageInteraction, SlashInteraction, UserInteraction
 
 class Handler:
@@ -23,6 +26,14 @@ class PrefixCommand(BaseCommand):
   def __init__(self, func, name = None):
     super().__init__(func, name)
     self.name = self.name.lower()
+
+  @cached_property
+  def parameters(self):
+    return list(inspect.signature(self.func).parameters.values())[1:]
+
+  async def __call__(self, ctx):
+    args, kwargs = parse_arguments(self.parameters, ctx.arguments, self.name)
+    return await self.func(ctx, *args, **kwargs)
 
 class InteractionCommand(BaseCommand):
   def __init__(self, func, name = None, type = None):
