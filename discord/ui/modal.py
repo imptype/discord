@@ -141,7 +141,7 @@ class ModalResult:
     raise KeyError(key)
 
 class Modal:
-  def __init__(self, *components, title, custom_id = None, timeout = DEFAULT_TIMEOUT, callback = None):
+  def __init__(self, *components, title, custom_id = None, timeout: float | None = DEFAULT_TIMEOUT, callback = None):
     self.title = title
     self.has_custom_id = bool(custom_id)
     self.custom_id = custom_id or uuid.uuid4().hex
@@ -172,7 +172,7 @@ class Modal:
       'components': [component.to_json() for component in self.components]
     }
 
-def modal(callback = None, *, title = None, components = (), custom_id = None, timeout = DEFAULT_TIMEOUT) -> Any:
+def modal(callback = None, *, title = None, components = (), custom_id = None, timeout: float | None = DEFAULT_TIMEOUT) -> Any:
   def wrap(func):
     return Modal(*components, title = title or func.__name__, custom_id = custom_id, timeout = timeout, callback = func)
   return wrap(callback) if callback is not None else wrap
