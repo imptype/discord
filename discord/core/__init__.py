@@ -2,6 +2,7 @@ from .base import AppBase
 from .api import Route, API
 from .http import HTTPClient
 from .cog import Cog, CogMixin
+from .color import color, colour
 from .factory import ModelFactory
 from .component import ComponentMixin
 from .log import enable_logs, format_json

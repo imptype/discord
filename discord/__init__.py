@@ -31,5 +31,5 @@ from .core import (
   MessageInteraction, ModalInteraction, ModalResponse, NumberOption, Option, OptionType,
   PartialWebhook, PrefixCommand, ResponseType, RoleOption, SlashCommand, SlashInteraction,
   StringOption, SubCommand, SyncWebhook, UserCommand, UserInteraction, UserOption, Webhook,
-  enable_logs, lifespan, command_namespace as command
+  enable_logs, lifespan, color, colour, command_namespace as command
 )
