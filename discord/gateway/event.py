@@ -3,6 +3,8 @@ events.py - lets you prefix a function name with on_ so MESSAGE_CREATE is on_mes
 """
 
 from enum import Enum, StrEnum
+from functools import cached_property
+from inspect import Parameter, signature
 from ..core import Handler
 from .intents import Intents
 
@@ -112,8 +114,15 @@ class Event(Handler):
       raise ValueError(f'event name must start with on_: {self.name}')
     self.gateway_name = self.name.removeprefix('on_').upper()
 
+  @cached_property
+  def count(self): # allows for optional args
+    kinds = [parameter.kind for parameter in signature(self.func).parameters.values()]
+    if Parameter.VAR_POSITIONAL in kinds:
+      return None
+    return sum(kind < Parameter.VAR_POSITIONAL for kind in kinds)
+
   async def __call__(self, *args):
-    return await self.func(*args)
+    return await self.func(*args[:self.count])
 
 def event(func = None, *, name = None):
   def wrap(f):
