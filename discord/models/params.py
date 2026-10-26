@@ -75,7 +75,7 @@ def send_params(content = None, *, app = None, embed = None, embeds = None, file
   files = list(files or [])
   if files: # attachment metadata and index matches the files[index] multipart name
     body['attachments'] = [file.to_json(index) for index, file in enumerate(files)]
-    
+
   if app:
     if view is not None:
       app.add_views(view)
