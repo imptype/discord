@@ -116,10 +116,10 @@ class FollowupWebhook(BaseWebhook):
 
   async def send(
     self, content = None, *, embed = None, embeds = None, file = None, files = None, view = None,
-    components = None, flags = None, thread_id = None, wait = False
+    components = None, flags = None, ephemeral = False, thread_id = None, wait = False
   ):
     body = send_params(content, embed = embed, embeds = embeds, file = file, files = files,
-      view = view, components = components, flags = flags, allowed = RESPONSE_MESSAGE_FLAGS)
+      view = view, components = components, flags = flags, ephemeral = ephemeral, allowed = RESPONSE_MESSAGE_FLAGS)
     if view is not None:
       self.app.add_views(view)
     if components:

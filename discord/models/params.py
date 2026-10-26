@@ -45,7 +45,7 @@ class Payload:
     parts.append(f'--{boundary}--\r\n'.encode())
     return f'multipart/form-data; boundary={boundary}', b''.join(parts)
 
-def send_params(content = None, *, embed = None, embeds = None, file = None, files = None, view = None, components = None, flags = None, allowed = SEND_MESSAGE_FLAGS):
+def send_params(content = None, *, embed = None, embeds = None, file = None, files = None, view = None, components = None, flags = None, ephemeral = False, allowed = SEND_MESSAGE_FLAGS):
   if embed is not None and embeds is not None:
     raise ValueError('cannot send both embed and embeds')
   if file is not None and files is not None:
@@ -58,6 +58,8 @@ def send_params(content = None, *, embed = None, embeds = None, file = None, fil
     body['content'] = content
   if flags is not None:
     body['flags'] = check_flags(flags, allowed, 'send')
+  if ephemeral:
+    body['flags'] = body.get('flags', 0) | int(MessageFlags.EPHEMERAL)
   if embed:
     embeds = [embed]
   if embeds:

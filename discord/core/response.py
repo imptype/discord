@@ -28,9 +28,9 @@ class InteractionResponse:
       await self.app.http.create_interaction_response(self.interaction.id, self.interaction.token, payload)
 
 class MessageMixin(InteractionResponse):
-  async def send(self, content = None, *, embed = None, embeds = None, file = None, files = None, view = None, components = None, flags = None):
+  async def send(self, content = None, *, embed = None, embeds = None, file = None, files = None, view = None, components = None, flags = None, ephemeral = False):
     data = send_params(content, embed = embed, embeds = embeds, file = file, files = files,
-      view = view, components = components, flags = flags, allowed = RESPONSE_MESSAGE_FLAGS)
+      view = view, components = components, flags = flags, ephemeral = ephemeral, allowed = RESPONSE_MESSAGE_FLAGS)
     if view is not None:
       self.app.add_views(view)
     if components:
