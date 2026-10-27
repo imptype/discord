@@ -8,7 +8,7 @@ from .interaction import ComponentInteraction, ModalInteraction
 def resolve_timeout(component, view = None):
   if component.timeout is not MISSING: # component timeout takes priority
     return component.timeout
-  return DEFAULT_TIMEOUT if view is None else view.timeout
+  return view.timeout if view else DEFAULT_TIMEOUT
 
 def describe(component): # Button MyView.on_click() in cogs/test.py:42
   callback = component.callback

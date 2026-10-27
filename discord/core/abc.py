@@ -4,7 +4,7 @@ import inspect
 
 class BaseHandler:
   def __init__(self, callback = None, name = None):
-    if callback is not None:
+    if callback:
       self.callback = callback
     self.name = (
       name # as init param

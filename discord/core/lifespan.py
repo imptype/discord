@@ -27,7 +27,7 @@ class LifespanMixin(CogMixin):
   def lifespan(self, callback = None): # @app.lifespan syntax
     def wrap(callback): # lets you add by object too (for sync context)
       handler = callback if isinstance(callback, Lifespan) else Lifespan(callback)
-      if self.started_at is not None:
+      if self.started_at:
         raise ValueError(f'cannot use @app.lifespan syntax when already started, use "await app.add_lifespans()" instead for: {handler.name}')
       self.lifespan_handlers.setdefault(handler, None)
       return handler
@@ -45,11 +45,11 @@ class LifespanMixin(CogMixin):
     for handler in handlers:
       if not isinstance(handler, Lifespan):
         raise ValueError(f'not a lifespan: {handler!r}')
-      if self.lifespan_handlers.get(handler) is not None:
+      if self.lifespan_handlers.get(handler):
         raise ValueError(f'lifespan already running: {handler.name}')
     for handler in handlers:
       self.lifespan_handlers.setdefault(handler, None)
-      if self.started_at is not None:
+      if self.started_at:
         try:
           await self.enter_lifespan(handler)
         except Exception:
@@ -76,7 +76,7 @@ class LifespanMixin(CogMixin):
 
   async def shutdown_lifespans(self):
     for manager in self.lifespan_handlers.values():
-      if manager is not None:
+      if manager:
         self.stack.push_async_exit(manager)
     self.lifespan_handlers = dict.fromkeys(self.lifespan_handlers)
     self.started_at = None

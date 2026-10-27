@@ -20,7 +20,7 @@ class Channel(PartialChannel):
     channel_id = payload['id']
     guild_id = payload.get('guild_id')
 
-    if guild is None and guild_id:
+    if not guild and guild_id:
       guild = app.model.partial_guild(guild_id)
 
     super().__init__(app, channel_id, guild)

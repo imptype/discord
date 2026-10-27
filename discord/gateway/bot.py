@@ -121,7 +121,7 @@ class Bot(AppBase):
     match name:
       case 'READY':
         self.http.application_id = data['application']['id']
-        is_first_ready = self.ready_at is None
+        is_first_ready = not self.ready_at
         self.ready_at = time.time()
         if is_first_ready:
           for handler in self.event_handlers.get(CustomEvent.FIRST_READY, ()):

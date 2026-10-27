@@ -28,10 +28,10 @@ class Message(PartialMessage): # app can be done for partial webhook messages
     channel_id = payload['channel_id']
     guild_id = payload.get('guild_id')
 
-    if guild is None and guild_id:
+    if not guild and guild_id:
       guild = PartialGuild(app, guild_id)
 
-    if channel is None:
+    if not channel:
       channel = PartialChannel(app, channel_id, guild)
 
     super().__init__(app, message_id, channel)

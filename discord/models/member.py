@@ -11,13 +11,13 @@ class PartialMember(PartialUser):
 
 class Member(PartialMember):
   def __init__(self, app, payload, *, user = None, guild = None):
-    if user is None:
+    if not user:
       user = payload['user']
 
     user_id = user['id']
     guild_id = payload.get('guild_id')
 
-    if guild is None and guild_id:
+    if not guild and guild_id:
       guild = app.model.partial_guild(guild_id)
 
     super().__init__(app, user_id, guild)

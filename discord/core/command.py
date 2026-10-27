@@ -36,7 +36,7 @@ class InteractionCommand(BaseCommand):
 
 class SlashNode:
   def __init__(self, callback = None, name = None, description = None, options = (), level = 1):
-    if callback is not None:
+    if callback:
       self.callback = callback
     self.name = name or getattr(callback, '__name__', None) or getattr(self, 'name', None) # 3 for class attr
     self.description = description or self.name

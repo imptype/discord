@@ -28,7 +28,7 @@ class Interactable(Component):
     self.custom_id = custom_id or uuid.uuid4().hex
     self.disabled = disabled
     self.timeout = timeout
-    if callback is not None: # skipped for None so the class-level callback() isn't shadowed
+    if callback: # helps avoid overwriting class defined callback method
       self.callback = callback
     self.id = id
 
