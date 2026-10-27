@@ -120,11 +120,6 @@ class MessageCommand(InteractionCommand):
     return await self.callback(interaction, interaction.message)
 
 class CommandNamespace:
-  def __call__(self, callback = None, *, name = None):
-    def wrap(callback):
-      return PrefixCommand(callback, name)
-    return wrap(callback) if callback else wrap
-
   @staticmethod
   def slash(callback = None, *, name = None, description = None, options = ()):
     def wrap(callback):
@@ -141,6 +136,11 @@ class CommandNamespace:
   def message(callback = None, *, name = None):
     def wrap(callback):
       return MessageCommand(callback, name)
+    return wrap(callback) if callback else wrap
+
+  def __call__(self, callback = None, *, name = None):
+    def wrap(callback):
+      return PrefixCommand(callback, name)
     return wrap(callback) if callback else wrap
 
 command_namespace = CommandNamespace()

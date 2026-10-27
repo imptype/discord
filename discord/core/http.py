@@ -31,13 +31,6 @@ class HTTPClient(API):
     self.cleanup_task = asyncio.create_task(cleanup())
     return self
 
-  async def __aenter__(self):
-    self.session = aiohttp.ClientSession(json_serialize_bytes = orjson.dumps)
-    return self
-
-  async def __aexit__(self, *exc_info):
-    await self.session.close()
-
   async def request(
     self,
     route: Route,
@@ -99,3 +92,10 @@ class HTTPClient(API):
     if status == 204:
       return None
     return orjson.loads(content)
+
+  async def __aenter__(self):
+    self.session = aiohttp.ClientSession(json_serialize_bytes = orjson.dumps)
+    return self
+
+  async def __aexit__(self, *exc_info):
+    await self.session.close()

@@ -27,6 +27,9 @@ It also ensures all tracked text (.gitignore, *.md, *.toml, *.lock,
 *.env, *.yml, LICENSE) files use LF and end with 1 newline.
 10. For *.toml files (like pyproject.toml) it enforces the same 2-space indent for multi-line arrays
   and inline tables, and removes trailing commas before a closing ] or }.
+11. Orders the methods inside a class: __init__ first, then normal methods (not starting and
+  ending with __), then dunder methods like __aenter__ or __getitem__. The order inside each
+  group is kept. A class is skipped if other statements sit between its methods.
 
 This is a hybrid because Ruff can either expand or collapse lines, but
 not leave them alone! We also could use other Ruff stuff.
@@ -37,7 +40,8 @@ Usage (run from the project root):
   uv run python scripts/format.py --diff      show what would change, change nothing
   uv run python scripts/format.py --selftest  run the built-in tests
 
-No pass ever joins or splits lines. Each pass only changes whitespace, quotes and import order.
+No pass ever joins or splits lines. Each pass only changes whitespace, quotes, import order
+and method order.
 """
 
 import io
@@ -565,6 +569,77 @@ def fix_imports(src):
     lines[first - 1 : last] = new
   return ''.join(lines)
 
+# --- pass: method order ---
+
+METHOD_NODES = (ast.FunctionDef, ast.AsyncFunctionDef)
+
+def method_group(name):
+  """0 = __init__, 1 = normal methods, 2 = dunder methods."""
+  if name == '__init__':
+    return 0
+  if name.startswith('__') and name.endswith('__'):
+    return 2
+  return 1
+
+def sorted_methods(body):
+  """Indexes of the methods in a class body, and those methods in wanted order (stable)."""
+  slots = [i for i, node in enumerate(body) if isinstance(node, METHOD_NODES)]
+  return slots, sorted((body[i] for i in slots), key = lambda node: method_group(node.name))
+
+def method_start(node, lines, floor):
+  """First row of a method: its decorators plus any same-indent comment lines right above."""
+  row = min([node.lineno, *(deco.lineno for deco in node.decorator_list)])
+  while row - 1 > floor:
+    above = lines[row - 2]
+    if not above.lstrip().startswith('#') or width(above) != node.col_offset:
+      break
+    row -= 1
+  return row
+
+def reorder_once(text):
+  """One round of reordering. Returns the new text, or None if nothing changed."""
+  lines = list(io.StringIO(text).readlines())
+  if lines and not lines[-1].endswith('\n'):
+    lines[-1] += '\n'
+  edits = []
+  spans = []
+  for cls in ast.walk(ast.parse(text)):
+    if not isinstance(cls, ast.ClassDef):
+      continue
+    slots, methods = sorted_methods(cls.body)
+    if len(slots) < 2 or slots != list(range(slots[0], slots[0] + len(slots))):
+      continue  # nothing to sort, or other statements sit between the methods
+    if all(cls.body[i] is node for i, node in zip(slots, methods, strict = True)):
+      continue
+    floor = cls.body[slots[0] - 1].end_lineno if slots[0] else cls.lineno
+    blocks = {}
+    for i in slots:
+      node = cls.body[i]
+      blocks[id(node)] = (method_start(node, lines, floor), node.end_lineno)
+      floor = node.end_lineno
+    ranges = [blocks[id(cls.body[i])] for i in slots]
+    if any(a[1] >= b[0] for a, b in zip(ranges, ranges[1:], strict = False)):
+      continue  # two methods share a line
+    span = (ranges[0][0], ranges[-1][1])
+    if any(span[0] <= end and begin <= span[1] for begin, end in spans):
+      continue  # inside a class already changed this round, the next round gets it
+    spans.append(span)
+    for (begin, end), node in zip(ranges, methods, strict = True):
+      first, last = blocks[id(node)]
+      edits.append((begin, end, lines[first - 1 : last]))
+  if not edits:
+    return None
+  for begin, end, new in sorted(edits, key = lambda edit: edit[0], reverse = True):
+    lines[begin - 1 : end] = new
+  return ''.join(lines)
+
+def fix_method_order(src):
+  """Inside each class: __init__ first, then normal methods, then dunder methods."""
+  text = src
+  while (new := reorder_once(text)) is not None:
+    text = new
+  return text
+
 # --- pass: whitespace and blank lines (Python files) ---
 
 def fix_whitespace(src):
@@ -684,7 +759,7 @@ def format_text(path, text):
 
 # --- pipeline ---
 
-PASSES = [fix_quotes, fix_trailing_commas, fix_spacing, fix_indent, fix_imports, fix_whitespace]
+PASSES = [fix_quotes, fix_trailing_commas, fix_spacing, fix_indent, fix_imports, fix_method_order, fix_whitespace]
 
 STATEMENT_FIELDS = ('body', 'orelse', 'finalbody', 'handlers', 'cases')
 
@@ -702,7 +777,8 @@ def import_nodes(tree):
           todo.append(child)
 
 def canonical(src):
-  """AST dump that ignores import order, so the import pass is allowed to reorder them."""
+  """AST dump that ignores import order and method order, so the import and method passes are
+  allowed to reorder them."""
   tree = ast.parse(src)  # not parse(), this tree gets modified
   for node in import_nodes(tree):
     node.names.sort(key = ast.dump)
@@ -717,6 +793,11 @@ def canonical(src):
     if node is not None:
       body.append(node)
   tree.body = body
+  for node in ast.walk(tree):
+    if isinstance(node, ast.ClassDef):
+      slots, methods = sorted_methods(node.body)
+      for i, method in zip(slots, methods, strict = True):
+        node.body[i] = method
   return ast.dump(tree)
 
 def same_tree(old, new):
@@ -847,7 +928,10 @@ CASES = [
   ('imports lazy', 'lazy import sys\nimport os\nlazy from enum import IntEnum, auto, Flag as F\n', 'import os\nlazy import sys\nlazy from enum import Flag as F, IntEnum, auto\n'),
   ('comments around statements', '# head\nif a:\n    b = 1\n      # between\n    c = 2\n# tail\n', '# head\nif a:\n  b = 1\n    # between\n  c = 2\n# tail\n'),
   ('comments between blocks', 'class A:\n    def f(self):\n        return 1\n        # end of f\n    # between\n\n# top\n', 'class A:\n  def f(self):\n    return 1\n    # end of f\n# between\n\n# top\n'),
-  ('comment above a dedent', 'if a:\n    if b:\n        c = 1\n  # odd\n    d = 2\n', 'if a:\n  if b:\n    c = 1\n# odd\n  d = 2\n')
+  ('comment above a dedent', 'if a:\n    if b:\n        c = 1\n  # odd\n    d = 2\n', 'if a:\n  if b:\n    c = 1\n# odd\n  d = 2\n'),
+  ('methods ordered', 'class A:\n  def b(self):\n    return 1\n\n  def __len__(self):\n    return 2\n\n  def __init__(self):\n    pass\n\n  def a(self):\n    return 3\n', 'class A:\n  def __init__(self):\n    pass\n\n  def b(self):\n    return 1\n\n  def a(self):\n    return 3\n\n  def __len__(self):\n    return 2\n'),
+  ('methods keep decorators and comments', 'class A:\n  # about len\n  def __len__(self):\n    return 0\n  @property\n  def x(self):\n    return 1\n', 'class A:\n  @property\n  def x(self):\n    return 1\n  # about len\n  def __len__(self):\n    return 0\n'),
+  ('methods skipped when attributes between', 'class A:\n  def __len__(self):\n    return 0\n  y = 1\n  def a(self):\n    return 1\n', 'class A:\n  def __len__(self):\n    return 0\n  y = 1\n  def a(self):\n    return 1\n')
 ]
 NAME_CASES = [
   ('thing = 1\npoint_RTS = 2\nRTS_point = 3\nRTS = 4\nclass ABC: pass\nclass CoolCar: pass\n', 0),
