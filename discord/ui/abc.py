@@ -28,9 +28,12 @@ class Interactable(Component):
     self.custom_id = custom_id or uuid.uuid4().hex
     self.disabled = disabled
     self.timeout = timeout
-    self.callback = callback
+    if callback is not None: # skipped for None so the class-level callback() isn't shadowed
+      self.callback = callback
     self.id = id
 
+  async def callback(self, interaction):
+    raise NotImplementedError(f'{type(self).__name__} is missing a callback!')
+
   async def __call__(self, interaction):
-    if self.callback:
-      return await self.callback(self, interaction)
+    return await self.callback(interaction)

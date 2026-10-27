@@ -49,7 +49,7 @@ class Bot(AppBase):
     for command in commands:
       if not isinstance(command, PrefixCommand):
         continue
-      name = command.func.__name__
+      name = command.callback.__name__
       if command.name != name:
         name = f'"{command.name}" {name}'
       if not self.intents & intents:
@@ -77,7 +77,7 @@ class Bot(AppBase):
       if not isinstance(event, Event):
         raise ValueError(f'not an event: {event!r}')
     for event in events:
-      name = event.func.__name__
+      name = event.callback.__name__
       if event.name != name:
         name = f'"{event.name}" {name}'
       member = EventIntents.__members__.get(event.gateway_name)

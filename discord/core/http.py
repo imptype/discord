@@ -6,7 +6,7 @@ from typing import Any
 import orjson
 import aiohttp
 from .api import Route, API
-from ..models.params import Payload
+from ..models import Payload
 
 URL = 'https://discord.com/api/v10'
 USER_AGENT = 'DiscordBot (https://github.com/imptype/discord, v0.1.1)'

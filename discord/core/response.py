@@ -1,7 +1,6 @@
 from .. import MISSING
 from .enums import ResponseType
-from ..models.params import Payload, edit_params, send_params
-from ..models.enums import MessageFlags, RESPONSE_MESSAGE_FLAGS
+from ..models import MessageFlags, Payload, edit_params, send_params, RESPONSE_MESSAGE_FLAGS
 
 class InteractionResponse:
   def __init__(self, interaction):

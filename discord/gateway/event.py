@@ -108,21 +108,23 @@ class EventIntents(Enum):
   MESSAGE_POLL_VOTE_REMOVE = Intents.GUILD_MESSAGE_POLLS | Intents.DIRECT_MESSAGE_POLLS
 
 class Event(Handler):
-  def __init__(self, func, name = None):
-    super().__init__(func, name)
-    if not self.name.startswith('on_'):
-      raise ValueError(f'event name must start with on_: {self.name}')
-    self.gateway_name = self.name.removeprefix('on_').upper()
+  def __init__(self, callback = None, name: str | None = None):
+    super().__init__(callback, name)
+    if (event_name := self.name) and callback is not None and not name:
+      if not event_name.startswith('on_'): # require function names to start with 'on_'
+        raise ValueError(f'event function name must start with on_: {event_name}')
+      event_name = event_name.removeprefix('on_')
+    self.gateway_name = event_name and event_name.upper()
 
   @cached_property
   def count(self): # allows for optional args
-    kinds = [parameter.kind for parameter in signature(self.func).parameters.values()]
+    kinds = [parameter.kind for parameter in signature(self.callback).parameters.values()]
     if Parameter.VAR_POSITIONAL in kinds:
       return None
     return sum(kind < Parameter.VAR_POSITIONAL for kind in kinds)
 
   async def __call__(self, *args):
-    return await self.func(*args[:self.count])
+    return await self.callback(*args[:self.count])
 
 def event(func = None, *, name = None):
   def wrap(f):

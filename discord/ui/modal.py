@@ -1,6 +1,7 @@
 import uuid
 from typing import Any
 from .layout import Label
+from ..core import Handler
 from .content import TextDisplay
 from .enums import ComponentType, TextInputStyle
 from .abc import Component, clean, DEFAULT_TIMEOUT
@@ -140,23 +141,21 @@ class ModalResult:
         return value
     raise KeyError(key)
 
-class Modal:
+class Modal(Handler):
   def __init__(self, *components, title, custom_id = None, timeout: float | None = DEFAULT_TIMEOUT, callback = None):
+    super().__init__(callback)
     self.title = title
     self.has_custom_id = bool(custom_id)
     self.custom_id = custom_id or uuid.uuid4().hex
     self.timeout = timeout
     self.components = []
-    if callback is not None:
-      self.callback = callback
     if components:
       self.add_components(*components)
 
-  async def callback(self, interaction):
-    pass
-
-  async def __call__(self, interaction):
-    return await self.callback(interaction)
+  def bind(self, instance):
+    modal = super().bind(instance)
+    modal.components = list(self.components)
+    return modal
 
   def add_components(self, *components):
     for component in components:
@@ -172,7 +171,7 @@ class Modal:
       'components': [component.to_json() for component in self.components]
     }
 
-def modal(callback = None, *, title = None, components = (), custom_id = None, timeout: float | None = DEFAULT_TIMEOUT) -> Any:
-  def wrap(func):
-    return Modal(*components, title = title or func.__name__, custom_id = custom_id, timeout = timeout, callback = func)
-  return wrap(callback) if callback is not None else wrap
+def modal(func = None, *, title = None, components = (), custom_id = None, timeout: float | None = DEFAULT_TIMEOUT) -> Any:
+  def wrap(f):
+    return Modal(*components, title = title or f.__name__, custom_id = custom_id, timeout = timeout, callback = f)
+  return wrap(func) if func else wrap

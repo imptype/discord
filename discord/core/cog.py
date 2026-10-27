@@ -4,7 +4,8 @@ import asyncio
 import inspect
 import logging
 import importlib
-from .command import BaseCommand, CommandMixin, Handler
+from .abc import BaseHandler
+from .command import BaseCommand, CommandMixin
 
 log = logging.getLogger(__name__)
 
@@ -49,22 +50,28 @@ class CogMixin(CommandMixin):
     instances = []
     for cog in cogs:
       instance = cog(self)
-      await instance.cog_load()
       found = {
         name: value
         for cls in reversed(cog.__mro__)
         for name, value in vars(cls).items()
-        if isinstance(value, Handler)
+        if isinstance(value, BaseHandler)
       }
       handlers = []
       for name, value in found.items():
         handler = value.bind(instance)
+        setattr(instance, name, handler)
         if isinstance(handler, tuple(registrars)):
           handlers.append(handler)
         else:
           log.warning(f'{cog.__name__}.{name}() was not loaded: {type(handler).__name__} is not supported by {type(self).__name__}')
       self.cogs[cog] = instance
       self.cog_handlers[cog] = handlers
+      try:
+        await instance.cog_load()
+      except Exception:
+        del self.cogs[cog]
+        del self.cog_handlers[cog]
+        raise
       try:
         await self.run_registrars(handlers)
       except Exception:

@@ -1,8 +1,8 @@
 import os
 import asyncio
 from .. import MISSING
-from ..ui.abc import DEFAULT_TIMEOUT
-from ..ui import BaseView, Component, Modal
+from .cog import CogMixin
+from ..ui import BaseView, Component, Modal, DEFAULT_TIMEOUT
 from .interaction import ComponentInteraction, ModalInteraction
 
 def resolve_timeout(component, view = None):
@@ -17,12 +17,16 @@ def describe(component): # Button MyView.on_click() in cogs/test.py:42
   location = f'{os.path.relpath(code.co_filename)}:{code.co_firstlineno}' if code else None
   return f'{type(component).__name__} {qualname}() in {location}'
 
-class ComponentMixin:
-  def __init__(self):
+class ComponentMixin(CogMixin):
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
     self.component_cache = {}
     self.component_timers = {}
     self.modal_cache = {}
     self.modal_timers = {}
+
+  def registrars(self):
+    return super().registrars() | {Modal: (self.add_modals, self.remove_modals)}
 
   def add_views(self, *views): # also used by send() and edit()
     for view in views:
@@ -106,14 +110,14 @@ class ComponentMixin:
     custom_id = payload['data']['custom_id']
     if (component := self.component_cache.get(custom_id)) is None:
       raise ValueError(f'component not found: {custom_id}')
-    interaction = ComponentInteraction(payload, self, is_from_http)
+    interaction = ComponentInteraction(payload, self, is_from_http, component)
     await component(interaction)
     return interaction
 
-  async def run_modal(self, payload, is_from_http): # filter out params?
+  async def run_modal(self, payload, is_from_http):
     custom_id = payload['data']['custom_id']
     if (modal := self.modal_cache.get(custom_id)) is None:
       raise ValueError(f'modal not found: {custom_id}')
-    interaction = ModalInteraction(payload, self, is_from_http)
+    interaction = ModalInteraction(payload, self, is_from_http, modal)
     await modal(interaction)
     return interaction

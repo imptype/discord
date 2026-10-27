@@ -4,6 +4,7 @@ from .http import HTTPClient
 from .cog import Cog, CogMixin
 from .color import color, colour
 from .factory import ModelFactory
+from .abc import BaseHandler, Handler
 from .component import ComponentMixin
 from .log import enable_logs, format_json
 from .lifespan import Lifespan, LifespanMixin, lifespan
@@ -22,7 +23,7 @@ from .interaction import (
   MessageInteraction, ModalInteraction, SlashInteraction, UserInteraction
 )
 from .command import (
-  BaseCommand, CommandMixin, CommandNamespace, CommandProxy, Handler, InteractionCommand,
+  BaseCommand, CommandMixin, CommandNamespace, CommandProxy, InteractionCommand,
   MessageCommand, PrefixCommand, SlashCommand, SlashNode, SubCommand, UserCommand,
   command_namespace
 )

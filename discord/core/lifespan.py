@@ -2,14 +2,14 @@ import time
 import inspect
 from contextlib import AsyncExitStack, asynccontextmanager
 from .cog import CogMixin
-from .command import Handler
+from .abc import BaseHandler
 from .http import HTTPClient
 
-class Lifespan(Handler): # recognized by Cog
-  def __init__(self, func, name = None):
-    if not inspect.isasyncgenfunction(func):
-      raise ValueError(f'a lifespan must be an async generator function (it needs a single yield): {func!r}')
-    super().__init__(func, name)
+class Lifespan(BaseHandler): # recognized by Cog
+  def __init__(self, callback, name = None):
+    if not inspect.isasyncgenfunction(callback):
+      raise ValueError(f'a lifespan must be an async generator function (it needs a single yield): {callback!r}')
+    super().__init__(callback, name)
 
 def lifespan(func = None, *, name = None): # @discord.lifespan syntax
   def wrap(f):
@@ -37,7 +37,7 @@ class LifespanMixin(CogMixin):
     return super().registrars() | {Lifespan: (self.add_lifespans, self.remove_lifespans)}
 
   async def enter_lifespan(self, handler): # used on startup_lifespans and add_lifespans
-    manager = asynccontextmanager(handler.func)()
+    manager = asynccontextmanager(handler.callback)()
     await manager.__aenter__()
     self.lifespan_handlers[handler] = manager
 

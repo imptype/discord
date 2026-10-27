@@ -1,4 +1,4 @@
-from ..ui.abc import clean
+from ..ui import clean
 from .enums import OptionType
 
 class Choice:

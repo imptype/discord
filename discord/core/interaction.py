@@ -2,8 +2,7 @@ from typing import Any
 from .. import MISSING
 from ..ui import ModalResult
 from .enums import OptionType
-from ..models.abc import Snowflake
-from ..models.params import edit_params
+from ..models import Snowflake, edit_params
 from .response import AutocompleteResponse, CommandResponse, ComponentResponse, ModalResponse
 
 def resolve_user(interaction, user_id):
@@ -116,9 +115,10 @@ class MessageInteraction(CommandInteraction):
     self.message = app.model.message(message, guild = guild)
 
 class ComponentInteraction(Interaction):
-  def __init__(self, data, app, is_from_http):
+  def __init__(self, data, app, is_from_http, component):
     super().__init__(data, app, is_from_http)
     self.response = ComponentResponse(self)
+    self.component = component
 
 class ModalInteraction(Interaction):
   def __init__(self, data, app, is_from_http, modal):

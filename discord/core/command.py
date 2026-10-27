@@ -3,41 +3,31 @@ import types
 import inspect
 from typing import Any, cast
 from functools import cached_property
-from ..ui.abc import clean
+from ..ui import clean
+from .abc import Handler
 from .enums import CommandType, OptionType
 from ..models.context import parse_arguments
 from .interaction import AutocompleteInteraction, MessageInteraction, SlashInteraction, UserInteraction
 
-class Handler:
-  def __init__(self, func, name = None):
-    self.func = func
-    self.name = name or func.__name__
-
-  def bind(self, instance):
-    handler = copy.copy(self)
-    handler.func = types.MethodType(self.func, instance)
-    return handler
-
 class BaseCommand(Handler):
-  async def __call__(self, data):
-    return await self.func(data)
+  pass
 
 class PrefixCommand(BaseCommand):
-  def __init__(self, func, name = None):
-    super().__init__(func, name)
+  def __init__(self, callback = None, name = None):
+    super().__init__(callback, name)
     self.name = self.name.lower()
 
   @cached_property
   def parameters(self):
-    return list(inspect.signature(self.func).parameters.values())[1:]
+    return list(inspect.signature(self.callback).parameters.values())[1:]
 
   async def __call__(self, ctx):
     args, kwargs = parse_arguments(self.parameters, ctx.arguments, self.name)
-    return await self.func(ctx, *args, **kwargs)
+    return await self.callback(ctx, *args, **kwargs)
 
 class InteractionCommand(BaseCommand):
-  def __init__(self, func, name = None, type = None):
-    super().__init__(func, name)
+  def __init__(self, callback = None, name = None, type = None):
+    super().__init__(callback, name)
     self.type = type
     self.key = (type, self.name)
 
@@ -45,9 +35,10 @@ class InteractionCommand(BaseCommand):
     return {'name': self.name, 'type': self.type}
 
 class SlashNode:
-  def __init__(self, func, name = None, description = None, options = (), level = 1):
-    self.func = func
-    self.name = name or func.__name__
+  def __init__(self, callback = None, name = None, description = None, options = (), level = 1):
+    if callback is not None:
+      self.callback = callback
+    self.name = name or getattr(callback, '__name__', None) or getattr(self, 'name', None) # 3 for class attr
     self.description = description or self.name
     self.options = options
     self.level = level
@@ -95,7 +86,8 @@ class SlashNode:
 
   def bind(self, instance):
     node = copy.copy(self)
-    node.func = types.MethodType(self.func, instance)
+    if not inspect.ismethod(self.callback):
+      node.callback = types.MethodType(self.callback, instance)
     node.subcommands = {name: subcommand.bind(instance) for name, subcommand in self.subcommands.items()}
     if self.autocomplete:
       node.autocomplete = types.MethodType(self.autocomplete, instance)
@@ -105,27 +97,27 @@ class SubCommand(SlashNode): # an alias for now
   pass
 
 class SlashCommand(SlashNode, InteractionCommand):
-  def __init__(self, func, name = None, description = None, options = ()):
-    SlashNode.__init__(self, func, name, description, options, 0)
-    InteractionCommand.__init__(self, func, name, CommandType.CHAT_INPUT)
+  def __init__(self, callback = None, name = None, description = None, options = ()):
+    SlashNode.__init__(self, callback, name, description, options, 0)
+    InteractionCommand.__init__(self, callback, name, CommandType.CHAT_INPUT)
 
   async def __call__(self, interaction):
     node = self.find(interaction.names[1:])
-    return await node.func(interaction, **interaction.options)
+    return await node.callback(interaction, **interaction.options)
 
 class UserCommand(InteractionCommand):
-  def __init__(self, func, name = None):
-    super().__init__(func, name, CommandType.USER)
+  def __init__(self, callback = None, name = None):
+    super().__init__(callback, name, CommandType.USER)
 
   async def __call__(self, interaction):
-    return await self.func(interaction, interaction.user)
+    return await self.callback(interaction, interaction.user)
 
 class MessageCommand(InteractionCommand):
-  def __init__(self, func, name = None):
-    super().__init__(func, name, CommandType.MESSAGE)
+  def __init__(self, callback = None, name = None):
+    super().__init__(callback, name, CommandType.MESSAGE)
 
   async def __call__(self, interaction):
-    return await self.func(interaction, interaction.message)
+    return await self.callback(interaction, interaction.message)
 
 class CommandNamespace:
   def __call__(self, func = None, *, name = None):

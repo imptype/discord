@@ -1,6 +1,7 @@
 import copy
 import uuid
 import types
+import inspect
 from .button import Button
 from .layout import ActionRow
 from .select import BaseSelect
@@ -41,7 +42,8 @@ class View(BaseView):
       new = copy.copy(interactable)
       if not interactable.has_custom_id:
         new.custom_id = uuid.uuid4().hex
-      new.callback = types.MethodType(interactable.callback, self)
+      if not inspect.ismethod(interactable.callback): # plain function, subclass overrides are already bound
+        new.callback = types.MethodType(interactable.callback, self)
       setattr(self, name, new) # diff for each view instance
       copies.append(new)
 
