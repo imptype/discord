@@ -67,7 +67,7 @@ class Bot(AppBase):
 
   def event(self, func = None, *, name = None):
     def wrap(f):
-      event = f if isinstance(f, Event) else Event(f, name)
+      event = Event(f, name)
       self.add_events(event)
       return event
     return wrap(func) if func else wrap
