@@ -171,7 +171,7 @@ class Modal(Handler):
       'components': [component.to_json() for component in self.components]
     }
 
-def modal(func = None, *, title = None, components = (), custom_id = None, timeout: float | None = DEFAULT_TIMEOUT) -> Any:
-  def wrap(f):
-    return Modal(*components, title = title or f.__name__, custom_id = custom_id, timeout = timeout, callback = f)
-  return wrap(func) if func else wrap
+def modal(callback = None, *, title = None, components = (), custom_id = None, timeout: float | None = DEFAULT_TIMEOUT) -> Any:
+  def wrap(callback):
+    return Modal(*components, title = title or callback.__name__, custom_id = custom_id, timeout = timeout, callback = callback)
+  return wrap(callback) if callback else wrap

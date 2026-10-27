@@ -65,12 +65,12 @@ class Bot(AppBase):
       if isinstance(command, PrefixCommand) and self.command_handlers.get(command.name) is command:
         del self.command_handlers[command.name]
 
-  def event(self, func = None, *, name = None):
-    def wrap(f):
-      event = Event(f, name)
+  def event(self, callback = None, *, name = None):
+    def wrap(callback):
+      event = Event(callback, name)
       self.add_events(event)
       return event
-    return wrap(func) if func else wrap
+    return wrap(callback) if callback else wrap
 
   def add_events(self, *events):
     for event in events:

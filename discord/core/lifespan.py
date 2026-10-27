@@ -11,10 +11,10 @@ class Lifespan(BaseHandler): # recognized by Cog
       raise ValueError(f'a lifespan must be an async generator function (it needs a single yield): {callback!r}')
     super().__init__(callback, name)
 
-def lifespan(func = None, *, name = None): # @discord.lifespan syntax
-  def wrap(f):
-    return Lifespan(f, name)
-  return wrap(func) if func else wrap
+def lifespan(callback = None, *, name = None): # @discord.lifespan syntax
+  def wrap(callback):
+    return Lifespan(callback, name)
+  return wrap(callback) if callback else wrap
 
 class LifespanMixin(CogMixin):
   def __init__(self, token, application_id, *args, **kwargs):
@@ -24,14 +24,14 @@ class LifespanMixin(CogMixin):
     self.lifespan_handlers = {} # {LifespanHandler: manager, or None if not running}, ordered
     self.started_at = None # time.time() of app start
 
-  def lifespan(self, func = None): # @app.lifespan syntax
-    def wrap(f):
-      handler = f if isinstance(f, Lifespan) else Lifespan(f)
+  def lifespan(self, callback = None): # @app.lifespan syntax
+    def wrap(callback): # lets you add by object too (for sync context)
+      handler = callback if isinstance(callback, Lifespan) else Lifespan(callback)
       if self.started_at is not None:
         raise ValueError(f'cannot use @app.lifespan syntax when already started, use "await app.add_lifespans()" instead for: {handler.name}')
       self.lifespan_handlers.setdefault(handler, None)
       return handler
-    return wrap(func) if func else wrap
+    return wrap(callback) if callback else wrap
 
   def registrars(self):
     return super().registrars() | {Lifespan: (self.add_lifespans, self.remove_lifespans)}

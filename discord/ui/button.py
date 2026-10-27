@@ -22,6 +22,6 @@ class Button(Interactable):
     })
 
 def button(label, *, style = ButtonStyle.PRIMARY, custom_id = None, disabled = False, timeout = MISSING, callback = None, row = None, id = None):
-  def wrap(func):
-    return Button(label, style = style, custom_id = custom_id, disabled = disabled, timeout = timeout, callback = func, row = row, id = id)
-  return wrap(callback) if callback is not None else wrap
+  def wrap(callback):
+    return Button(label, style = style, custom_id = custom_id, disabled = disabled, timeout = timeout, callback = callback, row = row, id = id)
+  return wrap(callback) if callback else wrap

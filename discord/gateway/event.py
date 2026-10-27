@@ -126,7 +126,7 @@ class Event(Handler):
   async def __call__(self, *args):
     return await self.callback(*args[:self.count])
 
-def event(func = None, *, name = None):
-  def wrap(f):
-    return Event(f, name)
-  return wrap(func) if func else wrap
+def event(callback = None, *, name = None):
+  def wrap(callback):
+    return Event(callback, name)
+  return wrap(callback) if callback else wrap

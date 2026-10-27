@@ -112,39 +112,39 @@ class ChannelSelect(BaseSelect):
 
 def string_select(*options, placeholder = None, min_values = 1, max_values = 1, required = True,
   custom_id = None, disabled = False, timeout = MISSING, callback = None, id = None):
-  def wrap(func):
+  def wrap(callback):
     return StringSelect(*options, placeholder = placeholder, min_values = min_values, max_values = max_values,
-      required = required, custom_id = custom_id, disabled = disabled, timeout = timeout, callback = func, id = id)
-  return wrap(callback) if callback is not None else wrap
+      required = required, custom_id = custom_id, disabled = disabled, timeout = timeout, callback = callback, id = id)
+  return wrap(callback) if callback else wrap
 
 def user_select(*, default_values = (), placeholder = None, min_values = 1, max_values = 1, required = True,
   custom_id = None, disabled = False, timeout = MISSING, callback = None, id = None):
-  def wrap(func):
+  def wrap(callback):
     return UserSelect(default_values = default_values, placeholder = placeholder,
       min_values = min_values, max_values = max_values, required = required, custom_id = custom_id,
-      disabled = disabled, timeout = timeout, callback = func, id = id)
-  return wrap(callback) if callback is not None else wrap
+      disabled = disabled, timeout = timeout, callback = callback, id = id)
+  return wrap(callback) if callback else wrap
 
 def role_select(*, default_values = (), placeholder = None, min_values = 1, max_values = 1, required = True,
   custom_id = None, disabled = False, timeout = MISSING, callback = None, id = None):
-  def wrap(func):
+  def wrap(callback):
     return RoleSelect(default_values = default_values, placeholder = placeholder,
       min_values = min_values, max_values = max_values, required = required, custom_id = custom_id,
-      disabled = disabled, timeout = timeout, callback = func, id = id)
-  return wrap(callback) if callback is not None else wrap
+      disabled = disabled, timeout = timeout, callback = callback, id = id)
+  return wrap(callback) if callback else wrap
 
 def mentionable_select(*, default_users = (), default_roles = (), placeholder = None, min_values = 1,
   max_values = 1, required = True, custom_id = None, disabled = False, timeout = MISSING, callback = None, id = None):
-  def wrap(func):
+  def wrap(callback):
     return MentionableSelect(default_users = default_users, default_roles = default_roles,
       placeholder = placeholder, min_values = min_values, max_values = max_values, required = required,
-      custom_id = custom_id, disabled = disabled, timeout = timeout, callback = func, id = id)
-  return wrap(callback) if callback is not None else wrap
+      custom_id = custom_id, disabled = disabled, timeout = timeout, callback = callback, id = id)
+  return wrap(callback) if callback else wrap
 
 def channel_select(*, channel_types = None, default_values = (), placeholder = None, min_values = 1,
   max_values = 1, required = True, custom_id = None, disabled = False, timeout = MISSING, callback = None, id = None):
-  def wrap(func):
+  def wrap(callback):
     return ChannelSelect(channel_types = channel_types, default_values = default_values,
       placeholder = placeholder, min_values = min_values, max_values = max_values, required = required,
-      custom_id = custom_id, disabled = disabled, timeout = timeout, callback = func, id = id)
-  return wrap(callback) if callback is not None else wrap
+      custom_id = custom_id, disabled = disabled, timeout = timeout, callback = callback, id = id)
+  return wrap(callback) if callback else wrap

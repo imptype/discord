@@ -45,20 +45,20 @@ class SlashNode:
     self.subcommands = {}
     self.autocomplete: Any = None
 
-  def subcommand(self, func = None, *, name = None, description = None, options = ()):
+  def subcommand(self, callback = None, *, name = None, description = None, options = ()):
     if self.level >= 2:
       raise ValueError(f'cannot add a subcommand to {self.name!r}, command > group > subcommand is the maximum depth')
-    def wrap(f):
-      subcommand = SubCommand(f, name, description, options, self.level + 1)
+    def wrap(callback):
+      subcommand = SubCommand(callback, name, description, options, self.level + 1)
       self.subcommands[subcommand.name] = subcommand
       return subcommand
-    return wrap(func) if func else wrap
+    return wrap(callback) if callback else wrap
 
-  def on_autocomplete(self, func = None):
-    def wrap(f):
-      self.autocomplete = f
-      return f
-    return wrap(func) if func else wrap
+  def on_autocomplete(self, callback = None):
+    def wrap(callback):
+      self.autocomplete = callback
+      return callback
+    return wrap(callback) if callback else wrap
 
   def find(self, names):
     node = self
@@ -120,28 +120,28 @@ class MessageCommand(InteractionCommand):
     return await self.callback(interaction, interaction.message)
 
 class CommandNamespace:
-  def __call__(self, func = None, *, name = None):
-    def wrap(f):
-      return PrefixCommand(f, name)
-    return wrap(func) if func else wrap
+  def __call__(self, callback = None, *, name = None):
+    def wrap(callback):
+      return PrefixCommand(callback, name)
+    return wrap(callback) if callback else wrap
 
   @staticmethod
-  def slash(func = None, *, name = None, description = None, options = ()):
-    def wrap(f):
-      return SlashCommand(f, name, description, options)
-    return wrap(func) if func else wrap
+  def slash(callback = None, *, name = None, description = None, options = ()):
+    def wrap(callback):
+      return SlashCommand(callback, name, description, options)
+    return wrap(callback) if callback else wrap
 
   @staticmethod
-  def user(func = None, *, name = None):
-    def wrap(f):
-      return UserCommand(f, name)
-    return wrap(func) if func else wrap
+  def user(callback = None, *, name = None):
+    def wrap(callback):
+      return UserCommand(callback, name)
+    return wrap(callback) if callback else wrap
 
   @staticmethod
-  def message(func = None, *, name = None):
-    def wrap(f):
-      return MessageCommand(f, name)
-    return wrap(func) if func else wrap
+  def message(callback = None, *, name = None):
+    def wrap(callback):
+      return MessageCommand(callback, name)
+    return wrap(callback) if callback else wrap
 
 command_namespace = CommandNamespace()
 
