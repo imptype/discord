@@ -91,6 +91,13 @@ class Interaction(Snowflake):
     self.followup = app.model.followup_webhook(self.application_id, self.token)
     self.original_message = OriginalInteractionMessage(self)
 
+    member = data.get('member')
+    if self.guild_id and member:
+      guild = app.model.partial_guild(self.guild_id)
+      self.author = app.model.member(member, guild = guild)
+    else:
+      self.author = app.model.user(data['user'])
+
 class CommandInteraction(Interaction):
   def __init__(self, data, app, is_from_http):
     super().__init__(data, app, is_from_http)
