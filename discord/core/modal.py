@@ -1,7 +1,8 @@
 import uuid
 from typing import Any
+from .. import MISSING
 from .abc import Handler
-from ..ui import ComponentType, Label, TextDisplay, DEFAULT_TIMEOUT
+from ..ui import ComponentType, Label, TextDisplay
 
 class ModalResult:
   def __init__(self, data):
@@ -27,7 +28,7 @@ class ModalResult:
     raise KeyError(key)
 
 class Modal(Handler):
-  def __init__(self, *components, title, custom_id = None, timeout: float | None = DEFAULT_TIMEOUT, callback = None):
+  def __init__(self, *components, title, custom_id = None, timeout = MISSING, callback = None):
     super().__init__(callback)
     self.title = title
     self.has_custom_id = bool(custom_id)
@@ -56,7 +57,7 @@ class Modal(Handler):
       'components': [component.to_json() for component in self.components]
     }
 
-def modal(callback = None, *, title = None, components = (), custom_id = None, timeout: float | None = DEFAULT_TIMEOUT) -> Any:
+def modal(callback = None, *, title = None, components = (), custom_id = None, timeout = MISSING) -> Any:
   def wrap(callback):
     return Modal(*components, title = title or callback.__name__, custom_id = custom_id, timeout = timeout, callback = callback)
   return wrap(callback) if callback else wrap

@@ -2,15 +2,16 @@ import copy
 import uuid
 import types
 import inspect
+from .. import MISSING
 from .button import Button
 from .layout import ActionRow
 from .select import BaseSelect
-from .abc import Component, Interactable, DEFAULT_TIMEOUT
+from .abc import Component, Interactable
 
 MAX_BUTTONS_PER_ROW = 5
 
 class BaseView:
-  def __init__(self, *, timeout = DEFAULT_TIMEOUT):
+  def __init__(self, *, timeout = MISSING):
     self.timeout = timeout
 
   def children(self):
@@ -27,7 +28,7 @@ class BaseView:
     return [child.to_json() for child in self.children()]
 
 class View(BaseView):
-  def __init__(self, *components, timeout = DEFAULT_TIMEOUT):
+  def __init__(self, *components, timeout = MISSING):
     super().__init__(timeout = timeout)
     self.rows = []
 
@@ -78,7 +79,7 @@ class View(BaseView):
     self.rows.append(ActionRow(select))
 
 class LayoutView(BaseView):
-  def __init__(self, *components, timeout = DEFAULT_TIMEOUT):
+  def __init__(self, *components, timeout = MISSING):
     super().__init__(timeout = timeout)
     self.components = []
     if components:

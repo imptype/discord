@@ -2,7 +2,7 @@ from .file import File
 from .embed import Embed
 from .button import Button, button
 from .view import BaseView, LayoutView, View
-from .abc import Component, Interactable, clean, DEFAULT_TIMEOUT
+from .abc import Component, Interactable, clean
 from .layout import ActionRow, Container, Label, LayoutComponent, Section, Separator
 from .enums import ButtonStyle, ChannelType, ComponentType, SeparatorSpacing, TextInputStyle
 from .modal import (

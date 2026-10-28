@@ -3,13 +3,17 @@ import asyncio
 from .. import MISSING
 from .modal import Modal
 from .cog import CogMixin
+from ..ui import BaseView, Component, Interactable
 from .interaction import ComponentInteraction, ModalInteraction
-from ..ui import BaseView, Component, Interactable, DEFAULT_TIMEOUT
+
+DEFAULT_TIMEOUT = 180
 
 def resolve_timeout(component, view = None):
   if component.timeout is not MISSING: # component timeout takes priority
     return component.timeout
-  return view.timeout if view else DEFAULT_TIMEOUT
+  if view and view.timeout is not MISSING:
+    return view.timeout
+  return DEFAULT_TIMEOUT
 
 def describe(component): # Button MyView.on_click() in cogs/test.py:42
   callback = component.callback

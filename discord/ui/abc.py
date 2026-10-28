@@ -5,8 +5,6 @@ import inspect
 from typing import Any
 from .. import MISSING
 
-DEFAULT_TIMEOUT = 180
-
 def clean(data):
   return {key: value for key, value in data.items() if value is not None}
 
