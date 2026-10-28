@@ -1,9 +1,10 @@
 import os
 import asyncio
 from .. import MISSING
+from .modal import Modal
 from .cog import CogMixin
-from ..ui import BaseView, Component, Modal, DEFAULT_TIMEOUT
 from .interaction import ComponentInteraction, ModalInteraction
+from ..ui import BaseView, Component, Interactable, DEFAULT_TIMEOUT
 
 def resolve_timeout(component, view = None):
   if component.timeout is not MISSING: # component timeout takes priority
@@ -26,7 +27,11 @@ class ComponentMixin(CogMixin):
     self.modal_timers = {}
 
   def registrars(self):
-    return super().registrars() | {Modal: (self.add_modals, self.remove_modals)}
+    return super().registrars() | {
+      Modal: (self.add_modals, self.remove_modals),
+      BaseView: (self.add_views, self.remove_views),
+      Interactable: (self.add_components, self.remove_components)
+    }
 
   def add_views(self, *views): # also used by send() and edit()
     for view in views:

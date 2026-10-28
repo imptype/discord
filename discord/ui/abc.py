@@ -1,4 +1,7 @@
+import copy
 import uuid
+import types
+import inspect
 from typing import Any
 from .. import MISSING
 
@@ -34,6 +37,12 @@ class Interactable(Component):
 
   async def callback(self, interaction):
     raise NotImplementedError(f'{type(self).__name__} is missing a callback!')
+
+  def bind(self, instance): # instance can be View or Cog
+    bound = copy.copy(self)
+    if not inspect.ismethod(self.callback):
+      bound.callback = types.MethodType(self.callback, instance)
+    return bound
 
   async def __call__(self, interaction):
     return await self.callback(interaction)

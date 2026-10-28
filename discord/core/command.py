@@ -5,8 +5,8 @@ from typing import Any, cast
 from functools import cached_property
 from ..ui import clean
 from .abc import Handler
+from ..models import parse_arguments
 from .enums import CommandType, OptionType
-from ..models.context import parse_arguments
 from .interaction import AutocompleteInteraction, MessageInteraction, SlashInteraction, UserInteraction
 
 class BaseCommand(Handler):
@@ -84,13 +84,13 @@ class SlashNode:
       'options': [child.to_json() for child in children] or None
     })
 
-  def bind(self, instance):
+  def bind(self, cog_instance):
     node = copy.copy(self)
     if not inspect.ismethod(self.callback):
-      node.callback = types.MethodType(self.callback, instance)
-    node.subcommands = {name: subcommand.bind(instance) for name, subcommand in self.subcommands.items()}
+      node.callback = types.MethodType(self.callback, cog_instance)
+    node.subcommands = {name: subcommand.bind(cog_instance) for name, subcommand in self.subcommands.items()}
     if self.autocomplete:
-      node.autocomplete = types.MethodType(self.autocomplete, instance)
+      node.autocomplete = types.MethodType(self.autocomplete, cog_instance)
     return node
 
 class SubCommand(SlashNode): # an alias for now

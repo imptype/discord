@@ -5,12 +5,11 @@ from .view import BaseView, LayoutView, View
 from .abc import Component, Interactable, clean, DEFAULT_TIMEOUT
 from .layout import ActionRow, Container, Label, LayoutComponent, Section, Separator
 from .enums import ButtonStyle, ChannelType, ComponentType, SeparatorSpacing, TextInputStyle
+from .modal import (
+  Checkbox, CheckboxGroup, FileUpload, GroupOption, ModalInput, RadioGroup, TextInput
+)
 from .content import (
   ContentComponent, FileComponent, MediaGallery, MediaGalleryItem, TextDisplay, Thumbnail
-)
-from .modal import (
-  Checkbox, CheckboxGroup, FileUpload, GroupOption, Modal, ModalInput, ModalResult,
-  RadioGroup, TextInput, modal
 )
 from .select import (
   BaseSelect, ChannelSelect, MentionableSelect, RoleSelect, SelectOption, StringSelect,

@@ -12,10 +12,10 @@ class BaseHandler:
       or getattr(self, 'name', None) # as class attribute
     )
 
-  def bind(self, instance):
+  def bind(self, cog_instance):
     handler = copy.copy(self)
     if not inspect.ismethod(self.callback): # cog's @deco goes here, ignore for subclass
-      handler.callback = types.MethodType(self.callback, instance)
+      handler.callback = types.MethodType(self.callback, cog_instance)
     return handler
 
 class Handler(BaseHandler):

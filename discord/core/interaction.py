@@ -1,7 +1,7 @@
 from typing import Any
 from .. import MISSING
-from ..ui import ModalResult
 from .enums import OptionType
+from .modal import ModalResult
 from ..models import Snowflake, edit_params
 from .response import AutocompleteResponse, CommandResponse, ComponentResponse, ModalResponse
 
