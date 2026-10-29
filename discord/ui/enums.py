@@ -23,18 +23,18 @@ class ComponentType(IntEnum):
   CHECKBOX = 23
 
 class ButtonStyle(IntEnum):
-  PRIMARY = 1
-  BLURPLE = 1
-  SECONDARY = 2
-  GREY = 2
+  Primary = 1
+  Blurple = 1
+  Secondary = 2
+  Grey = 2
 
 class SeparatorSpacing(IntEnum):
-  SMALL = 1
-  LARGE = 2
+  Small = 1
+  Large = 2
 
 class TextInputStyle(IntEnum):
-  SHORT = 1
-  PARAGRAPH = 2
+  Short = 1
+  Paragraph = 2
 
 class ChannelType(IntEnum):
   GUILD_TEXT = 0
