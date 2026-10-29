@@ -3,7 +3,7 @@ from .abc import Interactable, clean
 from .enums import ButtonStyle, ComponentType
 
 class Button(Interactable):
-  def __init__(self, label, *, style = ButtonStyle.PRIMARY, custom_id = None, disabled = False, timeout = MISSING, callback = None, row = None, id = None):
+  def __init__(self, label, *, style = ButtonStyle.Primary, custom_id = None, disabled = False, timeout = MISSING, callback = None, row = None, id = None):
     if not label:
       raise ValueError('button label is required')
     super().__init__(custom_id = custom_id, disabled = disabled, timeout = timeout, callback = callback, id = id)
@@ -21,7 +21,7 @@ class Button(Interactable):
       'disabled': self.disabled
     })
 
-def button(label, *, style = ButtonStyle.PRIMARY, custom_id = None, disabled = False, timeout = MISSING, callback = None, row = None, id = None):
+def button(label, *, style = ButtonStyle.Primary, custom_id = None, disabled = False, timeout = MISSING, callback = None, row = None, id = None):
   def wrap(callback):
     return Button(label, style = style, custom_id = custom_id, disabled = disabled, timeout = timeout, callback = callback, row = row, id = id)
   return wrap(callback) if callback else wrap

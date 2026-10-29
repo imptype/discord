@@ -38,7 +38,7 @@ class Section(LayoutComponent):
     })
 
 class Separator(LayoutComponent):
-  def __init__(self, *, divider = True, spacing = SeparatorSpacing.SMALL, id = None):
+  def __init__(self, *, divider = True, spacing = SeparatorSpacing.Small, id = None):
     super().__init__(id = id)
     self.divider = divider
     self.spacing = SeparatorSpacing(spacing)

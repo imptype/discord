@@ -13,7 +13,7 @@ class ModalInput(Component):
 
 class TextInput(ModalInput):
   def __init__(
-    self, *, style = TextInputStyle.SHORT, min_length = None, max_length = None, required = True,
+    self, *, style = TextInputStyle.Short, min_length = None, max_length = None, required = True,
     value = None, placeholder = None, custom_id = None, id = None
   ):
     super().__init__(custom_id = custom_id, id = id)
