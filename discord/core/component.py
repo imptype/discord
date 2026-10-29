@@ -98,16 +98,14 @@ class ComponentMixin(CogMixin):
       del self.component_cache[component.custom_id]
 
   def add_modals(self, *modals): # used by send_modal
-    for modal in modals:
-      if modal.timeout is None and not modal.has_custom_id:
-        raise ValueError(f'{type(modal).__name__} must set a custom_id to be persistent')
-    for modal in modals:
+    timeouts = [(modal, validate_timeout(modal)) for modal in modals]
+    for modal, timeout in timeouts:
       if timer := self.modal_timers.pop(modal.custom_id, None):
         timer.cancel()
       self.modal_cache[modal.custom_id] = modal
-      if modal.timeout is not None:
+      if timeout is not None:
         loop = asyncio.get_running_loop()
-        self.modal_timers[modal.custom_id] = loop.call_later(modal.timeout, self.remove_modals, modal)
+        self.modal_timers[modal.custom_id] = loop.call_later(timeout, self.remove_modals, modal)
 
   def remove_modals(self, *modals):
     for modal in modals:
