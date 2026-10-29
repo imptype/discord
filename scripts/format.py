@@ -10,7 +10,7 @@ Then it runs some extra things outside:
 2. Enforce single quotes (skipping strings with nested quotes).
 3. Enforce LF instead of CRLF newline character.
 4. Somewhat enforce PascalCase class names and type names.
-5. Somewhat enforce snake_case variable and function names.
+5. Somewhat enforce snake_case variable and function names (enum members are skipped).
 6. Enforce no double blank lines in a row (skipping strings).
 7. Enforce a space between operators like * + (includes = in parameters and assignments)
 8. Sort imports by these rules:
@@ -295,7 +295,7 @@ def fix_trailing_commas(src):
   it would change the meaning: the sole comma in a parenthesized single-element
   tuple, or in a single-element tuple subscript (a[1,])."""
   starts = line_starts(src)
-  stack = []
+  stack: list[dict] = []
   prev = None
   str_depth = 0
   edits = []
@@ -851,10 +851,28 @@ NAMED_NODES = {
   ast.Attribute, ast.ExceptHandler, ast.MatchAs, ast.MatchStar, ast.TypeAlias
 }
 
+ENUM_BASES = ('Enum', 'Flag')  # endswith, so IntEnum, StrEnum, ReprEnum, IntFlag... match too
+
+def is_enum(node):
+  for base in node.bases:
+    name = base.id if isinstance(base, ast.Name) else base.attr if isinstance(base, ast.Attribute) else ''
+    if name.endswith(ENUM_BASES):
+      return True
+  return False
+
+def enum_members(node):
+  """Name nodes of the members defined directly in an enum class body."""
+  for stmt in node.body:
+    if isinstance(stmt, ast.Assign):
+      yield from (target for target in stmt.targets if isinstance(target, ast.Name))
+    elif isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
+      yield stmt.target
+
 def check_names(src, path):
   ignored = {n for n, line in enumerate(src.split('\n'), 1) if NAMING_IGNORE in line}
   found = []
   aliases = set()  # ids of the Name nodes that hold a 'type X = ...' name
+  members = set()  # ids of the Name nodes that are enum members, their names are the point of an enum
   for node in ast.walk(parse(src)):
     if type(node) not in NAMED_NODES:
       continue
@@ -866,9 +884,11 @@ def check_names(src, path):
       if first and not first.isupper():
         found.append((node.lineno, f'type {node.name.id}: must start with an uppercase letter'))
       continue
-    if isinstance(node, ast.Name) and id(node) in aliases:
+    if isinstance(node, ast.Name) and (id(node) in aliases or id(node) in members):
       continue
     if isinstance(node, ast.ClassDef):
+      if is_enum(node):  # ast.walk reaches the class before its body, so its members are known in time
+        members.update(id(name) for name in enum_members(node))
       first = node.name.lstrip('_')[:1]
       if first and not first.isupper():
         found.append((node.lineno, f'class {node.name}: must start with an uppercase letter'))
@@ -940,7 +960,14 @@ NAME_CASES = [
   ('def doThing(selfThing): pass\n', 2),
   ('blueThing = 1  # naming: ignore\n', 0),
   ('type Method[**P, R] = Callable[Concatenate[Any, P], R]\ntype Alias = int\ntype _Private = int\n', 0),
-  ('type method = int\n', 1)
+  ('type method = int\n', 1),
+  ('from enum import IntEnum\nclass A(IntEnum):\n  Primary = 1\n  Blurple = 1\n', 0),
+  ('import enum\nclass A(enum.StrEnum):\n  Small = "a"\n  Large: str = "b"\n', 0),
+  ('from enum import IntFlag\nclass A(IntFlag):\n  Read = 1\n', 0),
+  ('class A:\n  Primary = 1\n', 1),
+  ('from enum import Enum\nclass A(Enum):\n  Primary = 1\n  def doThing(self): pass\n', 1),
+  ('from enum import Enum\nclass A(Enum):\n  Primary = 1\n  def f(self):\n    badName = 1\n', 1),
+  ('from enum import Enum\nclass a(Enum):\n  Primary = 1\n', 1)
 ]
 TEXT_CASES = [
   ('no trailing newline', 'readme body', 'readme body\n'),
