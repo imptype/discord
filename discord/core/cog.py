@@ -17,7 +17,7 @@ RELOAD_INTERVAL = 1
 class Cog:
   def __init__(self, app):
     self.app = app
-    self.instances = {} # {name: instance} of nested classes in cog, if you need a reference
+    self.instances = {} # {name: instance} to access the persistent view object in a cog
 
   async def cog_load(self): ...
   async def cog_unload(self): ...
@@ -64,6 +64,8 @@ class CogMixin(CommandMixin):
       # 3.1. Instantiate if the cog is a Class
       if not cog_instance:
         cog_instance = cog(self)
+        if not hasattr(cog_instance, 'instances'): # helps set .instances without super().__init__()
+          cog_instance.instances = {}
 
       # 3.2. Find stuff that should be loaded from the cog and add it to found dict
       found = {} # {name: handler instance | interactable instance | nested class}
@@ -78,29 +80,28 @@ class CogMixin(CommandMixin):
           ):
             found[name] = value # results in class Panel(discord.View), class Ok(discord.Button), etc
 
-      # 3.3. Convert each found item into a Handler
+      # 3.3. Convert each found item into a Handler (or an instance if it's a class)
       handlers = []
       for name, value in found.items():
 
-        # 3.3.1. Nested class = instantiate and add to coginstance.instances
+        # 3.3.1. Nested class = instantiate and set .cog add to coginstance.instances
         if isinstance(value, type):
-          handler = value.__new__(value) # type: ignore # complains about None.__new__
+          handler = value.__new__(value)
           handler.cog = cog_instance # lets you refer to the outer cog containing the class
+          value.cog = cog_instance # helps set a reused persistent view's default timeout to none
           try:
             handler.__init__() # u can access .app through self.cog.app
           except TypeError as e:
-            raise ValueError(f'{cog.__name__}.{name} cannot be loaded, __init__() is not expecting any arguments: {e}') from e
+            raise ValueError(f'{cog.__name__}.{name} cannot be loaded, persistent __init__() must not have any required arguments: {e}') from e
           cog_instance.instances[name] = handler
 
         # 3.3.2. @decorator = bind it to the cog instance and set it as self.<name>
         else:
           handler = value.bind(cog_instance)
-          setattr(cog_instance, name, handler)
+          setattr(cog_instance, name, handler) # allows self.<handler> ref (unlike classes)
 
-        # 3.3.3. Do a helplful warn incase you forgot to write timeout = None (class-level are meant to be for persistent stuff)
+        # 3.3.3. Warn if it could not be loaded (Events can only be used by Bot not App)
         if isinstance(handler, kinds):
-          if getattr(handler, 'timeout', None) is not None: # Event/other will default to None
-            log.warning(f'{cog.__name__}.{name} is not persistent, did you forget to write timeout = None (you\'d also need fixed custom ID too)')
           handlers.append(handler)
         else:
           log.warning(f'{cog.__name__}.{name}() was not loaded: {type(handler).__name__} is not supported by {type(self).__name__}')

@@ -1,19 +1,15 @@
 import os
 import asyncio
+import logging
 from .. import MISSING
 from .modal import Modal
-from .cog import CogMixin
-from ..ui import BaseView, Component, Interactable
+from .cog import Cog, CogMixin
+from ..ui import BaseView, Interactable
 from .interaction import ComponentInteraction, ModalInteraction
 
-DEFAULT_TIMEOUT = 180
+DEFAULT_TIMEOUT = 180 # if a class is in a Cog default is None (persistent)
 
-def resolve_timeout(component, view = None):
-  if component.timeout is not MISSING: # component timeout takes priority
-    return component.timeout
-  if view and view.timeout is not MISSING:
-    return view.timeout
-  return DEFAULT_TIMEOUT
+log = logging.getLogger(__name__)
 
 def describe(component): # Button MyView.on_click() in cogs/test.py:42
   callback = component.callback
@@ -21,6 +17,41 @@ def describe(component): # Button MyView.on_click() in cogs/test.py:42
   qualname = getattr(callback, '__qualname__', None)
   location = f'{os.path.relpath(code.co_filename)}:{code.co_firstlineno}' if code else None
   return f'{type(component).__name__} {qualname}() in {location}'
+
+def is_class_in_cog(instance):
+  return isinstance(getattr(instance, 'cog', None), Cog)
+
+def resolve_timeout(component, view = None):
+  has_component_timeout = component.timeout is not MISSING
+
+  if is_class_in_cog(component):
+    if has_component_timeout and component.timeout is not None:
+      raise ValueError(f'{describe(component)} is a class in a cog, which is intended for persistence, move it out of the cog to set a timeout.')
+    return None # component class in cog is persistent
+
+  is_persistent_view = False
+  if view:
+    is_persistent_view = is_class_in_cog(view)
+    if is_persistent_view and view.timeout not in (MISSING, None):
+      raise ValueError(f'{type(view).__qualname__} is a View class in a cog, which is intended for persistence, move it out of the cog to set a timeout.')
+
+  if has_component_timeout:
+    return component.timeout # takes priority over view
+
+  if is_persistent_view:
+    return None # view in a cog is persistent
+
+  if view and view.timeout is not MISSING:
+    return view.timeout
+
+  return DEFAULT_TIMEOUT
+
+def validate_timeout(component, view = None):
+  timeout = resolve_timeout(component, view)
+  print('validate timeout:', describe(component), timeout)
+  if timeout is None and not component.has_custom_id:
+    raise ValueError(f'{describe(component)} must set a custom_id to be persistent')
+  return timeout
 
 class ComponentMixin(CogMixin):
   def __init__(self, *args, **kwargs):
@@ -39,45 +70,28 @@ class ComponentMixin(CogMixin):
 
   def add_views(self, *views): # also used by send() and edit()
     for view in views:
-      if not isinstance(view, BaseView):
-        raise ValueError(f'not a view: {view!r}')
-      self.check_persistent(view.interactables(), view)
-    for view in views:
-      self.add_interactables(view.interactables(), view)
+      self.add_interactables(*view.interactables(), view = view)
 
   def remove_views(self, *views):
-    for view in views:
-      if not isinstance(view, BaseView):
-        raise ValueError(f'not a view: {view!r}')
-    for view in views:
-      self.remove_interactables(view.interactables())
+    self.remove_interactables(*[*view.interactables() for view in views])
 
-  def add_components(self, *components): # filters out for interactables
-    for component in components:
-      if not isinstance(component, Component):
-        raise ValueError(f'not a component: {component!r}')
-      self.check_persistent(component.interactables())
-    for component in components:
-      self.add_interactables(component.interactables())
+  def add_components(self, *components): # does .interactables() walk for you
+    self.add_interactables(*[*component.interactables() for component in components])
 
   def remove_components(self, *components):
-    for component in components:
-      if not isinstance(component, Component):
-        raise ValueError(f'not a component: {component!r}')
-    for component in components:
-      self.remove_interactables(component.interactables())
+    self.remove_interactables(*[*component.interactables() for component in components])
 
-  def add_interactables(self, interactables, view = None):
-    for component in interactables:
+  def add_interactables(self, *interactables, view = None):
+    timeouts = [(component, validate_timeout(component, view)) for component in interactables]
+    for component, timeout in timeouts:
       if timer := self.component_timers.pop(component.custom_id, None):
         timer.cancel()
       self.component_cache[component.custom_id] = component
-      timeout = resolve_timeout(component, view)
       if timeout is not None:
         loop = asyncio.get_running_loop()
-        self.component_timers[component.custom_id] = loop.call_later(timeout, self.remove_interactables, [component])
+        self.component_timers[component.custom_id] = loop.call_later(timeout, self.remove_interactables, component)
 
-  def remove_interactables(self, interactables):
+  def remove_interactables(self, *interactables):
     for component in interactables:
       if self.component_cache.get(component.custom_id) is not component:
         continue
@@ -92,8 +106,6 @@ class ComponentMixin(CogMixin):
 
   def add_modals(self, *modals): # used by send_modal
     for modal in modals:
-      if not isinstance(modal, Modal):
-        raise ValueError(f'not a modal: {modal!r}')
       if modal.timeout is None and not modal.has_custom_id:
         raise ValueError(f'{type(modal).__name__} must set a custom_id to be persistent')
     for modal in modals:
@@ -105,9 +117,6 @@ class ComponentMixin(CogMixin):
         self.modal_timers[modal.custom_id] = loop.call_later(modal.timeout, self.remove_modals, modal)
 
   def remove_modals(self, *modals):
-    for modal in modals:
-      if not isinstance(modal, Modal):
-        raise ValueError(f'not a modal: {modal!r}')
     for modal in modals:
       if self.modal_cache.get(modal.custom_id) is not modal:
         continue
