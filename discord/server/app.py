@@ -9,6 +9,7 @@ class App(AppBase):
   def __init__(self, public_key, token = None, application_id = None, reload = False):
     super().__init__(token, application_id, reload)
     self.verify_key = VerifyKey(bytes.fromhex(public_key))
+    self.pending_interactions = {} # {interaction id: (response_future, response_ack_future)}
 
   async def run_lifespan(self, receive, send):
     while True:
@@ -25,11 +26,12 @@ class App(AppBase):
         await send({'type': 'lifespan.shutdown.complete'})
         return
 
-  async def respond(self, send, status, obj): # obj is a Payload (json or multipart), or a plain dict
+  async def respond(self, send, status, obj = None): # obj is a Payload (json or multipart), or a plain dict or None
     if isinstance(obj, Payload):
       content_type, body = obj.encode()
     else:
-      content_type, body = 'application/json', orjson.dumps(obj)
+      content_type = 'application/json'
+      body = orjson.dumps(obj) if obj else b''
     await send({'type': 'http.response.start', 'status': status,
       'headers': [
         (b'content-type', content_type.encode()),
@@ -60,4 +62,10 @@ class App(AppBase):
       return await self.respond(send, HTTPStatus.UNAUTHORIZED_401, {'error': 'invalid signature'})
 
     payload = orjson.loads(body)
-    await self.respond(send, HTTPStatus.OK_200, await handler(self, payload))
+    response_ack_future = self.loop.create_future()
+    try:
+      status, body = await handler(self, payload, response_ack_future)
+      await self.respond(send, status, body)
+    finally:
+      if not response_ack_future.done():
+        response_ack_future.set_result(None)

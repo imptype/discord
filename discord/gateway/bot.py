@@ -24,7 +24,6 @@ class Bot(AppBase):
     self.event_handlers = {} # {gateway name: {Event: None}}
     self.command_handlers = {}
     self.extra_registrars = {Event: (self.add_events, self.remove_events)}
-    self.tasks = set()
     self.ready_at = None # time.time() of the latest READY
 
   def set_proxy(self):
@@ -99,7 +98,7 @@ class Bot(AppBase):
         self.event_handlers.pop(event.gateway_name, None)
 
   def spawn(self, coro):
-    task = asyncio.create_task(coro)
+    task = self.loop.create_task(coro)
     self.tasks.add(task)
     task.add_done_callback(self.tasks.discard)
 

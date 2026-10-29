@@ -1,8 +1,9 @@
 import asyncio
 import logging
+from .cog import Cog
 from .. import MISSING
 from .modal import Modal
-from .cog import Cog, CogMixin
+from .lifespan import LifespanMixin
 from ..ui import BaseSelect, BaseView, Interactable
 from .interaction import ComponentInteraction, ModalInteraction, SelectInteraction
 
@@ -51,7 +52,7 @@ def validate_timeout(component, view = None):
     raise ValueError(f'{describe(component)} must set a custom_id to be persistent')
   return timeout
 
-class ComponentMixin(CogMixin):
+class ComponentMixin(LifespanMixin):
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self.component_cache = {}
@@ -86,8 +87,7 @@ class ComponentMixin(CogMixin):
         timer.cancel()
       self.component_cache[component.custom_id] = component
       if timeout is not None:
-        loop = asyncio.get_running_loop()
-        self.component_timers[component.custom_id] = loop.call_later(timeout, self.remove_interactables, component)
+        self.component_timers[component.custom_id] = self.loop.call_later(timeout, self.remove_interactables, component)
 
   def remove_interactables(self, *interactables):
     for component in interactables:

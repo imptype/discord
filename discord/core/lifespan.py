@@ -1,4 +1,5 @@
 import time
+import asyncio
 import inspect
 from contextlib import AsyncExitStack, asynccontextmanager
 from .cog import CogMixin
@@ -22,6 +23,7 @@ class LifespanMixin(CogMixin):
     self.http = HTTPClient(token, application_id)
     self.stack = AsyncExitStack()
     self.lifespan_handlers = {} # {LifespanHandler: manager, or None if not running}, ordered
+    self.loop: asyncio.AbstractEventLoop # event loop
     self.started_at = None # time.time() of app start
 
   def lifespan(self, callback = None): # @app.lifespan syntax
@@ -65,6 +67,7 @@ class LifespanMixin(CogMixin):
         await manager.__aexit__(None, None, None)
 
   async def startup_lifespans(self):
+    self.loop = asyncio.get_running_loop()
     self.started_at = time.time()
     try:
       await self.stack.enter_async_context(self.http)

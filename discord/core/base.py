@@ -1,11 +1,11 @@
 from .factory import ModelFactory
-from .lifespan import LifespanMixin
 from .component import ComponentMixin
 
-class AppBase(LifespanMixin, ComponentMixin):
+class AppBase(ComponentMixin):
   def __init__(self, token = None, application_id = None, reload = False):
     super().__init__(token, application_id, reload)
     self.model = ModelFactory(self)
+    self.tasks = set() # holds running asyncio tasks
 
   async def sync(self):
     body = [command.to_json() for command in self.registry.values()]
