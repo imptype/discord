@@ -1,6 +1,8 @@
-# examples
+# Examples
 
-[bot.py](bot.py) = example of websocket bot  
-[main.py](ping.py) = example of http only bot  
-[funcs.py](funcs.py) = the above 2 imports them  
-[cogs/utils.py](cogs/utils.py) = to import multiple at once
+Fill in `example.env` and rename it to `.env` then you can run the scripts below.
+
+There are 3 examples:
+1. `python examples/bot.py` to run a websocket bot.
+2. `uvicorn examples.main:app` to run a HTTP server bot.
+3. `python examples/webhook.py` to execute a standalone webhook.

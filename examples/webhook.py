@@ -8,11 +8,11 @@ async def main():
   webhook = discord.PartialWebhook.from_url(url)
   await webhook.send('aaaaa')
 
-  def syncinasync():
+  def sync_in_async():
     webhook = discord.SyncWebhook.from_url(url)
     webhook.send('bbbb')
 
-  syncinasync()
+  sync_in_async()
 
 asyncio.run(main())
 

@@ -1,5 +1,4 @@
 import os
-# from funcs import ping_command
 import discord
 
 app = discord.App(
@@ -8,16 +7,18 @@ app = discord.App(
   application_id = os.environ['APPLICATION_ID']
 )
 
-# app.add_commands(ping_command)
-
 @app.command.slash()
-async def hello(interaction):
-  await interaction.response.send('hi')
+async def ping(interaction):
+  await interaction.response.send('pong')
 
 @app.lifespan
 async def lifespan():
-  print('startup')
-  print(app.registry)
-  # print(await app.sync())
+  print('This runs when the HTTP server starts.')
+  print('Uncomment to sync your interaction commands once:', app.registry)
+  # print(result := await bot.sync())
+  # print(f'Synced {len(result)} commands!')
+  await app.load_extensions(
+    'cogs.modal' # examples are the same as bot.py, remember gateway stuff won't work
+  )
   yield
-  print('shutdown')
+  print('This runs when the HTTP server stops.')
