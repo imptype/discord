@@ -48,7 +48,6 @@ def resolve_timeout(component, view = None):
 
 def validate_timeout(component, view = None):
   timeout = resolve_timeout(component, view)
-  print('validate timeout:', describe(component), timeout)
   if timeout is None and not component.has_custom_id:
     raise ValueError(f'{describe(component)} must set a custom_id to be persistent')
   return timeout
