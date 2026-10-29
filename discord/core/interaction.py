@@ -127,6 +127,11 @@ class ComponentInteraction(Interaction):
     self.response = ComponentResponse(self)
     self.component = component
 
+class SelectInteraction(ComponentInteraction):
+  def __init__(self, data, app, is_from_http, select):
+    super().__init__(data, app, is_from_http, select)
+    self.values = data['data']['values']
+
 class ModalInteraction(Interaction):
   def __init__(self, data, app, is_from_http, modal):
     super().__init__(data, app, is_from_http)

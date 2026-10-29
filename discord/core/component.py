@@ -4,8 +4,8 @@ import logging
 from .. import MISSING
 from .modal import Modal
 from .cog import Cog, CogMixin
-from ..ui import BaseView, Interactable
-from .interaction import ComponentInteraction, ModalInteraction
+from ..ui import BaseSelect, BaseView, Interactable
+from .interaction import ComponentInteraction, ModalInteraction, SelectInteraction
 
 DEFAULT_TIMEOUT = 180 # if a class is in a Cog default is None (persistent)
 
@@ -127,7 +127,10 @@ class ComponentMixin(CogMixin):
     custom_id = payload['data']['custom_id']
     if (component := self.component_cache.get(custom_id)) is None:
       raise ValueError(f'component not found: {custom_id}')
-    interaction = ComponentInteraction(payload, self, is_from_http, component)
+    if isinstance(component, BaseSelect):
+      interaction = SelectInteraction(payload, self, is_from_http, component)
+    else:
+      interaction = ComponentInteraction(payload, self, is_from_http, component)
     await component(interaction)
     return interaction
 
