@@ -1,4 +1,3 @@
-import os
 import asyncio
 import logging
 from .. import MISSING
@@ -11,11 +10,11 @@ DEFAULT_TIMEOUT = 180 # if a class is in a Cog default is None (persistent)
 
 log = logging.getLogger(__name__)
 
-def describe(component): # Button MyView.on_click() in cogs/test.py:42
+def describe(component): # Button MyView.on_click() in /path/to/cogs/test.py:42
   callback = component.callback
   code = getattr(callback, '__code__', None)
   qualname = getattr(callback, '__qualname__', None)
-  location = f'{os.path.relpath(code.co_filename)}:{code.co_firstlineno}' if code else None
+  location = f'{code.co_filename}:{code.co_firstlineno}' if code else None
   return f'{type(component).__name__} {qualname}() in {location}'
 
 def is_class_in_cog(instance):
@@ -97,11 +96,6 @@ class ComponentMixin(CogMixin):
       if timer := self.component_timers.pop(component.custom_id, None):
         timer.cancel()
       del self.component_cache[component.custom_id]
-
-  def check_persistent(self, interactables, view = None):
-    for component in interactables: # persistent (timeout = None) components must have a custom_id
-      if resolve_timeout(component, view) is None and not component.has_custom_id:
-        raise ValueError(f'{describe(component)} must set a custom_id to be persistent')
 
   def add_modals(self, *modals): # used by send_modal
     for modal in modals:
