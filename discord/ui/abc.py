@@ -39,8 +39,8 @@ class Interactable(Component):
   def bind(self, instance): # instance can be View or Cog
     bound = copy.copy(self)
     if not inspect.ismethod(self.callback):
-      bound.callback = types.MethodType(self.callback, instance)
+      bound.callback = types.MethodType(self.callback, instance) # ty: ignore[invalid-assignment]
     return bound
 
   async def __call__(self, interaction):
-    return await self.callback(interaction)
+    return await self.callback(interaction) # ty: ignore[missing-argument]

@@ -15,7 +15,7 @@ class BaseCommand(Handler):
 class PrefixCommand(BaseCommand):
   def __init__(self, callback = None, name = None):
     super().__init__(callback, name)
-    self.name = self.name.lower()
+    self.name = self.name and self.name.lower()
 
   @cached_property
   def parameters(self):

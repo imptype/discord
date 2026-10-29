@@ -25,10 +25,11 @@ module-root = ''
 
 [dependency-groups]
 dev = [
-  "ruff",
-  "pyright",
+  "ty>=0.0.94",
+  "ruff>=0.17.0",
   "uvicorn>=0.54.0",
-  "psutil>=7.2.2"
+  "psutil>=7.2.2",
+  "pillow>=13.0.0"
 ]
 
 [tool.ruff]

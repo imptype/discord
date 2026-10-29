@@ -36,7 +36,7 @@ class Intents(IntFlag):
     return cls(sum(cls))
 
   def __str__(self):
-    privileged = [flag.name for flag in self & PRIVILEGED if flag.name]
+    privileged = [flag.name for flag in self & PRIVILEGED]
     text = f'{len(privileged)} privileged'
     if privileged:
       text += ': ' + ', '.join(privileged)
