@@ -21,9 +21,9 @@ class PrefixCommand(BaseCommand):
   def parameters(self):
     return list(inspect.signature(self.callback).parameters.values())[1:]
 
-  async def __call__(self, ctx):
-    args, kwargs = parse_arguments(self.parameters, ctx.arguments, self.name)
-    return await self.callback(ctx, *args, **kwargs)
+  async def __call__(self, context):
+    args, kwargs = parse_arguments(self.parameters, context.arguments, self.name)
+    return await self.callback(context, *args, **kwargs)
 
 class InteractionCommand(BaseCommand):
   def __init__(self, callback = None, name = None, type = None):
