@@ -1,9 +1,9 @@
-import os
 import sys
 import asyncio
 import inspect
 import logging
 import importlib
+from pathlib import Path
 from .abc import BaseHandler
 from ..ui import Interactable
 from .command import BaseCommand, CommandMixin
@@ -134,6 +134,12 @@ class CogMixin(CommandMixin):
       await cog_instance.cog_unload()
 
   async def load_extensions(self, *names):
+    caller = sys._getframe(1).f_globals.get('__file__') # the file that called this
+    if caller and (folder := str(Path(caller).resolve().parent)) not in sys.path:
+      sys.path.insert(0, folder) # so 'cogs.modal' resolves next to the caller, like running the file directly
+    await self.import_extensions(*names)
+
+  async def import_extensions(self, *names): # also used by the reloader, which must not touch sys.path
     for name in names:
       if not isinstance(name, str):
         raise ValueError(f'not an extension name: {name!r}')
@@ -153,7 +159,8 @@ class CogMixin(CommandMixin):
         raise
       self.extensions[name] = [cog for cog in self.cogs if cog not in before]
       if self.reload and (path := getattr(module, '__file__', None)):
-        self.extension_files[name] = (path, os.stat(path).st_mtime)
+        path = Path(path)
+        self.extension_files[name] = (path, path.stat().st_mtime)
         if self.reload_task is None:
           self.reload_task = asyncio.create_task(self.watch_extensions())
 
@@ -175,7 +182,7 @@ class CogMixin(CommandMixin):
         if name not in self.extension_files:
           continue
         try:
-          current = os.stat(path).st_mtime
+          current = path.stat().st_mtime
         except OSError:
           continue
         if current == mtime:
@@ -184,7 +191,7 @@ class CogMixin(CommandMixin):
         try:
           if name in self.extensions:
             await self.unload_extensions(name)
-          await self.load_extensions(name)
+          await self.import_extensions(name)
           log.warning(f'extension {name!r} was reloaded!')
         except Exception:
           log.exception(f'failed to reload extension {name!r}')

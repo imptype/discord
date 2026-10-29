@@ -10,7 +10,7 @@ DEFAULT_TIMEOUT = 180 # if a class is in a Cog default is None (persistent)
 
 log = logging.getLogger(__name__)
 
-def describe(component): # Button MyView.on_click() in /path/to/cogs/test.py:42
+def describe(component): # Button MyView.on_click() in cogs/test.py:42
   callback = component.callback
   code = getattr(callback, '__code__', None)
   qualname = getattr(callback, '__qualname__', None)
