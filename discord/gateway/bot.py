@@ -21,7 +21,7 @@ class Bot(AppBase):
     self.intents = intents
     self.prefix = prefix
     self.connection = Connection(self.http, token, intents, self.on_event)
-    self.event_handlers = {}
+    self.event_handlers = {} # {gateway name: {Event: None}}
     self.command_handlers = {}
     self.extra_registrars = {Event: (self.add_events, self.remove_events)}
     self.tasks = set()
@@ -86,15 +86,15 @@ class Bot(AppBase):
       elif member and member.value and not self.intents & member.value:
         names = ' / '.join(flag.name for flag in member.value)
         log.warning(f'event handler {name}() will never run: missing intents, enable one of {names}')
-      self.event_handlers.setdefault(event.gateway_name, set()).add(event)
+      self.event_handlers.setdefault(event.gateway_name, {})[event] = None
 
   def remove_events(self, *events):
     for event in events:
       if not isinstance(event, Event):
         raise ValueError(f'not an event: {event!r}')
     for event in events:
-      handlers = self.event_handlers.get(event.gateway_name, set())
-      handlers.discard(event)
+      handlers = self.event_handlers.get(event.gateway_name, {})
+      handlers.pop(event, None)
       if not handlers:
         self.event_handlers.pop(event.gateway_name, None)
 
