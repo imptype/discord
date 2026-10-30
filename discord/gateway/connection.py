@@ -131,7 +131,7 @@ class Connection:
         log.info(f'heartbeat ack {self.since_beat()}')
         self.acked = True
       case Opcode.RECONNECT | Opcode.INVALID_SESSION:
-        log.warning(f'server sent {Opcode(op).name}, reconnecting')
+        log.warning(f'server sent {Opcode(op).name}, will close and reconnect')
         if op == Opcode.INVALID_SESSION and not payload['d']:
           self.reset()
         await self.ws.close(code = ReconnectCode.UNKNOWN_ERROR)
@@ -141,6 +141,7 @@ class Connection:
           case 'READY':
             self.session_id = payload['d']['session_id']
             self.resume_url = payload['d']['resume_gateway_url']
+            log.info('ready')
           case 'RESUMED':
             log.info('resumed')
         await self.on_event(event, payload['d'])
