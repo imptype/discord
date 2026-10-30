@@ -1,6 +1,7 @@
 import time
 import asyncio
 import inspect
+from typing import cast
 from contextlib import AsyncExitStack, asynccontextmanager
 from ..abc import BaseHandler
 
@@ -21,7 +22,7 @@ class LifespanMixin:
     self.http = http # made by AppBase, entered on startup
     self.stack = AsyncExitStack()
     self.lifespan_handlers = {} # {LifespanHandler: manager, or None if not running}, ordered
-    self.loop: asyncio.AbstractEventLoop # event loop
+    self.loop = cast(asyncio.AbstractEventLoop, None) # event loop
     self.started_at = None # time.time() of app start
 
   def lifespan(self, callback = None): # @app.lifespan syntax
