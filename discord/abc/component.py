@@ -1,9 +1,7 @@
-import copy
 import uuid
-import types
-import inspect
 from typing import Any
 from .. import MISSING
+from .handler import Handler
 
 def clean(data):
   return {key: value for key, value in data.items() if value is not None}
@@ -23,24 +21,11 @@ class Component:
   def to_json(self) -> Any:
     pass
 
-class Interactable(Component):
+class Interactable(Component, Handler): # inherits .callback, bind() and __call__() from Handler
   def __init__(self, *, custom_id = None, disabled = False, timeout = MISSING, callback = None, id = None):
+    super().__init__(callback)
     self.has_custom_id = bool(custom_id) # helps debug if it needs to be persistent
     self.custom_id = custom_id or uuid.uuid4().hex
     self.disabled = disabled
     self.timeout = timeout
-    if callback: # helps avoid overwriting class defined callback method
-      self.callback = callback
     self.id = id
-
-  async def callback(self, interaction):
-    raise NotImplementedError(f'{type(self).__name__} is missing a callback!')
-
-  def bind(self, instance): # instance can be View or Cog
-    bound = copy.copy(self)
-    if not inspect.ismethod(self.callback):
-      bound.callback = types.MethodType(self.callback, instance) # ty: ignore[invalid-assignment]
-    return bound
-
-  async def __call__(self, interaction):
-    return await self.callback(interaction) # ty: ignore[missing-argument]

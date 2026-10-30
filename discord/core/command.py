@@ -37,7 +37,7 @@ class SlashNode:
   def __init__(self, callback = None, name = None, description = None, options = (), level = 1):
     if callback:
       self.callback = callback
-    self.name = name or getattr(callback, '__name__', None) or getattr(self, 'name', None) # 3 for class attr
+    self.name = name or getattr(self, 'name', None) or getattr(callback, '__name__', None)
     self.description = description or self.name
     self.options = options
     self.level = level

@@ -8,8 +8,8 @@ class BaseHandler:
       self.callback = callback
     self.name = (
       name # as init param
-      or getattr(callback, '__name__', None) # as function/method name
       or getattr(self, 'name', None) # as class attribute
+      or getattr(callback, '__name__', None) # as function/method name
     )
 
   def bind(self, cog_instance):

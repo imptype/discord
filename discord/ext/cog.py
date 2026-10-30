@@ -4,7 +4,7 @@ import inspect
 import logging
 import importlib
 from pathlib import Path
-from ..abc import BaseHandler, Interactable
+from ..abc import BaseHandler
 
 log = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ class CogMixin:
       found = {} # {name: handler instance | interactable instance | nested class}
       for base in reversed(cog.__mro__): # read base clases first so subclass overrides / is what u expect
         for name, value in vars(base).items():
-          if isinstance(value, (BaseHandler, Interactable)): # is a @discord.modal, @discord.button, etc
+          if isinstance(value, BaseHandler): # is a @discord.modal, @discord.button, etc
             found[name] = value
           elif (
             isinstance(value, type) # is a class (which is defined in this cog class)

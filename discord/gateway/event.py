@@ -110,8 +110,10 @@ class EventIntents(Enum):
 class Event(Handler):
   def __init__(self, callback = None, name: str | None = None):
     super().__init__(callback, name)
-    if (event_name := self.name) and callback and not name:
-      if not event_name.startswith('on_'): # require function names to start with 'on_'
+    event_name = self.name
+    is_from_function = callback and not name and event_name and event_name == getattr(callback, '__name__', None)
+    if is_from_function:
+      if not event_name.startswith('on_'):
         raise ValueError(f'event function name must start with on_: {event_name}')
       event_name = event_name.removeprefix('on_')
     self.gateway_name = event_name and event_name.upper()
