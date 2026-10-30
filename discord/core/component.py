@@ -1,7 +1,7 @@
 import logging
+from ..ext import Cog
 from .. import MISSING
 from .modal import Modal
-from ..ext import Cog
 from ..abc import Interactable
 from ..ui import BaseSelect, BaseView
 from .interaction import ComponentInteraction, ModalInteraction, SelectInteraction

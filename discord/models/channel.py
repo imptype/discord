@@ -1,5 +1,5 @@
-from .params import send_params
 from ..abc import PartialModel
+from .params import send_params
 
 class PartialChannel(PartialModel):
   def __init__(self, app, channel_id, guild = None):

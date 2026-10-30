@@ -8,8 +8,8 @@ sys.set_lazy_imports('all')
 MISSING = sentinel('MISSING')
 
 from .server import App
-from .ext import Cog, Lifespan, color, colour, lifespan
 from .gateway import Bot, Intents, event
+from .ext import Cog, Lifespan, color, colour, lifespan
 from .abc import Component, Interactable, PartialModel, Snowflake, snowflake_time
 from .models import (
   Channel, Context, Guild, Member, Message, MessageFlags, User, PartialChannel,
