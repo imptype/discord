@@ -48,6 +48,3 @@ ignore = ['I001']
 [tool.ruff.lint.per-file-ignores]
 '__init__.py' = ['F401']
 'discord/__init__.py' = ['E402']
-
-[tool.pyright]
-include = ['discord']
