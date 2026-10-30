@@ -6,7 +6,7 @@ from .. import MISSING
 from .button import Button
 from .layout import ActionRow
 from .select import BaseSelect
-from .abc import Component, Interactable
+from ..abc import Component, Interactable
 
 MAX_BUTTONS_PER_ROW = 5
 

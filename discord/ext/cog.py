@@ -4,8 +4,7 @@ import inspect
 import logging
 import importlib
 from pathlib import Path
-from .abc import BaseHandler
-from ..ui import Interactable
+from ..abc import BaseHandler, Interactable
 
 log = logging.getLogger(__name__)
 

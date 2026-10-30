@@ -1,5 +1,5 @@
 from .enums import ComponentType
-from .abc import Component, clean
+from ..abc import Component, clean
 
 class ContentComponent(Component):
   def __init__(self, *, id = None):

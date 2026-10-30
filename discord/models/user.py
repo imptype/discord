@@ -1,4 +1,4 @@
-from .abc import PartialModel
+from ..abc import PartialModel
 
 class PartialUser(PartialModel):
   async def fetch(self):

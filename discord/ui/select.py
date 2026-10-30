@@ -1,6 +1,6 @@
 from .. import MISSING
 from .enums import ComponentType
-from .abc import Interactable, clean
+from ..abc import Interactable, clean
 
 def format_defaults(kind, ids):
   return [{'id': str(id), 'type': kind} for id in ids] or None

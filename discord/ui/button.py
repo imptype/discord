@@ -1,5 +1,5 @@
 from .. import MISSING
-from .abc import Interactable, clean
+from ..abc import Interactable, clean
 from .enums import ButtonStyle, ComponentType
 
 class Button(Interactable):

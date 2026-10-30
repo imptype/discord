@@ -8,16 +8,17 @@ sys.set_lazy_imports('all')
 MISSING = sentinel('MISSING')
 
 from .server import App
+from .ext import Cog, Lifespan, color, colour, lifespan
 from .gateway import Bot, Intents, event
+from .abc import Component, Interactable, PartialModel, Snowflake, snowflake_time
 from .models import (
   Channel, Context, Guild, Member, Message, MessageFlags, User, PartialChannel,
-  PartialGuild, PartialMember, PartialMessage, PartialUser,
-  PartialModel, Snowflake, snowflake_time
+  PartialGuild, PartialMember, PartialMessage, PartialUser
 )
 from .ui import (
   ActionRow, BaseSelect, BaseView, Button, ButtonStyle, ChannelSelect, ChannelType,
-  Checkbox, CheckboxGroup, Component, ComponentType, Container, ContentComponent, Embed,
-  File, FileComponent, FileUpload, GroupOption, Interactable, Label, LayoutComponent,
+  Checkbox, CheckboxGroup, Container, ContentComponent, ComponentType, Embed,
+  File, FileComponent, FileUpload, GroupOption, Label, LayoutComponent,
   LayoutView, MediaGallery, MediaGalleryItem, MentionableSelect, ModalInput,
   RadioGroup, RoleSelect, Section, Separator, SelectOption, SeparatorSpacing, StringSelect,
   TextDisplay, TextInput, TextInputStyle, Thumbnail, UserSelect, View, button,
@@ -25,11 +26,11 @@ from .ui import (
 )
 from .core import (
   AttachmentOption, AutocompleteInteraction, AutocompleteResponse, BooleanOption, ChannelOption,
-  Choice, Cog, CommandInteraction, CommandResponse, CommandType, ComponentInteraction,
+  Choice, CommandInteraction, CommandResponse, CommandType, ComponentInteraction,
   ComponentResponse, FollowupWebhook, HTTPClient, IntegerOption, Interaction, InteractionCommand,
-  InteractionResponse, InteractionType, Lifespan, MentionableOption, MessageCommand,
+  InteractionResponse, InteractionType, MentionableOption, MessageCommand,
   MessageInteraction, Modal, ModalResult, ModalInteraction, ModalResponse, NumberOption, Option, OptionType,
   PartialWebhook, PrefixCommand, ResponseType, RoleOption, SlashCommand, SlashInteraction,
   StringOption, SubCommand, SyncWebhook, UserCommand, UserInteraction, UserOption, Webhook,
-  enable_logs, lifespan, modal, color, colour, command_namespace as command
+  enable_logs, modal, command_namespace as command
 )

@@ -3,7 +3,7 @@ modal.py - currently holds modal exclusive components.
 """
 
 import uuid
-from .abc import Component, clean
+from ..abc import Component, clean
 from .enums import ComponentType, TextInputStyle
 
 class ModalInput(Component):

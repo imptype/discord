@@ -2,9 +2,9 @@ from datetime import datetime
 from .. import MISSING
 from .user import User
 from .member import Member
-from .abc import PartialModel
 from .enums import MessageFlags
 from .guild import PartialGuild
+from ..abc import PartialModel
 from .params import edit_params
 from .channel import PartialChannel
 

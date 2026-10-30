@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 from .. import MISSING
-from .abc import Handler
+from ..abc import Handler
 from ..ui import ComponentType, Label, TextDisplay
 
 class ModalResult:

@@ -1,5 +1,5 @@
 from datetime import datetime
-from .abc import clean
+from ..abc import clean
 
 class Embed:
   def __init__(self, title = None, description = None, url = None, color = None, timestamp = None):

@@ -2,8 +2,7 @@ import time
 import asyncio
 import inspect
 from contextlib import AsyncExitStack, asynccontextmanager
-from .abc import BaseHandler
-from .http import HTTPClient
+from ..abc import BaseHandler
 
 class Lifespan(BaseHandler): # recognized by Cog
   def __init__(self, callback, name = None):
@@ -17,9 +16,9 @@ def lifespan(callback = None, *, name = None): # @discord.lifespan syntax
   return wrap(callback) if callback else wrap
 
 class LifespanMixin:
-  def __init__(self, registrars, token, application_id):
+  def __init__(self, registrars, http):
     registrars[Lifespan] = (self.add_lifespans, self.remove_lifespans)
-    self.http = HTTPClient(token, application_id)
+    self.http = http # made by AppBase, entered on startup
     self.stack = AsyncExitStack()
     self.lifespan_handlers = {} # {LifespanHandler: manager, or None if not running}, ordered
     self.loop: asyncio.AbstractEventLoop # event loop

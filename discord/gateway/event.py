@@ -5,7 +5,7 @@ events.py - lets you prefix a function name with on_ so MESSAGE_CREATE is on_mes
 from enum import Enum, StrEnum
 from functools import cached_property
 from inspect import Parameter, signature
-from ..core import Handler
+from ..abc import Handler
 from .intents import Intents
 
 class CustomEvent(StrEnum): # not sent by the gateway

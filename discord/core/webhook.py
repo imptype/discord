@@ -2,7 +2,8 @@ from typing import Any, Concatenate
 from collections.abc import Callable, Coroutine
 from .. import MISSING
 from .http import HTTPClient
-from ..models import Message, PartialModel, edit_params, send_params, RESPONSE_MESSAGE_FLAGS
+from ..abc import PartialModel
+from ..models import Message, edit_params, send_params, RESPONSE_MESSAGE_FLAGS
 
 class BaseWebhook(PartialModel):
   def __init__(self, webhook_id, token = None, app = None, http = None):

@@ -3,10 +3,9 @@ import types
 import inspect
 from typing import Any, cast
 from functools import cached_property
-from ..ui import clean
-from .abc import Handler
-from ..models import parse_arguments
 from .enums import CommandType, OptionType
+from ..abc import Handler, clean
+from ..models import parse_arguments
 from .interaction import AutocompleteInteraction, MessageInteraction, SlashInteraction, UserInteraction
 
 class BaseCommand(Handler):

@@ -1,14 +1,9 @@
 from .base import AppBase
-from .api import Route, API
 from .http import HTTPClient
-from .cog import Cog, CogMixin
-from .color import color, colour
 from .factory import ModelFactory
-from .abc import BaseHandler, Handler
 from .log import enable_logs, format_json
 from .modal import Modal, ModalResult, modal
 from .component import ComponentMixin, DEFAULT_TIMEOUT
-from .lifespan import Lifespan, LifespanMixin, lifespan
 from .webhook import FollowupWebhook, PartialWebhook, SyncWebhook, Webhook
 from .enums import CommandType, HTTPStatus, InteractionType, OptionType, ResponseType
 from .response import (

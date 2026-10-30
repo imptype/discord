@@ -1,8 +1,9 @@
 import logging
-from .cog import Cog
 from .. import MISSING
 from .modal import Modal
-from ..ui import BaseSelect, BaseView, Interactable
+from ..ext import Cog
+from ..abc import Interactable
+from ..ui import BaseSelect, BaseView
 from .interaction import ComponentInteraction, ModalInteraction, SelectInteraction
 
 DEFAULT_TIMEOUT = 180 # if a class is in a Cog default is None (persistent)

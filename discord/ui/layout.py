@@ -1,4 +1,4 @@
-from .abc import Component, clean
+from ..abc import Component, clean
 from .enums import ComponentType, SeparatorSpacing
 
 class LayoutComponent(Component):
