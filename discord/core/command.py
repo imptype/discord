@@ -175,8 +175,8 @@ class CommandProxy:
     return wrapper
 
 class CommandMixin:
-  def __init__(self):
-    super().__init__()
+  def __init__(self, registrars):
+    registrars[BaseCommand] = (self.add_commands, self.remove_commands)
     self.registry = {} # {(kind, name): InteractionCommand}
     self.set_proxy()
 

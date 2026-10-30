@@ -6,7 +6,6 @@ import importlib
 from pathlib import Path
 from .abc import BaseHandler
 from ..ui import Interactable
-from .command import BaseCommand, CommandMixin
 
 log = logging.getLogger(__name__)
 
@@ -22,22 +21,18 @@ class Cog:
   async def cog_load(self): ...
   async def cog_unload(self): ...
 
-class CogMixin(CommandMixin):
-  def __init__(self, reload = False):
-    super().__init__()
+class CogMixin:
+  def __init__(self, registrars, reload = False):
+    self.registrars = registrars
     self.reload = reload
     self.cogs = {} # loaded cogs {Cog: instance}
     self.cog_handlers = {} # {Cog: [copy.copy of handlers]}
-    self.extra_registrars = {} # discord.Bot sets this
     self.extensions = {} # loaded extensions {name: [Cog]}
     self.extension_files = {} # {name: (path, mtime)} used when reload is on
     self.reload_task = None
 
-  def registrars(self): # {kind: (add, remove)}
-    return {BaseCommand: (self.add_commands, self.remove_commands)} | self.extra_registrars
-
   async def run_registrars(self, handlers, remove = False): # bool indexes (add, remove)
-    for kind, functions in self.registrars().items():
+    for kind, functions in self.registrars.items():
       result = functions[remove](*[handler for handler in handlers if isinstance(handler, kind)])
       if inspect.isawaitable(result):
         await result
@@ -45,8 +40,7 @@ class CogMixin(CommandMixin):
   async def add_cogs(self, *cogs):
 
     # 1. Find the handlers this app can register (commands, views, modals, Bot can do events too)
-    registrars = self.registrars()
-    kinds = tuple(registrars)
+    kinds = tuple(self.registrars)
 
     # 2. Put each cog into a (Cog class, cog_instance/None) pair, to support Cog and Cog(app) syntax
     pairs = [] # [(Cog class, cog_instance/None)]

@@ -1,9 +1,7 @@
-import asyncio
 import logging
 from .cog import Cog
 from .. import MISSING
 from .modal import Modal
-from .lifespan import LifespanMixin
 from ..ui import BaseSelect, BaseView, Interactable
 from .interaction import ComponentInteraction, ModalInteraction, SelectInteraction
 
@@ -52,20 +50,18 @@ def validate_timeout(component, view = None):
     raise ValueError(f'{describe(component)} must set a custom_id to be persistent')
   return timeout
 
-class ComponentMixin(LifespanMixin):
-  def __init__(self, *args, **kwargs):
-    super().__init__(*args, **kwargs)
+class ComponentMixin:
+  def __init__(self, registrars, loop):
+    registrars.update({
+      Modal: (self.add_modals, self.remove_modals),
+      BaseView: (self.add_views, self.remove_views),
+      Interactable: (self.add_components, self.remove_components)
+    })
     self.component_cache = {}
     self.component_timers = {}
     self.modal_cache = {}
     self.modal_timers = {}
-
-  def registrars(self):
-    return super().registrars() | {
-      Modal: (self.add_modals, self.remove_modals),
-      BaseView: (self.add_views, self.remove_views),
-      Interactable: (self.add_components, self.remove_components)
-    }
+    self.loop = loop
 
   def add_views(self, *views): # also used by send() and edit()
     for view in views:
@@ -104,8 +100,7 @@ class ComponentMixin(LifespanMixin):
         timer.cancel()
       self.modal_cache[modal.custom_id] = modal
       if timeout is not None:
-        loop = asyncio.get_running_loop()
-        self.modal_timers[modal.custom_id] = loop.call_later(timeout, self.remove_modals, modal)
+        self.modal_timers[modal.custom_id] = self.loop.call_later(timeout, self.remove_modals, modal)
 
   def remove_modals(self, *modals):
     for modal in modals:

@@ -23,7 +23,7 @@ class Bot(AppBase):
     self.connection = Connection(self.http, token, intents, self.on_event)
     self.event_handlers = {} # {gateway name: {Event: None}}
     self.command_handlers = {}
-    self.extra_registrars = {Event: (self.add_events, self.remove_events)}
+    self.registrars[Event] = (self.add_events, self.remove_events)
     self.ready_at = None # time.time() of the latest READY
 
   def set_proxy(self):
