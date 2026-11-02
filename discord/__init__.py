@@ -9,8 +9,8 @@ MISSING = sentinel('MISSING')
 
 from .server import App
 from .gateway import Bot, Intents, event
-from .ext import Cog, Lifespan, color, colour, lifespan
 from .abc import Component, Interactable, PartialModel, Snowflake, snowflake_time
+from .ext import Cog, Lifespan, SignalHandler, SignalWaiter, color, colour, lifespan, signal
 from .models import (
   Channel, Context, Guild, Member, Message, MessageFlags, User, PartialChannel,
   PartialGuild, PartialMember, PartialMessage, PartialUser
