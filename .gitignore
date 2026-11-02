@@ -13,3 +13,4 @@ test.py
 NOTES.md
 scripts/*
 !scripts/format.py
+archive/
