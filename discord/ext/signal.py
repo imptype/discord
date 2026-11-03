@@ -27,7 +27,7 @@ Sending:
 
 Terms:
   concurrent = handlers run indepdendently, a yield in the handler can change completion order
-  sequential = handlers run one at a time, a yield in one slows down the whole thing (except the last one in fire_each, where the sender continues at its first yield)
+  sequential = handlers run one at a time, a yield in one slows down the whole thing
   priority = lower number first, None last, handlers and waiters interleave but handler takes priority when same priority
   max_runs = handler automatically removes after hitting that amount of runs, default is None which is unlimited
   once = shortcut for max_runs = 1, raises ValueError if max_runs is also set
