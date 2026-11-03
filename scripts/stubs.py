@@ -374,7 +374,7 @@ def format_args(args): # like ast.unparse, but with spaces around the = of defau
     parts.append(one(args.vararg, False, '*'))
   elif args.kwonlyargs:
     parts.append('*')
-  parts += [one(arg, default is not None) for arg, default in zip(args.kwonlyargs, args.kw_defaults)]
+  parts += [one(arg, default is not None) for arg, default in zip(args.kwonlyargs, args.kw_defaults, strict = True)]
   if args.kwarg:
     parts.append(one(args.kwarg, False, '**'))
   return ', '.join(parts)
@@ -556,7 +556,7 @@ def apply_actions(lines, tree, source_tree, source, actions):
     new = import_lines if follow is not None and not follow.strip() else [*import_lines, '']
     ops.append((position + 0.5, 10 ** 6, 'insert', (position, new)))
 
-  for position, depth, kind, payload in sorted(ops, key = lambda op: (op[0], -op[1]), reverse = True):
+  for _position, _depth, kind, payload in sorted(ops, key = lambda op: (op[0], -op[1]), reverse = True):
     match kind:
       case 'insert':
         after, new = payload
