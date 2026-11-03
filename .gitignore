@@ -11,6 +11,7 @@ temp/
 !example.env
 test.py
 NOTES.md
+archive/
 scripts/*
 !scripts/format.py
-archive/
+!scripts/stubs.py

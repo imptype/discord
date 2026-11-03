@@ -1,0 +1,3 @@
+from typing import Any
+
+async def handler(app, payload, response_ack_future) -> Any: ...
