@@ -1,0 +1,152 @@
+:root {
+	--api-mono: "SFMono-Regular", Menlo, Consolas, Monaco, "Liberation Mono", "Lucida Console", monospace;
+	--py-text: #D4D4D4; --py-kw: #569CD6; --py-cls: #4EC9B0; --py-fn: #DCDCAA;
+	--py-var: #9CDCFE; --py-str: #CE9178; --py-num: #B5CEA8; --py-ctl: #C586C0;
+}
+:root[data-theme='light'] {
+	--py-text: #000000; --py-kw: #0000FF; --py-cls: #267F99; --py-fn: #795E26;
+	--py-var: #001080; --py-str: #A31515; --py-num: #098658; --py-ctl: #AF00DB;
+}
+
+/* class / member signatures */
+.api-sig,
+.api-member > dt {
+	font-family: var(--api-mono);
+	font-size: var(--sl-text-code);
+	line-height: 1.5;
+	background: var(--sl-color-gray-6);
+	border-left: 4px solid var(--sl-color-accent);
+	border-radius: 0 0.25rem 0.25rem 0;
+	padding: 0.35rem 0.75rem;
+	scroll-margin-top: calc(var(--sl-nav-height) + 1rem);
+}
+.api-sig { margin: 0.75rem 0; }
+/* thinner bar on attribute / method blocks */
+.api-member > dt { border-left-width: 2px; }
+.api-sig { border-left-color: var(--py-cls); }
+.api-attr > dt { border-left-color: var(--py-var); }
+.api-method > dt { border-left-color: var(--py-fn); }
+.api-sig, .api-member > dt { color: var(--py-text); font-weight: 400; }
+.py-kw { color: var(--py-kw); }
+.py-ctl { color: var(--py-ctl); }
+.py-cls { color: var(--py-cls); }
+.py-fn { color: var(--py-fn); }
+.py-var { color: var(--py-var); }
+.py-str { color: var(--py-str); }
+.py-num { color: var(--py-num); }
+/* same weight Starlight gives <strong> (browser default `bolder`) */
+.py-name { font-weight: bolder; }
+.api-sig em, .api-member > dt em { font-style: italic; }
+
+/* permalink shown on hover */
+.api-link {
+	margin-left: 0.5rem;
+	color: var(--sl-color-gray-4);
+	text-decoration: none;
+	opacity: 0;
+}
+.api-sig:hover .api-link,
+.api-member > dt:hover .api-link,
+.api-link:focus { opacity: 1; }
+.api-link:hover { color: var(--sl-color-accent-high); }
+
+/* compact parameters */
+.api-fields { margin-top: 0.5rem; }
+/* labels like **Parameters** are <strong>, so they use Starlight's own strong weight */
+.api-fields > p { margin: 0 0 0.15rem; }
+.api-fields ul { margin: 0; padding: 0 0 0 1.25rem; }
+.api-fields li { margin: 0; padding: 0; line-height: 1.5; }
+.api-fields li + li { margin-top: 0.25rem; }
+.api-fields ul ul { list-style: none; padding-left: 1rem; }
+.api-fields ul ul li::marker { content: none; }
+.api-fields .api-type {
+	font-family: var(--api-mono);
+	font-size: var(--sl-text-code);
+	font-style: italic;
+	background: var(--sl-color-gray-6);
+	padding: 0.05rem 0.4rem;
+	border-radius: 0.25rem;
+}
+
+/* attributes | methods summary */
+.api-summary {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0 1.5rem;
+	margin: 0.75rem 0 1.25rem;
+}
+.api-summary > div { margin: 0; align-self: start; }
+.api-summary .label {
+	margin: 0 0 0.25rem;
+	font-weight: bolder;
+	font-size: var(--sl-text-body);
+	color: var(--sl-color-white);
+}
+.api-summary ul { list-style: none; margin: 0; padding: 0; }
+.api-summary li { margin: 0; padding: 0; font-family: var(--api-mono); font-size: var(--sl-text-code); }
+.api-summary li::marker { content: none; }
+.api-summary a {
+	display: block;
+	border-left: 2px solid var(--sl-color-gray-5);
+	padding-left: 0.75rem;
+	color: var(--sl-color-gray-2);
+	text-decoration: none;
+	line-height: 1.6;
+}
+.api-summary a:hover,
+.api-summary a:focus-visible {
+	background: var(--sl-color-gray-6);
+}
+/* hover colour matches the member's colour: attributes blue, methods yellow */
+.api-summary ul:not(.api-cols) a:hover,
+.api-summary ul:not(.api-cols) a:focus-visible {
+	color: var(--py-var);
+	border-left-color: var(--py-var);
+}
+.api-summary ul.api-cols a:hover,
+.api-summary ul.api-cols a:focus-visible {
+	color: var(--py-fn);
+	border-left-color: var(--py-fn);
+}
+.api-summary .kw { color: var(--sl-color-gray-3); font-style: normal; }
+.api-summary a:hover .kw,
+.api-summary a:focus-visible .kw { color: inherit; }
+.api-summary ul.api-cols { display: grid; grid-template-columns: max-content 1fr; }
+.api-summary ul.api-cols li { display: contents; }
+.api-summary ul.api-cols a { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; }
+.api-summary ul.api-cols .kw { text-align: right; padding-right: 0.6rem; }
+@media (max-width: 50rem) {
+	.api-summary { grid-template-columns: 1fr; gap: 0.75rem; }
+}
+
+/* member blocks */
+.api-member { margin: 1rem 0 0; }
+.api-member > dd { margin: 0.35rem 0 0 1.5rem; padding: 0; }
+.api-member > dd > * { margin-top: 0.5rem; }
+.api-member > dd > :first-child { margin-top: 0; }
+.api-member > dd ul { margin: 0.25rem 0; padding-inline-start: 1.25rem; }
+.api-member > dd li { margin: 0.1rem 0; }
+.api-member > dd pre { margin-top: 0.5rem; }
+
+/* example code blocks: Astro <Code> with VS Code Dark+ / Light+ */
+.astro-code {
+	font-family: var(--api-mono);
+	font-size: var(--sl-text-code);
+	line-height: 1.5;
+	padding: 0.75rem 1rem;
+	margin: 0.5rem 0 0;
+	border: 1px solid var(--sl-color-gray-5);
+	border-radius: 0.25rem;
+	background-color: var(--shiki-dark-bg);
+}
+.astro-code, .astro-code span { color: var(--shiki-dark); }
+:root[data-theme='light'] .astro-code { background-color: var(--shiki-light-bg); }
+:root[data-theme='light'] .astro-code,
+:root[data-theme='light'] .astro-code span { color: var(--shiki-light); }
+
+/* inline code and parameter / exception names use the same code font */
+.sl-markdown-content :not(pre) > code { font-family: var(--api-mono); }
+.api-fields li > strong {
+	font-family: var(--api-mono);
+	font-size: var(--sl-text-code);
+}

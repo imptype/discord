@@ -1,0 +1,374 @@
+---
+title: Example API
+description: Showcases how the API would look based on `example.py`.
+sidebar:
+  hidden: true
+---
+
+import { Code } from 'astro:components';
+import '../../../styles/api-reference.css';
+
+## NumberGroup
+
+<div class="api-sig" id="NumberGroup"><span class="py-kw">class</span> <span class="py-cls py-name">NumberGroup</span>(<em><span class="py-var">numbers</span>, <span class="py-var">name</span> = <span class="py-str">"Default"</span></em>)<a class="api-link" href="#NumberGroup" aria-label="Permalink">#</a></div>
+
+<div class="api-summary">
+<div>
+<p class="label">Attributes</p>
+<ul>
+<li><a href="#NumberGroup.numbers">numbers</a></li>
+<li><a href="#NumberGroup.name">name</a></li>
+</ul>
+</div>
+<div>
+<p class="label">Methods</p>
+<ul class="api-cols">
+<li><a href="#NumberGroup.calculate_average"><em class="kw">def</em><span>calculate_average</span></a></li>
+<li><a href="#NumberGroup.divide"><em class="kw">def</em><span>divide</span></a></li>
+<li><a href="#NumberGroup.generate_sequence"><em class="kw">def</em><span>generate_sequence</span></a></li>
+<li><a href="#NumberGroup.calculate_average_async"><em class="kw">async</em><span>calculate_average_async</span></a></li>
+<li><a href="#NumberGroup.from_string"><em class="kw">cls</em><span>from_string</span></a></li>
+</ul>
+</div>
+</div>
+
+Process numbers using common mathematical operations.
+
+This class provides methods to calculate averages, divide numbers, generate sequences, and process numbers asynchronously.
+
+<div class="api-fields">
+
+**Parameters**
+
+- **numbers**: <code class="api-type"><span class="py-cls">list</span>[<span class="py-cls">float</span>]</code>
+  - List of numbers to process.
+- **name**: <code class="api-type"><span class="py-cls">str</span> = <span class="py-str">"Default"</span></code>
+  - Name assigned to the processor.
+
+</div>
+
+<dl class="api-member api-attr">
+<dt id="NumberGroup.numbers">NumberGroup.<span class="py-var py-name">numbers</span>: <em><span class="py-cls">list</span>[<span class="py-cls">float</span>]</em><a class="api-link" href="#NumberGroup.numbers" aria-label="Permalink">#</a></dt>
+<dd>
+
+A list of numbers to process.
+
+</dd>
+</dl>
+
+<dl class="api-member api-attr">
+<dt id="NumberGroup.name">NumberGroup.<span class="py-var py-name">name</span>: <em><span class="py-cls">str</span></em><a class="api-link" href="#NumberGroup.name" aria-label="Permalink">#</a></dt>
+<dd>
+
+The name of the processor.
+
+</dd>
+</dl>
+
+<dl class="api-member api-method">
+<dt id="NumberGroup.calculate_average">NumberGroup.<span class="py-fn py-name">calculate_average</span>() -&gt; <em><span class="py-cls">float</span></em><a class="api-link" href="#NumberGroup.calculate_average" aria-label="Permalink">#</a></dt>
+<dd>
+
+Calculate the average of the stored numbers.
+
+<div class="api-fields">
+
+**Returns**
+
+- <code class="api-type"><span class="py-cls">float</span></code>
+  - The average of all numbers.
+
+</div>
+
+<div class="api-fields">
+
+**Raises**
+
+- **ValueError**
+  - If the numbers list is empty.
+
+</div>
+
+:::caution[Warnings]
+This method raises an exception rather than returning `None` when no numbers are available.
+:::
+
+<div class="api-fields">
+
+**References**
+
+- [https://docs.python.org/3/library/functions.html#sum](https://docs.python.org/3/library/functions.html#sum)
+
+</div>
+
+<div class="api-fields">
+
+**Examples**
+
+<Code
+	code={`>>> processor = NumberGroup([10, 20, 30])
+>>> processor.calculate_average()
+20.0`}
+	lang="python"
+	themes={{ light: 'light-plus', dark: 'dark-plus' }}
+	defaultColor={false}
+/>
+
+</div>
+
+</dd>
+</dl>
+
+<dl class="api-member api-method">
+<dt id="NumberGroup.divide">NumberGroup.<span class="py-fn py-name">divide</span>(<em><span class="py-var">a</span>, <span class="py-var">b</span> = <span class="py-num">1.0</span></em>) -&gt; <em><span class="py-cls">float</span></em><a class="api-link" href="#NumberGroup.divide" aria-label="Permalink">#</a></dt>
+<dd>
+
+Divide two numbers.
+
+<div class="api-fields">
+
+**Parameters**
+
+- **a**: <code class="api-type"><span class="py-cls">float</span></code>
+  - The numerator.
+- **b**: <code class="api-type"><span class="py-cls">float</span> = <span class="py-num">1.0</span></code>
+  - The denominator.
+
+</div>
+
+<div class="api-fields">
+
+**Returns**
+
+- <code class="api-type"><span class="py-cls">float</span></code>
+  - The result of the division.
+
+</div>
+
+<div class="api-fields">
+
+**Raises**
+
+- **ZeroDivisionError**
+  - If the denominator is zero.
+
+</div>
+
+:::caution[Warnings]
+A zero denominator will cause a `ZeroDivisionError`.
+:::
+
+:::note[Notes]
+The result is returned as a floating-point number.
+:::
+
+<div class="api-fields">
+
+**References**
+
+- [https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex](https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex)
+
+</div>
+
+<div class="api-fields">
+
+**Examples**
+
+<Code
+	code={`>>> processor = NumberGroup([1, 2])
+>>> processor.divide(10, 2)
+5.0
+>>> processor.divide(10)
+10.0`}
+	lang="python"
+	themes={{ light: 'light-plus', dark: 'dark-plus' }}
+	defaultColor={false}
+/>
+
+</div>
+
+</dd>
+</dl>
+
+<dl class="api-member api-method">
+<dt id="NumberGroup.generate_sequence">NumberGroup.<span class="py-fn py-name">generate_sequence</span>(<em><span class="py-var">count</span> = <span class="py-num">5</span></em>)<a class="api-link" href="#NumberGroup.generate_sequence" aria-label="Permalink">#</a></dt>
+<dd>
+
+Generate a sequence of integers.
+
+<div class="api-fields">
+
+**Parameters**
+
+- **count**: <code class="api-type"><span class="py-cls">int</span> = <span class="py-num">5</span></code>
+  - Number of integers to generate.
+
+</div>
+
+<div class="api-fields">
+
+**Yields**
+
+- <code class="api-type"><span class="py-cls">int</span></code>
+  - The next integer in the sequence.
+
+</div>
+
+<div class="api-fields">
+
+**Raises**
+
+- **ValueError**
+  - If count is negative.
+
+</div>
+
+:::caution[Warnings]
+Large values of `count` may produce long-running iterations.
+:::
+
+<div class="api-fields">
+
+**References**
+
+- [https://docs.python.org/3/library/functions.html#func-range](https://docs.python.org/3/library/functions.html#func-range)
+
+</div>
+
+<div class="api-fields">
+
+**Examples**
+
+<Code
+	code={`>>> processor = NumberGroup([])
+>>> list(processor.generate_sequence(3))
+[0, 1, 2]`}
+	lang="python"
+	themes={{ light: 'light-plus', dark: 'dark-plus' }}
+	defaultColor={false}
+/>
+
+</div>
+
+</dd>
+</dl>
+
+<dl class="api-member api-method">
+<dt id="NumberGroup.calculate_average_async"><span class="py-ctl">await</span> NumberGroup.<span class="py-fn py-name">calculate_average_async</span>() -&gt; <em><span class="py-cls">float</span></em><a class="api-link" href="#NumberGroup.calculate_average_async" aria-label="Permalink">#</a></dt>
+<dd>
+
+Calculate the average asynchronously.
+
+<div class="api-fields">
+
+**Returns**
+
+- <code class="api-type"><span class="py-cls">float</span></code>
+  - The average of all stored numbers.
+
+</div>
+
+<div class="api-fields">
+
+**Raises**
+
+- **ValueError**
+  - If the numbers list is empty.
+
+</div>
+
+:::caution[Warnings]
+This method does not perform asynchronous I/O or yield control to other tasks because its current implementation is synchronous internally.
+:::
+
+<div class="api-fields">
+
+**References**
+
+- [https://docs.python.org/3/library/asyncio.html](https://docs.python.org/3/library/asyncio.html)
+
+</div>
+
+<div class="api-fields">
+
+**Examples**
+
+<Code
+	code={`>>> processor = NumberGroup([10, 20, 30])
+>>> await processor.calculate_average_async()
+20.0`}
+	lang="python"
+	themes={{ light: 'light-plus', dark: 'dark-plus' }}
+	defaultColor={false}
+/>
+
+</div>
+
+</dd>
+</dl>
+
+<dl class="api-member api-method">
+<dt id="NumberGroup.from_string"><span class="py-kw">classmethod</span> NumberGroup.<span class="py-fn py-name">from_string</span>(<em><span class="py-var">values</span>, <span class="py-var">name</span> = <span class="py-str">"Parsed"</span></em>) -&gt; <em><span class="py-cls">NumberGroup</span></em><a class="api-link" href="#NumberGroup.from_string" aria-label="Permalink">#</a></dt>
+<dd>
+
+Create a NumberGroup from a comma-separated string.
+
+<div class="api-fields">
+
+**Parameters**
+
+- **values**: <code class="api-type"><span class="py-cls">str</span></code>
+  - Comma-separated numeric values.
+- **name**: <code class="api-type"><span class="py-cls">str</span> = <span class="py-str">"Parsed"</span></code>
+  - Name assigned to the processor.
+
+</div>
+
+<div class="api-fields">
+
+**Returns**
+
+- <code class="api-type"><span class="py-cls">NumberGroup</span></code>
+  - A new NumberGroup instance.
+
+</div>
+
+<div class="api-fields">
+
+**Raises**
+
+- **ValueError**
+  - If any value cannot be converted to a float.
+
+</div>
+
+:::caution[Warnings]
+Empty values or malformed numeric strings will cause conversion to fail.
+:::
+
+<div class="api-fields">
+
+**References**
+
+- [https://docs.python.org/3/library/stdtypes.html#str.split](https://docs.python.org/3/library/stdtypes.html#str.split)
+- [https://docs.python.org/3/library/functions.html#float](https://docs.python.org/3/library/functions.html#float)
+
+</div>
+
+<div class="api-fields">
+
+**Examples**
+
+<Code
+	code={`>>> processor = NumberGroup.from_string("10,20,30")
+>>> processor.numbers
+[10.0, 20.0, 30.0]`}
+	lang="python"
+	themes={{ light: 'light-plus', dark: 'dark-plus' }}
+	defaultColor={false}
+/>
+
+</div>
+
+</dd>
+</dl>

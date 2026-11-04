@@ -7,16 +7,20 @@ import starlight from '@astrojs/starlight';
 export default defineConfig({
 	site: 'https://imptype.github.io',
 	base: '/discord',
+	markdown: { smartypants: false }, // disables unicode quote chars
 	integrations: [
 		starlight({
 			title: 'My Docs',
-			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/imptype/discord' }],
+			components: {
+				SocialIcons: './src/components/SocialIcons.astro', // for github top right tag, stars, forks
+      	ThemeSelect: './src/components/ThemeSelect.astro', // for toggle day/night top right
+			},
 			sidebar: [
 				{
-					label: 'Guides',
+					label: 'Introduction',
 					items: [
 						// Each item here is one entry in the navigation menu.
-						{ label: 'Example Guide', slug: 'guides/example' },
+						{ label: 'Tutorial', slug: 'guides/tutorial' },
 					],
 				},
 				{
