@@ -5,6 +5,7 @@ dist/
 .ruff_cache/
 .git/
 temp/
+.vscode/
 
 # Hide personal stuff
 .env

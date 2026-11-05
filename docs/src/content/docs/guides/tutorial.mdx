@@ -1,0 +1,190 @@
+---
+title: Tutorial
+description: A quick tutorial.
+---
+
+import { Steps, Tabs, TabItem, FileTree } from '@astrojs/starlight/components';
+
+### Tutorial
+
+To get started with **Discord bot development**, follow these steps:  
+
+<Steps>
+1. First install [VSCode](https://code.visualstudio.com). This is a code editor to type your code in, and it has a built-in terminal where you can run commands to start and stop your bot (which will be used later).
+
+2. Make a folder for your project, for example `C:/Users/imp/Documents/Projects/TestBot`.
+
+3. Open that folder in VSCode.
+
+4. Create a file called `main.py` and paste this code in it, then `CTRL + S` to save the changed file:
+    ```py
+    import os
+    import discord
+
+    intents = discord.Intents.default()
+    intents.MESSAGE_CONTENT = True
+    bot = discord.Bot(token = os.environ['TOKEN'], intents = intents) 
+
+    @bot.command
+    async def ping(context):
+      await context.send('pong!')
+
+    bot.run()
+    ```
+
+5. Go to [Discord's Developer Portal](https://discord.com/developers/home), login, and click `+` to create a bot.  
+    Then do these things in your app's dashboard:  
+    - In the **Installation tab**, change **Install Link** from `Discord Provided Link` to `None`.
+    - In the **Bot tab**, uncheck **Public Bot**. The above step is required to do this.  
+      *(These first two steps makes your bot uninvitable by others.)*
+    - In the **Bot tab**, enable **Message Content Intent**.  
+      *(This lets your bot see message content, used for the gateway message `!ping` command)*
+    - In the **OAuth2 tab**, under **OAuth2 URL Generator**, tick "bot" then scroll down and copy the URL, paste it in a Discord chat and click on it to invite your bot to your Discord server.  
+      *(Make sure your server has less than 10,000 members in it so privileged intents can work)*
+    - Go back to the **Bot tab**, under **Token** click the **Reset Token** button then copy your token.  
+    :::caution
+    Your bot's **Token** is a secret. Do not share it and if you accidentally leak it then reset it again. If someone gets your token, they can send messages or do actions as your bot.
+    :::
+
+6. Create a file called `.env` and paste this in it, replace `REPLACEME` with your copied token:
+    ```ini
+    TOKEN=REPLACEME
+    ```
+
+7. Install these VSCode extensions:
+    - Python (`ms-python.python`) - for the load .env file option.
+    - Python Environments (`ms-python.vscode-python-envs`) - to enable venv automatically.
+    - ty (`astral-sh.ty`) - Optional, for useful type checking.
+    - Discord Presence (`icrawl.discord-vscode`) - Optional, for presence.
+
+8. Create a file called `.vscode/settings.json` and paste this in it:
+    ```json
+    {
+      "python.terminal.useEnvFile": true, // Loads .env variables into terminal
+      "python.experiments.enabled": false, // Opts-out of Microsoft's experiments
+      "python.languageServer": "None", // Disables Pylance (ty is more performant)
+      "editor.tabSize": 2, // Use 2 space indents
+      "files.eol": "\n", // Uses LF newline char
+      "files.insertFinalNewline": true // ensures files end with \n
+    }
+    ```
+
+9. Kill your stale terminal and open a new one. This is so your .env variable will load.  
+    You can confirm if it has loaded by running echo in VSCode's terminal.
+    <Tabs syncKey="os">
+      <TabItem label="Windows">
+        ```sh
+        echo $env:TOKEN
+        ```
+      </TabItem>
+      <TabItem label="Linux">
+        ```sh
+        echo $TOKEN
+        ```
+      </TabItem>
+      <TabItem label="macOS">
+        ```sh
+        echo $TOKEN
+        ```
+      </TabItem>
+    </Tabs>
+
+10. Install the `uv` package manager for Python, run this in VSCode's terminal:
+    <Tabs syncKey="os">
+      <TabItem label="Windows">
+        ```sh
+        winget install --id=astral-sh.uv -e
+        ```
+      </TabItem>
+      <TabItem label="Linux">
+        ```sh
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        ```
+      </TabItem>
+      <TabItem label="macOS">
+        ```sh
+        brew install uv
+        ```
+      </TabItem>
+    </Tabs>
+
+11. Next run these 2 commands in VSCode's terminal:
+    ```sh
+    uv init --python 3.15 --no-pin-python # creates pyproject.toml of python 3.15+
+    uv add idiscord # installs this library, which also creates .venv/ and uv.lock
+    ```
+
+12. Activate the venv for the first time, run this in VSCode's terminal:
+    <Tabs syncKey="os">
+      <TabItem label="Windows">
+        ```sh
+        .venv\Scripts\activate
+        ```
+      </TabItem>
+      <TabItem label="Linux">
+        ```sh
+        source .venv/bin/activate
+        ```
+      </TabItem>
+      <TabItem label="macOS">
+        ```sh
+        source .venv/bin/activate
+        ```
+      </TabItem>
+    </Tabs>
+
+    After this, new terminals will automatically activate venv. (*You can deactivate with `deactivate`*.)
+
+13. Run `python main.py` in VSCode's terminal to run your bot. `CTRL + C` to stop.
+</Steps>
+
+Your bot should now be online and when you say `!ping` the bot says `pong` back! 
+
+Double check your file structure looks like this:
+<FileTree>
+- TestBot/
+  - .venv/ created by `uv add` (step 11)
+  - .vscode/
+    - settings.json created by you (step 8)
+  - .env created by you (step 6)
+  - main.py created by you (step 4)
+  - pyproject.toml created by `uv init` (step 11)
+  - uv.lock created by `uv add` (step 11)
+  - README.md created by `uv init` (step 11)
+</FileTree>
+
+### What's next?
+
+Your development environment is completely set up. Now you can:
+- Use VSCode to write code to implement new bot features and commands.
+- See the [Examples Folder][1] on GitHub for demos of buttons, slash commands and etc.
+- See the [API Reference][2] to `CTRL+F` for what's possible on what model and etc.
+- See the [Discord API Docs][3] themselves to see what's actually possible on Discord.
+- Consider setting up a GitHub repository for version control & deployment later.
+
+### Faq
+
+**What are intents?**  
+Intents lets you control the events you receieve over websocket (gateway). The `Intents.default()` constructor makes you receive them all except the 3 privileged ones. See [intents.py][4] for a list. 
+
+**What are <u>privileged</u> intents?**  
+Due to privacy laws, Discord has made 3 intents "privileged". You can still use them if your bot has a reach of under 10,000 members, but after that milestone, you'll have to fill out a form which includes preparing a Privacy Policy and making sure your public commands use **/slash** commands instead.
+
+**What is the point of an `.env` file?**  
+Sure you could paste your bot token in `main.py` as a string, but if you want to copy paste your code for someone else to review, you might accidentally leak it! Or that it becomes tedious to redact each time! You may also want to easily switch between secrets, for example using different bot tokens for prod vs dev versions, and it doesn't help when it's hard-coded in the source. Deployment platforms also tend to have a dedicated section for environment variables (secrets) so you can use that too.
+
+**What is `.venv/`?**  
+When you install a library, its files are downloaded into the `.venv` folder. You can inspect (or even edit) them there to debug a library. Without a venv, they are downloaded globally, in a far away Python `site-packages` folder, which makes them usable by all your projects by default but it can also introduce package version dependency conflicts.
+
+**What is `uv.lock`?**  
+It pins the exact dependency versions `uv` installed. It's automatic, you don't need to touch it.
+
+:::note
+This library is still in development. Expect some unfinished features.
+:::
+
+{/* References */}
+[1]: https://github.com/imptype/discord/tree/main/examples
+[2]: ../../reference/api/
+[3]: https://docs.discord.com/developers/reference
+[4]: https://github.com/imptype/discord/blob/main/discord/gateway/intents.py
