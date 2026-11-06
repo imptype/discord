@@ -1,0 +1,145 @@
+---
+import Default from '@astrojs/starlight/components/TableOfContents.astro';
+
+const { id, toc } = Astro.locals.starlightRoute;
+
+// Only the test/ pages get the dynamic TOC for now; everything else uses Starlight's default.
+// If a page has no TOC (toc is undefined), the default component renders nothing, like Starlight.
+const dynamic = !!toc && id.startsWith('test/');
+
+type Item = { slug: string; text: string; depth: number; children: Item[] };
+const flat: Item[] = [];
+const walk = (items: Item[] = []) => {
+	for (const i of items) {
+		flat.push(i);
+		walk(i.children);
+	}
+};
+walk(toc?.items as Item[] | undefined);
+---
+
+{
+	dynamic ? (
+		<nav class="api-toc" aria-labelledby="starlight__on-this-page">
+			<h2 id="starlight__on-this-page">{Astro.locals.t('tableOfContents.onThisPage')}</h2>
+			<ul>
+				{flat.map((i) => (
+					<li data-group={i.slug} style={`--d:${i.depth - 2}`}>
+						<a href={`#${i.slug}`}>{i.text}</a>
+					</li>
+				))}
+			</ul>
+		</nav>
+	) : (
+		<Default><slot /></Default>
+	)
+}
+
+<script>
+	const nav = document.querySelector<HTMLElement>('nav.api-toc');
+	const list = nav?.querySelector('ul');
+
+	if (nav && list) {
+		const idOf = (a: HTMLAnchorElement) => decodeURIComponent(a.hash.slice(1));
+
+		// 1. Inject a (hidden) entry for every member, right after its parent heading.
+		const byId = new Map<string, HTMLLIElement>();
+		list.querySelectorAll<HTMLLIElement>('li').forEach((li) => {
+			byId.set(li.dataset.group!, li);
+		});
+
+		const found = document.querySelectorAll<HTMLElement>(
+			'.sl-markdown-content :is(h2, h3)[id], .api-member > dt[id]',
+		);
+		let last: HTMLLIElement | undefined;
+		let parent = '';
+		for (const el of found) {
+			// tagName check (not el.matches) so TS doesn't narrow `el` to never in the else branch
+			const isMember = el.tagName === 'DT';
+			if (isMember) {
+				if (!last) continue;
+				const li = document.createElement('li');
+				li.className = 'sub';
+				li.hidden = true;
+				li.dataset.parent = parent;
+				li.style.setProperty('--d', '1');
+				const a = document.createElement('a');
+				a.href = `#${el.id}`;
+				a.textContent = el.id; // e.g. NumberGroup.divide
+				li.append(a);
+				last.after(li);
+				last = li;
+			} else if (byId.has(el.id)) {
+				last = byId.get(el.id);
+				parent = el.id;
+			}
+		}
+
+		// 2. Scroll-spy: highlight current entry, only expand the current group.
+		// Same threshold Starlight uses: header height + 2rem, measured live.
+		const getOffset = () => (document.querySelector('header')?.getBoundingClientRect().height ?? 0) + 32;
+		const targets = [...list.querySelectorAll<HTMLAnchorElement>('a')].map((a) => ({
+			a,
+			li: a.parentElement as HTMLLIElement,
+			el: document.getElementById(idOf(a)),
+		}));
+
+		const update = () => {
+			let cur = targets[0];
+			const atBottom = innerHeight + scrollY >= document.documentElement.scrollHeight - 2;
+			if (atBottom) {
+				cur = targets.findLast((t) => t.el) ?? cur;
+			} else {
+				const offset = getOffset();
+				for (const t of targets) {
+					if (!t.el) continue;
+					if (t.el.getBoundingClientRect().top <= offset) cur = t;
+					else break;
+				}
+			}
+			const group = cur.li.dataset.parent ?? cur.li.dataset.group;
+			for (const t of targets) {
+				if (t.li.classList.contains('sub')) t.li.hidden = t.li.dataset.parent !== group;
+				if (t === cur) t.a.setAttribute('aria-current', 'true');
+				else t.a.removeAttribute('aria-current');
+			}
+		};
+
+		let ticking = false;
+		const onScroll = () => {
+			if (ticking) return;
+			ticking = true;
+			requestAnimationFrame(() => {
+				ticking = false;
+				update();
+			});
+		};
+		addEventListener('scroll', onScroll, { passive: true });
+		addEventListener('resize', onScroll);
+		update();
+	}
+</script>
+
+<style is:global>
+	/* Matches Starlight's TableOfContentsList. Font size, link colour, hover colour and the
+	   h2 heading style are inherited from Starlight's .right-sidebar-panel rules. */
+	.api-toc ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.api-toc li[hidden] {
+		display: none;
+	}
+	.api-toc a {
+		--pad-inline: 0.5rem;
+		display: block;
+		border-radius: 0.25rem;
+		padding-block: 0.25rem;
+		padding-inline: calc(1rem * var(--d, 0) + var(--pad-inline)) var(--pad-inline);
+		line-height: 1.25;
+	}
+	.api-toc a[aria-current='true'] {
+		color: var(--sl-color-text-accent);
+	}
+</style>
