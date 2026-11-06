@@ -1,10 +1,10 @@
 <script>
 	const CONFIG = {
 		color: 'rgba(255, 224, 120, 0.2)',
-		blockPulse: 1000, // background pulses instantly, fade out time
-		fadeIn: 100, // text fade in time
-		hold: 500, // text hold time
-		fadeOut: 400, // text fade out time
+		blockPulse: 1000,
+		fadeIn: 100,
+		hold: 500,
+		fadeOut: 400,
 		message: 'Copied permalink!',
 	};
 
@@ -26,18 +26,6 @@
 
 	document.addEventListener('click', (e) => {
 		const target = e.target as Element;
-
-		const link = target.closest<HTMLAnchorElement>('a[href*="#"]:not(.sl-anchor-link)');
-		if (link && e.button === 0 && !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)) {
-			const url = new URL(link.href);
-			const el = url.pathname === location.pathname && document.getElementById(decodeURIComponent(url.hash.slice(1)));
-			if (el) {
-				e.preventDefault();
-				history.pushState(null, '', url.hash);
-				el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-				return;
-			}
-		}
 
 		if (window.getSelection()?.toString()) return;
 

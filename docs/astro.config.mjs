@@ -15,6 +15,7 @@ export default defineConfig({
 				SocialIcons: './src/components/SocialIcons.astro', // for github top right tag, stars, forks
 				ThemeSelect: './src/components/ThemeSelect.astro', // for toggle day/night top right
 			},
+      customCss: ['./src/styles/smooth-scroll.css'],
 			sidebar: [
 				{
 					label: 'Guides',

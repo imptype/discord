@@ -18,7 +18,6 @@
 	border-left: 4px solid var(--sl-color-accent);
 	border-radius: 0 0.25rem 0.25rem 0;
 	padding: 0.35rem 0.75rem;
-	scroll-margin-top: calc(var(--sl-nav-height) + 1rem);
 }
 .api-sig { margin: 0.75rem 0; }
 /* thinner bar on attribute / method blocks */
