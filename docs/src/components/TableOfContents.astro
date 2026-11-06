@@ -3,9 +3,10 @@ import Default from '@astrojs/starlight/components/TableOfContents.astro';
 
 const { id, toc } = Astro.locals.starlightRoute;
 
-// Only the test/ pages get the dynamic TOC for now; everything else uses Starlight's default.
+// These pages get the dynamic TOC; everything else uses Starlight's default.
 // If a page has no TOC (toc is undefined), the default component renders nothing, like Starlight.
-const dynamic = !!toc && id.startsWith('test/');
+const dynamicPages = ['test/', 'reference/api'];
+const dynamic = !!toc && dynamicPages.some((p) => id.startsWith(p));
 
 type Item = { slug: string; text: string; depth: number; children: Item[] };
 const flat: Item[] = [];
@@ -24,7 +25,7 @@ walk(toc?.items as Item[] | undefined);
 			<h2 id="starlight__on-this-page">{Astro.locals.t('tableOfContents.onThisPage')}</h2>
 			<ul>
 				{flat.map((i) => (
-					<li data-group={i.slug} style={`--d:${i.depth - 2}`}>
+					<li data-group={i.slug} data-depth={i.depth - 2} style={`--d:${i.depth - 2}`}>
 						<a href={`#${i.slug}`}>{i.text}</a>
 					</li>
 				))}
@@ -36,13 +37,18 @@ walk(toc?.items as Item[] | undefined);
 }
 
 <script>
-	const nav = document.querySelector<HTMLElement>('nav.api-toc');
-	const list = nav?.querySelector('ul');
+	// Expand / collapse animation length. Also exported to CSS as --toc-ms.
+	const DURATION = 250;
 
-	if (nav && list) {
+	const init = (nav: HTMLElement) => {
+		const list = nav.querySelector('ul');
+		if (!list) return;
+		nav.style.setProperty('--toc-ms', `${DURATION}ms`);
+
 		const idOf = (a: HTMLAnchorElement) => decodeURIComponent(a.hash.slice(1));
+		const headerHeight = () => document.querySelector('header')?.getBoundingClientRect().height ?? 0;
 
-		// 1. Inject a (hidden) entry for every member, right after its parent heading.
+		// 1. Inject an (initially closed) entry for every member, right after its parent heading.
 		const byId = new Map<string, HTMLLIElement>();
 		list.querySelectorAll<HTMLLIElement>('li').forEach((li) => {
 			byId.set(li.dataset.group!, li);
@@ -51,39 +57,100 @@ walk(toc?.items as Item[] | undefined);
 		const found = document.querySelectorAll<HTMLElement>(
 			'.sl-markdown-content :is(h2, h3)[id], .api-member > dt[id]',
 		);
-		let last: HTMLLIElement | undefined;
+		// All members of one class go into ONE collapsible block placed right after the class heading,
+		// so the whole group unrolls like an accordion instead of every item animating on its own.
+		const groups = new Map<string, HTMLLIElement>();
+		let heading: HTMLLIElement | undefined;
+		let groupList: HTMLUListElement | undefined;
 		let parent = '';
+		let depth = 0;
 		for (const el of found) {
 			// tagName check (not el.matches) so TS doesn't narrow `el` to never in the else branch
 			const isMember = el.tagName === 'DT';
 			if (isMember) {
-				if (!last) continue;
+				if (!heading) continue;
+				if (!groupList) {
+					const group = document.createElement('li');
+					group.className = 'sub-group';
+					const clip = document.createElement('div'); // clipped to 0 height when closed
+					groupList = document.createElement('ul');
+					clip.append(groupList);
+					group.append(clip);
+					heading.after(group);
+					groups.set(parent, group);
+				}
 				const li = document.createElement('li');
 				li.className = 'sub';
-				li.hidden = true;
 				li.dataset.parent = parent;
-				li.style.setProperty('--d', '1');
+				// One level below the class heading, whatever level the class is at.
+				li.style.setProperty('--d', String(depth + 1));
 				const a = document.createElement('a');
 				a.href = `#${el.id}`;
 				a.textContent = el.id; // e.g. NumberGroup.divide
 				li.append(a);
-				last.after(li);
-				last = li;
+				groupList.append(li);
 			} else if (byId.has(el.id)) {
-				last = byId.get(el.id);
+				heading = byId.get(el.id);
+				groupList = undefined;
 				parent = el.id;
+				depth = Number(heading!.dataset.depth) || 0;
 			}
 		}
 
-		// 2. Scroll-spy: highlight current entry, only expand the current group.
+		// 2. Keep the current entry visible inside the sidebar's own scrollbar.
+		const findScroller = () => {
+			for (let p = nav.parentElement; p && p !== document.body; p = p.parentElement) {
+				const o = getComputedStyle(p).overflowY;
+				if (o === 'auto' || o === 'scroll' || o === 'overlay') return p;
+			}
+			return null;
+		};
+		const scroller = findScroller();
+
+		const reveal = (a: HTMLElement) => {
+			if (!scroller) return;
+			const s = scroller.getBoundingClientRect();
+			const r = a.getBoundingClientRect();
+			if (!r.height) return; // not rendered (e.g. the hidden mobile copy)
+			// The visible area starts at whichever is lower: the scroller's top or the header's bottom.
+			// (Using max() means we never count the header twice, whatever Starlight's layout is.)
+			const headerBottom = document.querySelector('header')?.getBoundingClientRect().bottom ?? 0;
+			const top = Math.max(s.top, headerBottom) + 8;
+			const bottom = Math.min(s.bottom, innerHeight) - 16;
+			let next = scroller.scrollTop;
+			if (r.top < top) next -= top - r.top;
+			else if (r.bottom > bottom) next += r.bottom - bottom;
+			// If the entry would still be visible with the sidebar scrolled fully up, do that,
+			// so the "On this page" heading comes back into view instead of staying cropped.
+			if (r.bottom + scroller.scrollTop <= bottom) next = 0;
+			scroller.scrollTop = next;
+		};
+
+		// While groups expand/collapse the entry moves every frame, so keep it in view for the whole animation.
+		let raf = 0;
+		const follow = (a: HTMLElement) => {
+			cancelAnimationFrame(raf);
+			const end = performance.now() + DURATION + 50;
+			const step = () => {
+				reveal(a);
+				if (performance.now() < end) raf = requestAnimationFrame(step);
+			};
+			step();
+		};
+		// If the user grabs the sidebar themselves, stop fighting them.
+		for (const type of ['wheel', 'touchstart', 'pointerdown'])
+			scroller?.addEventListener(type, () => cancelAnimationFrame(raf), { passive: true });
+
+		// 3. Scroll-spy: highlight current entry, only expand the current group.
 		// Same threshold Starlight uses: header height + 2rem, measured live.
-		const getOffset = () => (document.querySelector('header')?.getBoundingClientRect().height ?? 0) + 32;
+		const getOffset = () => headerHeight() + 32;
 		const targets = [...list.querySelectorAll<HTMLAnchorElement>('a')].map((a) => ({
 			a,
-			li: a.parentElement as HTMLLIElement,
+			li: a.closest('li') as HTMLLIElement,
 			el: document.getElementById(idOf(a)),
 		}));
 
+		let previous: (typeof targets)[number] | undefined;
 		const update = () => {
 			let cur = targets[0];
 			const atBottom = innerHeight + scrollY >= document.documentElement.scrollHeight - 2;
@@ -98,10 +165,14 @@ walk(toc?.items as Item[] | undefined);
 				}
 			}
 			const group = cur.li.dataset.parent ?? cur.li.dataset.group;
+			for (const [name, el] of groups) el.classList.toggle('open', name === group);
 			for (const t of targets) {
-				if (t.li.classList.contains('sub')) t.li.hidden = t.li.dataset.parent !== group;
 				if (t === cur) t.a.setAttribute('aria-current', 'true');
 				else t.a.removeAttribute('aria-current');
+			}
+			if (cur !== previous) {
+				previous = cur;
+				follow(cur.a);
 			}
 		};
 
@@ -117,7 +188,12 @@ walk(toc?.items as Item[] | undefined);
 		addEventListener('scroll', onScroll, { passive: true });
 		addEventListener('resize', onScroll);
 		update();
-	}
+
+		// Enable transitions only after the first state is applied, so the page doesn't load mid-animation.
+		requestAnimationFrame(() => nav.classList.add('ready'));
+	};
+
+	document.querySelectorAll<HTMLElement>('nav.api-toc').forEach(init);
 </script>
 
 <style is:global>
@@ -127,9 +203,6 @@ walk(toc?.items as Item[] | undefined);
 		list-style: none;
 		margin: 0;
 		padding: 0;
-	}
-	.api-toc li[hidden] {
-		display: none;
 	}
 	.api-toc a {
 		--pad-inline: 0.5rem;
@@ -141,5 +214,37 @@ walk(toc?.items as Item[] | undefined);
 	}
 	.api-toc a[aria-current='true'] {
 		color: var(--sl-color-text-accent);
+	}
+
+	/* One collapsible block per class: closed = 0fr row (height 0), open = 1fr row (natural height).
+	   Animating grid-template-rows tweens the height without knowing it. */
+	.api-toc li.sub-group {
+		display: grid;
+		grid-template-rows: 0fr;
+		opacity: 0;
+		visibility: hidden; /* closed links leave the tab order / screen readers */
+	}
+	.api-toc li.sub-group > div {
+		min-height: 0;
+		overflow: hidden;
+	}
+	.api-toc li.sub-group.open {
+		grid-template-rows: 1fr;
+		opacity: 1;
+		visibility: visible;
+	}
+
+	/* Closing: stay visible until the animation ends. Opening: become visible immediately. */
+	.api-toc.ready li.sub-group {
+		transition:
+			grid-template-rows var(--toc-ms) ease,
+			opacity var(--toc-ms) ease,
+			visibility 0s linear var(--toc-ms);
+	}
+	.api-toc.ready li.sub-group.open {
+		transition:
+			grid-template-rows var(--toc-ms) ease,
+			opacity var(--toc-ms) ease,
+			visibility 0s;
 	}
 </style>
