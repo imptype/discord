@@ -1,4 +1,4 @@
-class NumberProcessor:
+class NumberGroup:
   """Process numbers using common mathematical operations.
 
   This class provides methods to calculate averages, divide numbers,
@@ -10,8 +10,8 @@ class NumberProcessor:
   """
   bob = 1
 
-  def __init__(self, numbers: list[float], name: str = "Default"):
-    """Initialize the NumberProcessor.
+  def __init__(self, numbers: list[float], name: str = 'Default'):
+    """Initialize the NumberGroup.
 
     Args:
       numbers: List of numbers to process.
@@ -37,12 +37,12 @@ class NumberProcessor:
       https://docs.python.org/3/library/functions.html#sum
 
     Examples:
-      >>> processor = NumberProcessor([10, 20, 30])
+      >>> processor = NumberGroup([10, 20, 30])
       >>> processor.calculate_average()
       20.0
     """
     if not self.numbers:
-      raise ValueError("Numbers list cannot be empty")
+      raise ValueError('Numbers list cannot be empty')
 
     return sum(self.numbers) / len(self.numbers)
 
@@ -69,7 +69,7 @@ class NumberProcessor:
       https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex
 
     Examples:
-      >>> processor = NumberProcessor([1, 2])
+      >>> processor = NumberGroup([1, 2])
       >>> processor.divide(10, 2)
       5.0
       >>> processor.divide(10)
@@ -96,15 +96,14 @@ class NumberProcessor:
       https://docs.python.org/3/library/functions.html#func-range
 
     Examples:
-      >>> processor = NumberProcessor([])
+      >>> processor = NumberGroup([])
       >>> list(processor.generate_sequence(3))
       [0, 1, 2]
     """
     if count < 0:
-      raise ValueError("Count cannot be negative")
+      raise ValueError('Count cannot be negative')
 
-    for number in range(count):
-      yield number
+    yield from range(count)
 
   async def calculate_average_async(self) -> float:
     """Calculate the average asynchronously.
@@ -124,25 +123,25 @@ class NumberProcessor:
       https://docs.python.org/3/library/asyncio.html
 
     Examples:
-      >>> processor = NumberProcessor([10, 20, 30])
+      >>> processor = NumberGroup([10, 20, 30])
       >>> await processor.calculate_average_async()
       20.0
     """
     if not self.numbers:
-      raise ValueError("Numbers list cannot be empty")
+      raise ValueError('Numbers list cannot be empty')
 
     return sum(self.numbers) / len(self.numbers)
 
   @classmethod
-  def from_string(cls, values: str, name: str = "Parsed") -> "NumberProcessor":
-    """Create a NumberProcessor from a comma-separated string.
+  def from_string(cls, values: str, name: str = 'Parsed') -> NumberGroup:
+    """Create a NumberGroup from a comma-separated string.
 
     Args:
       values: Comma-separated numeric values.
       name: Name assigned to the processor. Defaults to "Parsed".
 
     Returns:
-      A new NumberProcessor instance.
+      A new NumberGroup instance.
 
     Raises:
       ValueError: If any value cannot be converted to a float.
@@ -156,9 +155,9 @@ class NumberProcessor:
       https://docs.python.org/3/library/functions.html#float
 
     Examples:
-      >>> processor = NumberProcessor.from_string("10,20,30")
+      >>> processor = NumberGroup.from_string("10,20,30")
       >>> processor.numbers
       [10.0, 20.0, 30.0]
     """
-    numbers = [float(value.strip()) for value in values.split(",")]
+    numbers = [float(value.strip()) for value in values.split(',')]
     return cls(numbers, name)

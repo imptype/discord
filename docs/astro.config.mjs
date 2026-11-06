@@ -13,7 +13,7 @@ export default defineConfig({
 			title: 'iDiscord',
 			components: {
 				SocialIcons: './src/components/SocialIcons.astro', // for github top right tag, stars, forks
-      	ThemeSelect: './src/components/ThemeSelect.astro', // for toggle day/night top right
+				ThemeSelect: './src/components/ThemeSelect.astro', // for toggle day/night top right
 			},
 			sidebar: [
 				{
@@ -27,11 +27,11 @@ export default defineConfig({
 					label: 'Reference',
 					items: [{ autogenerate: { directory: 'reference' } }],
 				},
-        {
+				{
 					label: 'Test',
 					items: [
-            { label: 'NumberGroup', slug: 'test/example' },
-          ],
+						{ label: 'NumberGroup', slug: 'test/example' },
+					],
 				},
 			],
 		}),

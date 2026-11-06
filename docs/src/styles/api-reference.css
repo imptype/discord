@@ -38,18 +38,6 @@
 .py-name { font-weight: bolder; }
 .api-sig em, .api-member > dt em { font-style: italic; }
 
-/* permalink shown on hover */
-.api-link {
-	margin-left: 0.5rem;
-	color: var(--sl-color-gray-4);
-	text-decoration: none;
-	opacity: 0;
-}
-.api-sig:hover .api-link,
-.api-member > dt:hover .api-link,
-.api-link:focus { opacity: 1; }
-.api-link:hover { color: var(--sl-color-accent-high); }
-
 /* compact parameters */
 .api-fields { margin-top: 0.5rem; }
 /* labels like **Parameters** are <strong>, so they use Starlight's own strong weight */
@@ -89,7 +77,6 @@
 	display: block;
 	border-left: 2px solid var(--sl-color-gray-5);
 	padding-left: 0.75rem;
-	color: var(--sl-color-gray-2);
 	text-decoration: none;
 	line-height: 1.6;
 }
@@ -97,20 +84,23 @@
 .api-summary a:focus-visible {
 	background: var(--sl-color-gray-6);
 }
-/* hover colour matches the member's colour: attributes blue, methods yellow */
+
+/* default colours: attributes blue, methods yellow */
+.api-summary ul:not(.api-cols) a { color: var(--py-var); }
+.api-summary ul.api-cols a { color: var(--py-fn); }
+
+/* left line turns the member's colour on hover */
 .api-summary ul:not(.api-cols) a:hover,
 .api-summary ul:not(.api-cols) a:focus-visible {
-	color: var(--py-var);
 	border-left-color: var(--py-var);
 }
 .api-summary ul.api-cols a:hover,
 .api-summary ul.api-cols a:focus-visible {
-	color: var(--py-fn);
 	border-left-color: var(--py-fn);
 }
-.api-summary .kw { color: var(--sl-color-gray-3); font-style: normal; }
-.api-summary a:hover .kw,
-.api-summary a:focus-visible .kw { color: inherit; }
+
+/* def / async / cls keywords are always the keyword blue */
+.api-summary .kw { color: var(--py-kw); font-style: normal; }
 .api-summary ul.api-cols { display: grid; grid-template-columns: max-content 1fr; }
 .api-summary ul.api-cols li { display: contents; }
 .api-summary ul.api-cols a { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; }

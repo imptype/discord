@@ -1,0 +1,114 @@
+<script>
+	const CONFIG = {
+		color: 'rgba(255, 224, 120, 0.2)',
+		blockPulse: 1000, // background pulses instantly, fade out time
+		fadeIn: 100, // text fade in time
+		hold: 500, // text hold time
+		fadeOut: 400, // text fade out time
+		message: 'Copied permalink!',
+	};
+
+	const css = document.documentElement.style;
+	css.setProperty('--cl-color', CONFIG.color);
+	css.setProperty('--cl-block', `${CONFIG.blockPulse}ms`);
+	css.setProperty('--cl-in', `${CONFIG.fadeIn}ms`);
+	css.setProperty('--cl-out', `${CONFIG.fadeOut}ms`);
+	css.setProperty('--cl-text', JSON.stringify(CONFIG.message));
+
+	let timer: number;
+	let current: HTMLElement | undefined;
+
+	const play = (el: HTMLElement, cls: string) => {
+		el.classList.remove(cls);
+		void el.offsetWidth;
+		el.classList.add(cls);
+	};
+
+	document.addEventListener('click', (e) => {
+		const target = e.target as Element;
+
+		const link = target.closest<HTMLAnchorElement>('a[href*="#"]:not(.sl-anchor-link)');
+		if (link && e.button === 0 && !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)) {
+			const url = new URL(link.href);
+			const el = url.pathname === location.pathname && document.getElementById(decodeURIComponent(url.hash.slice(1)));
+			if (el) {
+				e.preventDefault();
+				history.pushState(null, '', url.hash);
+				el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				return;
+			}
+		}
+
+		if (window.getSelection()?.toString()) return;
+
+		const block = target.closest<HTMLElement>('.api-sig, .api-member > dt');
+		if (!block?.id) return;
+
+		const url = `${location.origin}${location.pathname}#${block.id}`;
+		history.replaceState(null, '', url);
+		navigator.clipboard.writeText(url).then(() => {
+			play(block, 'pulse');
+			current?.classList.remove('copied', 'leaving');
+			current = block;
+			play(block, 'copied');
+			clearTimeout(timer);
+			timer = window.setTimeout(() => {
+				block.classList.add('leaving');
+				timer = window.setTimeout(() => block.classList.remove('copied', 'leaving'), CONFIG.fadeOut);
+			}, CONFIG.fadeIn + CONFIG.hold);
+		});
+	});
+</script>
+
+<style is:global>
+	.api-sig,
+	.api-member > dt {
+		position: relative;
+		overflow: hidden;
+		cursor: pointer;
+	}
+	.api-sig:hover,
+	.api-member > dt:hover {
+		background: var(--sl-color-gray-5);
+	}
+	:where(.api-sig, .api-member > dt)::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: var(--cl-color);
+		opacity: 0;
+	}
+	.pulse::before {
+		animation: pulse var(--cl-block) ease-out;
+	}
+	@keyframes pulse {
+		from {
+			opacity: 1;
+		}
+	}
+
+	:where(.api-sig, .api-member > dt)::after {
+		content: var(--cl-text);
+		position: absolute;
+		right: 0.75rem;
+		top: 50%;
+		transform: translateY(-50%);
+		opacity: 0;
+		font: 600 var(--sl-text-body) var(--sl-font);
+		color: var(--sl-color-gray-3);
+	}
+	.copied::after {
+		opacity: 1;
+		animation: rise var(--cl-in) ease-out;
+	}
+	.copied.leaving::after {
+		opacity: 0;
+		transition: opacity var(--cl-out);
+	}
+	@keyframes rise {
+		from {
+			opacity: 0;
+			transform: translateY(calc(-50% + 0.5rem));
+		}
+	}
+</style>

@@ -6,11 +6,14 @@ description: Showcases how the API would look based on `example.py`.
 ---
 
 import { Code } from 'astro:components';
+import CopyLink from '../../../components/CopyLink.astro';
 import '../../../styles/api-reference.css';
+
+<CopyLink />
 
 ## NumberGroup
 
-<div class="api-sig" id="NumberGroup"><span class="py-kw">class</span> <span class="py-cls py-name">NumberGroup</span>(<em><span class="py-var">numbers</span>, <span class="py-var">name</span> = <span class="py-str">"Default"</span></em>)<a class="api-link" href="#NumberGroup" aria-label="Permalink">#</a></div>
+<div class="api-sig" id="NumberGroup"><span class="py-kw">class</span> <span class="py-cls py-name">NumberGroup</span>(<em><span class="py-var">numbers</span>, <span class="py-var">name</span> = <span class="py-str">"Default"</span></em>)</div>
 
 <div class="api-summary">
 <div>
@@ -48,7 +51,7 @@ This class provides methods to calculate averages, divide numbers, generate sequ
 </div>
 
 <dl class="api-member api-attr">
-<dt id="NumberGroup.numbers">NumberGroup.<span class="py-var py-name">numbers</span>: <em><span class="py-cls">list</span>[<span class="py-cls">float</span>]</em><a class="api-link" href="#NumberGroup.numbers" aria-label="Permalink">#</a></dt>
+<dt id="NumberGroup.numbers">NumberGroup.<span class="py-var py-name">numbers</span>: <em><span class="py-cls">list</span>[<span class="py-cls">float</span>]</em></dt>
 <dd>
 
 A list of numbers to process.
@@ -57,7 +60,7 @@ A list of numbers to process.
 </dl>
 
 <dl class="api-member api-attr">
-<dt id="NumberGroup.name">NumberGroup.<span class="py-var py-name">name</span>: <em><span class="py-cls">str</span></em><a class="api-link" href="#NumberGroup.name" aria-label="Permalink">#</a></dt>
+<dt id="NumberGroup.name">NumberGroup.<span class="py-var py-name">name</span>: <em><span class="py-cls">str</span></em></dt>
 <dd>
 
 The name of the processor.
@@ -66,7 +69,7 @@ The name of the processor.
 </dl>
 
 <dl class="api-member api-method">
-<dt id="NumberGroup.calculate_average">NumberGroup.<span class="py-fn py-name">calculate_average</span>() -&gt; <em><span class="py-cls">float</span></em><a class="api-link" href="#NumberGroup.calculate_average" aria-label="Permalink">#</a></dt>
+<dt id="NumberGroup.calculate_average">NumberGroup.<span class="py-fn py-name">calculate_average</span>() -&gt; <em><span class="py-cls">float</span></em></dt>
 <dd>
 
 Calculate the average of the stored numbers.
@@ -120,7 +123,7 @@ This method raises an exception rather than returning `None` when no numbers are
 </dl>
 
 <dl class="api-member api-method">
-<dt id="NumberGroup.divide">NumberGroup.<span class="py-fn py-name">divide</span>(<em><span class="py-var">a</span>, <span class="py-var">b</span> = <span class="py-num">1.0</span></em>) -&gt; <em><span class="py-cls">float</span></em><a class="api-link" href="#NumberGroup.divide" aria-label="Permalink">#</a></dt>
+<dt id="NumberGroup.divide">NumberGroup.<span class="py-fn py-name">divide</span>(<em><span class="py-var">a</span>, <span class="py-var">b</span> = <span class="py-num">1.0</span></em>) -&gt; <em><span class="py-cls">float</span></em></dt>
 <dd>
 
 Divide two numbers.
@@ -191,7 +194,7 @@ The result is returned as a floating-point number.
 </dl>
 
 <dl class="api-member api-method">
-<dt id="NumberGroup.generate_sequence">NumberGroup.<span class="py-fn py-name">generate_sequence</span>(<em><span class="py-var">count</span> = <span class="py-num">5</span></em>)<a class="api-link" href="#NumberGroup.generate_sequence" aria-label="Permalink">#</a></dt>
+<dt id="NumberGroup.generate_sequence">NumberGroup.<span class="py-fn py-name">generate_sequence</span>(<em><span class="py-var">count</span> = <span class="py-num">5</span></em>)</dt>
 <dd>
 
 Generate a sequence of integers.
@@ -254,7 +257,7 @@ Large values of `count` may produce long-running iterations.
 </dl>
 
 <dl class="api-member api-method">
-<dt id="NumberGroup.calculate_average_async"><span class="py-ctl">await</span> NumberGroup.<span class="py-fn py-name">calculate_average_async</span>() -&gt; <em><span class="py-cls">float</span></em><a class="api-link" href="#NumberGroup.calculate_average_async" aria-label="Permalink">#</a></dt>
+<dt id="NumberGroup.calculate_average_async"><span class="py-ctl">await</span> NumberGroup.<span class="py-fn py-name">calculate_average_async</span>() -&gt; <em><span class="py-cls">float</span></em></dt>
 <dd>
 
 Calculate the average asynchronously.
@@ -308,7 +311,7 @@ This method does not perform asynchronous I/O or yield control to other tasks be
 </dl>
 
 <dl class="api-member api-method">
-<dt id="NumberGroup.from_string"><span class="py-kw">classmethod</span> NumberGroup.<span class="py-fn py-name">from_string</span>(<em><span class="py-var">values</span>, <span class="py-var">name</span> = <span class="py-str">"Parsed"</span></em>) -&gt; <em><span class="py-cls">NumberGroup</span></em><a class="api-link" href="#NumberGroup.from_string" aria-label="Permalink">#</a></dt>
+<dt id="NumberGroup.from_string"><span class="py-kw">classmethod</span> NumberGroup.<span class="py-fn py-name">from_string</span>(<em><span class="py-var">values</span>, <span class="py-var">name</span> = <span class="py-str">"Parsed"</span></em>) -&gt; <em><span class="py-cls">NumberGroup</span></em></dt>
 <dd>
 
 Create a NumberGroup from a comma-separated string.
