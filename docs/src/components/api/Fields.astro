@@ -1,0 +1,28 @@
+---
+import { fmtInline, fmtType, fmtValue, type Param } from './format';
+
+interface Props {
+	title: string;
+	items: (Param | string)[];
+}
+const { title, items } = Astro.props;
+
+const typeHtml = (p: Param) =>
+	(p.type ? fmtType(p.type) : '') + (p.default ? `${p.type ? ' = ' : '= '}${fmtValue(p.default)}` : '');
+---
+
+<div class="api-fields">
+	<p><strong>{title}</strong></p>
+	<ul>
+		{items.map((item) =>
+			typeof item === 'string' ? (
+				<li><a href={item}>{item}</a></li>
+			) : (
+				<li>
+					{item.name && <strong>{item.name}</strong>}{item.name && (item.type || item.default) && ': '}{(item.type || item.default) && <code class="api-type" set:html={typeHtml(item)} />}
+					{item.doc && <ul><li set:html={fmtInline(item.doc)} /></ul>}
+				</li>
+			),
+		)}
+	</ul>
+</div>

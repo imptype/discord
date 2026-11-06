@@ -1,0 +1,39 @@
+---
+import '../../styles/api-reference.css';
+import CopyLink from '../CopyLink.astro';
+import Fields from './Fields.astro';
+import { classSig, type Param } from './format';
+
+interface Props {
+	name: string;
+	params?: Param[];
+	attrs?: string[];
+	methods?: [kind: 'def' | 'async' | 'cls', name: string][];
+}
+const { name, params = [], attrs = [], methods = [] } = Astro.props;
+---
+
+<CopyLink />
+<div class="api-sig" id={name} set:html={classSig(name, params)} />
+{(attrs.length > 0 || methods.length > 0) && (
+	<div class="api-summary">
+		{attrs.length > 0 && (
+			<div>
+				<p class="label">Attributes</p>
+				<ul>
+					{attrs.map((a) => <li><a href={`#${name}.${a}`}>{a}</a></li>)}
+				</ul>
+			</div>
+		)}
+		{methods.length > 0 && (
+			<div>
+				<p class="label">Methods</p>
+				<ul class="api-cols">
+					{methods.map(([kind, m]) => <li><a href={`#${name}.${m}`}><em class="kw">{kind}</em><span>{m}</span></a></li>)}
+				</ul>
+			</div>
+		)}
+	</div>
+)}
+<slot />
+{params.length > 0 && <Fields title="Parameters" items={params} />}

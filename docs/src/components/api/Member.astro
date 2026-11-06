@@ -1,0 +1,39 @@
+---
+import { Code } from 'astro:components';
+import Fields from './Fields.astro';
+import { memberSig, type Param } from './format';
+
+interface Props {
+	of: string;
+	name: string;
+	kind?: 'attr' | 'def' | 'async' | 'cls';
+	type?: string;
+	params?: Param[];
+	returns?: Param;
+	yields?: Param;
+	raises?: Param[];
+	references?: string[];
+	examples?: string[];
+}
+const { of, name, kind = 'def', type, params = [], returns, yields, raises = [], references = [], examples = [] } = Astro.props;
+---
+
+<dl class:list={['api-member', kind === 'attr' ? 'api-attr' : 'api-method']}>
+	<dt id={`${of}.${name}`} set:html={memberSig({ of, name, kind, type, params, returns })} />
+	<dd>
+		<slot />
+		{params.length > 0 && <Fields title="Parameters" items={params} />}
+		{returns && <Fields title="Returns" items={[returns]} />}
+		{yields && <Fields title="Yields" items={[yields]} />}
+		{raises.length > 0 && <Fields title="Raises" items={raises} />}
+		{references.length > 0 && <Fields title="References" items={references} />}
+		{examples.length > 0 && (
+			<div class="api-fields">
+				<p><strong>Examples</strong></p>
+				{examples.map((code) => (
+					<Code code={code} lang="python" themes={{ light: 'light-plus', dark: 'dark-plus' }} defaultColor={false} />
+				))}
+			</div>
+		)}
+	</dd>
+</dl>
