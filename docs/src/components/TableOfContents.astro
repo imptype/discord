@@ -1,11 +1,10 @@
 ---
 import Default from '@astrojs/starlight/components/TableOfContents.astro';
+import SidebarToggle from './SidebarToggle.astro';
 
 const { id, toc } = Astro.locals.starlightRoute;
 
-// Only the API reference page gets the two-column TOC (everything else uses Starlight's default). Its members
-// list is rendered on the server from src/data/api-members.json: { "Group": { "Class": ["Class.member", ...] } }.
-// import.meta.glob so a missing file means "no manifest" (default TOC), not a build error.
+// src/data/api-members.json: { "Group": { "Class": ["Class.member", ...] } }. glob, so a missing file means default TOC.
 type Manifest = Record<string, Record<string, string[]>>;
 const manifestFile = Object.values(
 	import.meta.glob('../data/api-members.json', { eager: true, import: 'default' }),
@@ -26,7 +25,6 @@ walk(toc?.items as Item[] | undefined);
 
 const textOf = new Map(flat.map((i) => [i.slug, i.text]));
 let seenGroup = false;
-// One row per heading: its member ids (if its class has any), or a small gap (kept only after a member list).
 const rows = flat.map((i) => {
 	const members = manifest?.[textOf.get(i.parent) ?? '']?.[i.text];
 	const has = !!members?.length;
@@ -35,30 +33,16 @@ const rows = flat.map((i) => {
 	return { ...i, members: has ? members : undefined, gap };
 });
 const groupCount = rows.filter((r) => r.members).length;
-// Heading rows above the first class with members: CSS pads the members column by this many rows (--first-rows).
 const firstGroupRow = rows.findIndex((r) => r.members);
 ---
-
-{/* Restore the "right sidebar collapsed" state before first paint so it doesn't flash open. */}
-<script is:inline>
-	try {
-		if (localStorage.getItem('toc-sidebar-collapsed') === '1') document.documentElement.setAttribute('data-toc-collapsed', '');
-	} catch (e) {}
-</script>
 
 {
 	dynamic ? (
 		<nav class="api-toc" aria-labelledby="starlight__on-this-page">
 			<div class="toc-head">
-				<button class="toc-sb-toggle" type="button" aria-label="Toggle table of contents sidebar" title="Toggle sidebar">
-					<svg viewBox="0 0 24 24" aria-hidden="true">
-						<rect x="3" y="4" width="18" height="16" rx="2" />
-						<path d="M15 4v16" />
-					</svg>
-				</button>
+				<SidebarToggle side="right" class="toc-sb-toggle" />
 				<h2 id="starlight__on-this-page">{Astro.locals.t('tableOfContents.onThisPage')}</h2>
 			</div>
-			{/* Two lists in a clipped viewport. The script slides them (never scrolled natively). */}
 			<div class="toc-view">
 				<div class="toc-col toc-heads">
 					<ul>
@@ -86,7 +70,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 						))}
 					</ul>
 				</div>
-				{/* Rendered from the manifest. */}
 				<div
 					class="toc-col toc-members"
 					hidden={groupCount === 0}
@@ -104,7 +87,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 						) : null,
 					)}
 				</div>
-				{/* Scrollbar track, server-rendered so its width is reserved from the first paint. */}
 				<div class="toc-scroll" aria-hidden="true" hidden={groupCount === 0}>
 					<div class="toc-thumb" />
 				</div>
@@ -112,20 +94,14 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		</nav>
 	) : (
 		<div class="toc-default">
-			<button class="toc-sb-toggle" type="button" aria-label="Toggle table of contents sidebar" title="Toggle sidebar">
-				<svg viewBox="0 0 24 24" aria-hidden="true">
-					<rect x="3" y="4" width="18" height="16" rx="2" />
-					<path d="M15 4v16" />
-				</svg>
-			</button>
+			<SidebarToggle side="right" class="toc-sb-toggle" />
 			<Default><slot /></Default>
 		</div>
 	)
 }
 
-{/* First-paint sizing. Inline, so it runs while parsing (no separate file to wait for). It only does the one
-    thing CSS can't: thumb height = view * view / total (length / length). The main script writes the same value later. */}
 <script is:inline>
+	// first-paint scrollbar thumb size
 	(function () {
 		try {
 			if (!matchMedia('(min-width: 72rem)').matches) return;
@@ -139,12 +115,14 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			var view = track.offsetHeight;
 			var total = Math.max(heads.offsetHeight, members.hidden ? 0 : members.offsetHeight);
 			if (total > view + 1) thumb.style.height = Math.max(24, (view * view) / total) + 'px';
-			else track.hidden = true; // everything fits: no scrollbar
+			else track.hidden = true;
 		} catch (e) {}
 	})();
 </script>
 
 <script>
+	import { setupCollapsibleSidebar } from '../scripts/collapsible-sidebar';
+
 	const START_COLLAPSED = false; // true = sections with sub-headings start collapsed
 	const REMEMBER = true; // remember which sections are collapsed, per page
 
@@ -152,20 +130,15 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 	const TAU = 90; // ms. Slide smoothing: smaller = snappier
 	const TIP_MS = 90; // ms. The "{" point moving to a new row
 	const BRACE_MS = 280; // ms. The "{" fading / moving / resizing (independent of scroll speed)
-	// The headings list follows a precomputed, as-straight-as-possible path; the members list is slid so the current
-	// member stays level with the current heading. The shared row may wander this many rows from the anchor:
 	const DRIFT = 4; // 0 = pinned (but headings move in bursts), bigger = steadier
-	// The highlight (and "{") switches to the next row once the page is this far (0..1) towards it.
 	const SWITCH = 0.5;
-	// The curly line "{" (px):
 	const CURVE = 8; // roundness of its top and bottom curves
 	const TRAIL = 28; // how far its ends reach right before fading out
 	const TIP = 8; // how far its middle point sticks out left
 	const TIP_R = 5; // roundness of that point
 	let braceId = 0;
 
-	// Taut string: the straightest path through a corridor (one value per row between lo[i] and hi[i], first and
-	// last fixed). Bends only where the corridor forces it to.
+	// Straightest path through a per-row corridor [lo, hi].
 	const tautString = (lo: number[], hi: number[]) => {
 		const n = lo.length;
 		const pts: [number, number][] = [[0, lo[0]]];
@@ -229,15 +202,13 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		type Target = { a: HTMLAnchorElement; el: HTMLElement; group: string };
 		const all: { a: HTMLAnchorElement; el: HTMLElement | null; group: string }[] = [];
 
-		// Right list: rendered by the server, just pick the lists and gaps up.
-		const groups = new Map<string, HTMLUListElement>(); // class heading id -> its member list
-		const gaps = new Map<string, HTMLElement>(); // class heading id -> its gap
+		const groups = new Map<string, HTMLUListElement>();
+		const gaps = new Map<string, HTMLElement>();
 		membersCol.querySelectorAll<HTMLUListElement>('ul.members-group').forEach((ul) => groups.set(ul.dataset.group!, ul));
 		membersCol.querySelectorAll<HTMLElement>('.members-gap').forEach((g) => gaps.set(g.dataset.gap!, g));
 
-		// Left list: headings; each class's members follow their heading (already page order).
 		const headLis = new Map<string, HTMLLIElement>();
-		const parentOf = new Map<string, string>(); // heading id -> parent heading id ('' = top level)
+		const parentOf = new Map<string, string>();
 		list.querySelectorAll<HTMLLIElement>('li').forEach((li) => {
 			const a = li.querySelector('a')!;
 			const slug = li.dataset.group!;
@@ -249,17 +220,16 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			});
 		});
 
-		// The accent line: ONE curly "{" SVG, redrawn every frame from the same reading position as the lists.
 		const SVG = 'http://www.w3.org/2000/svg';
-		const X0 = TIP + 1; // x of the vertical part (the point sticks out to its left)
-		const XE = X0 + CURVE + TRAIL; // right end of the trailing curves
+		const X0 = TIP + 1;
+		const XE = X0 + CURVE + TRAIL;
 		const gradId = `toc-brace-${braceId++}`;
 		const line = document.createElementNS(SVG, 'svg');
 		line.setAttribute('class', 'toc-line');
 		line.setAttribute('aria-hidden', 'true');
 		line.setAttribute('width', String(XE + 1));
 		line.style.left = `${-TIP}px`;
-		const grad = document.createElementNS(SVG, 'linearGradient'); // fades the ends out to the right
+		const grad = document.createElementNS(SVG, 'linearGradient');
 		grad.setAttribute('id', gradId);
 		grad.setAttribute('gradientUnits', 'userSpaceOnUse');
 		grad.setAttribute('x1', String(X0 + CURVE));
@@ -282,27 +252,21 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		line.append(defs, brace);
 		membersCol.append(line);
 
-		// Hand-drawn scrollbar (the lists are slid by script, never scrolled natively); the server renders the track.
 		const track = viewEl.querySelector<HTMLElement>(':scope > .toc-scroll');
 		const thumb = track?.querySelector<HTMLElement>('.toc-thumb');
 		if (!track || !thumb) return;
 
-		// Every row (headings and members), already in page order.
 		const everything = all.filter((t): t is Target => !!t.el);
 		if (!everything.length) return;
 
-		// Rows in play: rows inside a collapsed section are left out, so everything below only sees visible rows.
 		let targets: Target[] = everything;
 		let n = targets.length;
 		let indexOf = new Map(targets.map((t, i) => [t.a, i]));
-		// For every page row (hidden too): index in `targets` of the visible row standing for it (a collapsed
-		// section's own heading stands for everything inside it).
 		let vis: number[] = [];
 
-		// Collapsing: a heading with sub-headings gets a "v" button that hides its sub-headings and their members.
 		const kidsSlugs = [...headLis].filter(([, li]) => li.classList.contains('has-kids')).map(([s]) => s);
 		const collapsed = new Set<string>();
-		const hiddenSlugs = new Set<string>(); // hidden because something above them is collapsed
+		const hiddenSlugs = new Set<string>();
 		let visibleGroups = 0;
 		const KEY = `toc-collapsed:${location.pathname}`;
 		try {
@@ -322,15 +286,13 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			} catch {}
 		};
 
-		// Applies `collapsed`: hides / shows rows and rebuilds the rows in play.
 		const applyCollapse = () => {
 			hiddenSlugs.clear();
-			// headLis is in document order, so a parent is always decided before its children
 			for (const slug of headLis.keys()) {
 				const p = parentOf.get(slug);
 				if (p && (collapsed.has(p) || hiddenSlugs.has(p))) hiddenSlugs.add(slug);
 			}
-			let seen = false; // a visible member list has come earlier
+			let seen = false;
 			visibleGroups = 0;
 			for (const [slug, li] of headLis) {
 				const hid = hiddenSlugs.has(slug);
@@ -364,35 +326,28 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		};
 		applyCollapse();
 
-		// Movement (wide screens only; on narrow screens the lists are just stacked).
-		// The page position is ONE continuous number u ("row 41.3" = 30% of the way from row 41 to 42). Both lists
-		// move in the same frame from the same eased u. The members list is slid so the current member is level with
-		// the current heading; the headings list follows a taut-string path (see smoothLeft). The "{" runs its own
-		// fixed-length animations when the current class changes, so it never depends on scroll speed.
 		const desktop = matchMedia('(min-width: 72rem)');
 		const sidebarEl = nav.closest<HTMLElement>('.right-sidebar');
-		let live = false; // false while hidden or on a narrow screen
-		let view = 0; // visible height of the lists
-		let maxL = 0; // how far each list can slide
+		let live = false;
+		let view = 0;
+		let maxL = 0;
 		let maxR = 0;
 		let hasMembers = false;
-		let LYs: number[] = []; // per row: its class heading's y in the left list
-		let RYs: number[] = []; // per row: its y in the right list
-		let BTs: number[] = []; // per row: top / bottom of its class's member list, and whether it has one (1/0)
+		let LYs: number[] = [];
+		let RYs: number[] = [];
+		let BTs: number[] = [];
 		let BBs: number[] = [];
 		let BSs: number[] = [];
-		let OLs: number[] = []; // per row: left list slide when the page is exactly on that row (smoothed)
-		let ORs: number[] = []; // per row: same for the right list, so heading and member are level
-		let rowH = 24.25; // one row (measured exactly in layout(); matches --row-h in the CSS)
-		let target = 0; // u the page is at
-		let cur = 0; // u as shown (eased)
+		let OLs: number[] = [];
+		let ORs: number[] = [];
+		let rowH = 24.25;
+		let target = 0;
+		let cur = 0;
 		let raf = 0;
 		let lastT = 0;
-		// Extra px both lists are slid by, to keep a just-toggled heading where it was on screen. Eases back to 0.
 		let shiftCur = 0;
 		let shiftTarget = 0;
 
-		// The "{" as shown (top / bottom in members-list coordinates, opacity) and its animation.
 		let bTop = 0;
 		let bBot = 0;
 		let bOp = 0;
@@ -400,21 +355,19 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		let bTo = { top: 0, bot: 0, op: 0 };
 		let bStart = 0;
 		let bRaf = 0;
-		// The point of the "{" (centre of the active row, members-list coordinates) and its animation.
 		let tipY = 0;
 		let tipFrom = 0;
 		let tipTo = 0;
 		let tStart = 0;
-		let scrollable = false; // the lists are taller than the window
+		let scrollable = false;
 		let thumbH = 0;
 
-		// Fingerprint of everything whose size needs re-measuring, to skip pointless layout() runs.
 		let lastKey = '';
 		const sizeKey = () =>
 			`${heads.offsetWidth}x${heads.offsetHeight}|${membersCol.offsetWidth}x${membersCol.offsetHeight}|${sidebarEl?.clientHeight ?? 0}`;
 
 		const clamp = (v: number, max: number) => Math.max(0, Math.min(max, v));
-		const snap = (v: number) => Math.round(v * (devicePixelRatio || 1)) / (devicePixelRatio || 1); // sharp text
+		const snap = (v: number) => Math.round(v * (devicePixelRatio || 1)) / (devicePixelRatio || 1);
 		const topIn = (el: HTMLElement, col: HTMLElement) => el.getBoundingClientRect().top - col.getBoundingClientRect().top;
 		const at = (arr: number[], u: number) => {
 			const i = Math.min(Math.floor(u), n - 1);
@@ -422,27 +375,24 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		};
 		const idxOf = (u: number) => Math.min(n - 1, Math.max(0, Math.floor(u + 1 - SWITCH + 1e-6)));
 
-		// Where both lists sit at position u if heading and member shared one screen row. The right list always uses
-		// this; the left uses it for its corridor (smoothLeft) and when there are no members.
 		const offsets = (u: number) => {
 			const LY = at(LYs, u);
 			const RY = at(RYs, u);
 			const A = view * ANCHOR;
 			if (!hasMembers) return { offL: clamp(LY - A, maxL), offR: 0 };
-			// near the very top / bottom, move the shared row rather than misalign the lists
 			const hi = Math.min(LY, RY);
 			const lo = Math.max(LY - maxL, RY - maxR);
 			const row = lo <= hi ? Math.min(Math.max(A, lo), hi) : A;
 			return { offL: clamp(LY - row, maxL), offR: clamp(RY - row, maxR) };
 		};
 
-		// Builds OLs / ORs: the steady path of the headings list and the matching path of the members list.
+		// Steady slide path for the headings list; the members list stays level with it.
 		const smoothLeft = () => {
 			OLs = [];
 			ORs = [];
 			if (!hasMembers || n < 3) return;
 			const A = view * ANCHOR;
-			const yLo = Math.max(rowH, A - DRIFT * rowH); // highest / lowest screen y the shared row may have
+			const yLo = Math.max(rowH, A - DRIFT * rowH);
 			const yHi = Math.min(view - 2 * rowH, A + DRIFT * rowH);
 			const old: number[] = [];
 			const lo: number[] = [];
@@ -450,17 +400,13 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			for (let i = 0; i < n; i++) {
 				const v = offsets(i).offL;
 				old.push(v);
-				// the members list must not run out either, or heading and member couldn't stay level
 				const l = Math.max(0, LYs[i] - yHi, LYs[i] - RYs[i]);
 				const h = Math.min(maxL, LYs[i] - yLo, maxR + LYs[i] - RYs[i]);
-				lo.push(Math.min(l, v)); // the old position is always allowed, so the corridor is never empty
+				lo.push(Math.min(l, v));
 				hi.push(Math.max(h, v));
 			}
-			lo[0] = hi[0] = old[0]; // top of page = top of list, bottom = bottom
+			lo[0] = hi[0] = old[0];
 			lo[n - 1] = hi[n - 1] = old[n - 1];
-			// Work with the shared screen row s = LY - offL. Neither list may slide backwards while scrolling down, so s
-			// grows by at most min(heading step, member step) per row. Subtracting that allowance (m) turns the rule
-			// into "q never goes up", enforced by tightening the corridor.
 			const m: number[] = [0];
 			for (let i = 1; i < n; i++) m.push(m[i - 1] + Math.max(0, Math.min(LYs[i] - LYs[i - 1], RYs[i] - RYs[i - 1])));
 			const qLo = lo.map((_, i) => LYs[i] - hi[i] - m[i]);
@@ -470,14 +416,11 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			for (let i = 0; i < n; i++) qLo[i] = Math.min(qLo[i], qHi[i]);
 			const q = tautString(qLo, qHi);
 			OLs = q.map((v, i) => clamp(LYs[i] - (v + m[i]), maxL));
-			// Right list: that row's member level with its heading, interpolated row by row.
 			ORs = OLs.map((v, i) => clamp(RYs[i] - LYs[i] + v, maxR));
 			ORs[0] = offsets(0).offR;
 			ORs[n - 1] = offsets(n - 1).offR;
 		};
 
-		// Redraw the "{" over [top, bottom] of the members list, its point at tipY (the point keeps its full
-		// length and only moves up and down).
 		const drawLine = (top: number, bottom: number, tipY: number, opacity: number) => {
 			const t = snap(top);
 			const H = Math.round(snap(bottom) - t);
@@ -519,7 +462,7 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 
 		const braceTick = (t: number) => {
 			const p = Math.min(1, Math.max(0, (t - bStart) / BRACE_MS));
-			const e = 1 - Math.pow(1 - p, 3); // ease-out
+			const e = 1 - Math.pow(1 - p, 3);
 			bTop = bFrom.top + (bTo.top - bFrom.top) * e;
 			bBot = bFrom.bot + (bTo.bot - bFrom.bot) * e;
 			bOp = bFrom.op + (bTo.op - bFrom.op) * e;
@@ -529,7 +472,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			bRaf = p < 1 || q < 1 ? requestAnimationFrame(braceTick) : 0;
 		};
 
-		// Move the "{" point to the centre of row idx's line (short fixed-length animation).
 		const setTip = (idx: number, instant = false) => {
 			if (RYs[idx] === undefined) return;
 			const y = RYs[idx] + rowH / 2;
@@ -544,15 +486,12 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			if (!bRaf) bRaf = requestAnimationFrame(braceTick);
 		};
 
-		// Point the "{" at row idx's class: members -> members tweens position and size; none -> members fades in
-		// already in place; members -> none fades out where it is. Always runs BRACE_MS once started.
 		const setBrace = (idx: number, instant = false) => {
 			const has = BSs[idx] === 1;
 			const to = has
 				? { top: BTs[idx], bot: BBs[idx], op: 1 }
 				: { top: bTo.top, bot: bTo.bot, op: 0 };
 			if (!instant && to.top === bTo.top && to.bot === bTo.bot && to.op === bTo.op) return;
-			// appearing from nothing: place the box straight away, only the opacity animates
 			if (instant || (has && bOp < 0.02)) {
 				bTop = to.top;
 				bBot = to.bot;
@@ -602,7 +541,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			raf = requestAnimationFrame(tick);
 		};
 
-		// Dragging the thumb (or pressing the track) browses the TOC like the wheel does.
 		let grab = 0;
 		const dragTo = (e: PointerEvent) =>
 			go(clamp((e.clientY - track.getBoundingClientRect().top - grab) / Math.max(1, view - thumbH), 1) * (n - 1));
@@ -621,8 +559,7 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		track.addEventListener('pointerup', endDrag);
 		track.addEventListener('pointercancel', endDrag);
 
-		// Width with every section open and the scrollbar showing. The view is never narrower than this, or the
-		// centred TOC would shift sideways on every collapse / expand. Measured by briefly undoing the collapse.
+		// Width with every section open, so collapsing does not shift the centred TOC.
 		const fullWidth = () => {
 			const hiddenEls = [...nav.querySelectorAll<HTMLElement>('.toc-hidden')];
 			const wasHidden = membersCol.hidden;
@@ -643,22 +580,17 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			viewEl.style.minWidth = '';
 			if (desktop.matches) {
 				viewEl.style.minWidth = `${Math.ceil(fullWidth())}px`;
-				// exact fractional row height (offsetHeight would round 24.25 to 24); same as --row-h in the CSS
 				rowH = heads.querySelector('a')?.getBoundingClientRect().height || 24.25;
-				// Empty space on top of the members list, as tall as the headings above the first VISIBLE class with
-				// members, so its first member starts level with its heading.
 				const firstSlug = [...groups.keys()].find((s) => !hiddenSlugs.has(s));
 				const firstHead = firstSlug ? headLis.get(firstSlug)!.querySelector('a') : null;
 				const firstLink = firstSlug ? groups.get(firstSlug)!.querySelector('a') : null;
-				membersCol.style.paddingTop = '0px'; // measure the first member's natural top with no padding
+				membersCol.style.paddingTop = '0px';
 				membersCol.style.paddingTop =
 					firstHead && firstLink ? `${Math.max(0, topIn(firstHead, heads) - topIn(firstLink, membersCol))}px` : '';
 
 				const hL = heads.offsetHeight;
 				const hR = membersCol.hidden ? 0 : membersCol.offsetHeight;
 				if (hL || hR) {
-					// Room left in Starlight's scroll container (.right-sidebar): its height minus where the lists start
-					// and the panel's bottom padding.
 					const sidebar = viewEl.closest<HTMLElement>('.right-sidebar');
 					const panel = viewEl.closest<HTMLElement>('.right-sidebar-panel');
 					const start = viewEl.getBoundingClientRect().top - (sidebar?.getBoundingClientRect().top ?? 0) + (sidebar?.scrollTop ?? 0);
@@ -676,11 +608,9 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 					track.style.height = `${view}px`;
 					thumb.style.height = `${thumbH}px`;
 
-					// Per-row positions in both lists.
 					const headY = new Map<string, number>();
 					for (const [slug, li] of headLis) headY.set(slug, topIn(li.querySelector('a')!, heads));
 					const groupTop = new Map<string, number>();
-					// a class heading lines up with its first member's row, not the top of the padded group box
 					for (const [slug, ul] of groups) groupTop.set(slug, topIn(ul.querySelector('a')!, membersCol));
 					const boxOf = new Map<string, { top: number; bottom: number }>();
 					for (const [slug, ul] of groups) {
@@ -699,8 +629,8 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 						let r: number;
 						if (membersCol.contains(t.a)) r = topIn(t.a, membersCol);
 						else if (groupTop.has(t.group)) r = groupTop.get(t.group)!;
-						else if (gap && !gap.classList.contains('toc-hidden')) r = topIn(gap, membersCol); // class without members: its gap
-						else r = ly; // before the first class with members: level with itself
+						else if (gap && !gap.classList.contains('toc-hidden')) r = topIn(gap, membersCol);
+						else r = ly;
 						RYs.push(r);
 						const b = boxOf.get(t.group);
 						BTs.push(b ? b.top : r);
@@ -719,7 +649,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 				viewEl.style.height = '';
 				membersCol.style.paddingTop = '';
 			} else {
-				// sizes may have changed: put the "{" straight onto the current class (no animation)
 				setBrace(Math.max(0, active), true);
 				setTip(Math.max(0, active), true);
 			}
@@ -727,12 +656,9 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			render();
 		};
 
-		// Reading line = where the browser puts a jump-link target (the page's scroll-padding-top), so a row you
-		// jump to sits at the line. The 1px absorbs sub-pixel rounding.
+		// Reading line = scroll-padding-top, where jump links land.
 		const getOffset = () => (parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0) + 1;
 
-		// Row positions are measured once (document coordinates) and reused every scroll frame, which then only
-		// reads scrollY. `dirty` is set whenever the page layout may have changed.
 		let rowTops: number[] = [];
 		let readLine = 0;
 		let docH = 0;
@@ -745,19 +671,16 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			dirty = false;
 		};
 
-		// Page position as a continuous row number. Measured on EVERY row (collapsed ones too) so a collapsed section
-		// keeps its real stretch of the page, then mapped onto visible rows via `vis`.
+		// Page position as a continuous row number.
 		const pageU = () => {
 			if (dirty) measurePositions();
 			const sy = scrollY;
 			const topOf = (i: number) => rowTops[i] - sy;
 			const N = everything.length;
 			let r = readLine;
-			// near the page bottom the last rows can't reach the line: ease it down so u stays continuous
 			const maxScroll = docH - innerHeight;
 			const lastAtBottom = topOf(N - 1) - (maxScroll - sy);
 			if (lastAtBottom > r) r += (lastAtBottom - r) * Math.min(1, Math.max(0, (sy - (maxScroll - innerHeight)) / innerHeight));
-			// last row at or above the line (binary search, rows are in page order)
 			let lo = 0;
 			let hi = N - 1;
 			let i = -1;
@@ -776,7 +699,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			return vis[i] + (vis[i + 1] - vis[i]) * frac;
 		};
 
-		// Highlight: the last row the page has reached, and its class.
 		let active = -1;
 		const highlight = (u: number) => {
 			const idx = idxOf(u);
@@ -786,7 +708,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			const now = targets[idx];
 			now.a.setAttribute('aria-current', 'true');
 			for (const [slug, li] of headLis) li.classList.toggle('active-group', slug === now.group);
-			// headings above the current one (e.g. "Extensions" while on "Cog") get the soft grey too
 			const above = new Set<string>();
 			for (let p = parentOf.get(now.group); p; p = parentOf.get(p)) above.add(p);
 			for (const [slug, li] of headLis) li.classList.toggle('active-ancestor', above.has(slug));
@@ -806,18 +727,16 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 				}
 				render();
 			} else {
-				// the "{" belongs to the row the PAGE is on; wheel-browsing the TOC doesn't move it to another class
 				if (live) {
 					setBrace(active);
 					setTip(active);
 				}
-				shiftTarget = 0; // the page moved: follow it again
+				shiftTarget = 0;
 				go(u);
 			}
 		};
 
-		// A section was collapsed / expanded: rebuild, re-measure and redraw. `pin` is the clicked heading and its
-		// screen y; the lists are slid so it stays exactly there instead of jumping to the page's reading position.
+		// pin = clicked heading and its screen y, kept in place after the re-layout.
 		const refresh = (pin?: { a: HTMLAnchorElement; y: number }) => {
 			applyCollapse();
 			nav.querySelectorAll('[aria-current]').forEach((el) => el.removeAttribute('aria-current'));
@@ -831,13 +750,11 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 				const smooth = hasMembers && OLs.length === n && ORs.length === n;
 				const baseL = smooth ? at(OLs, h) : offsets(h).offL;
 				cur = target = h;
-				// heading y on screen = LYs[h] - (baseL + shift): solve for the shift that puts it at pin.y
 				shiftCur = shiftTarget = LYs[h] - pin.y - baseL;
 				render();
 			}
 		};
 
-		// Clicking a "v" button collapses / expands that heading's section.
 		list.addEventListener('click', (e) => {
 			const btn = (e.target as Element).closest<HTMLElement>('.toc-toggle');
 			const li = btn?.closest<HTMLElement>('li');
@@ -852,8 +769,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			refresh({ a, y });
 		});
 
-		// Wheel over the TOC browses it by hand (glides row by row) until the page scrolls again. It never leaks to
-		// the page while the cursor is over the TOC.
 		viewEl.addEventListener(
 			'wheel',
 			(e) => {
@@ -864,8 +779,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			},
 			{ passive: false },
 		);
-		// Keyboard focus glides to the link. Not for mouse clicks: focus happens on mouse DOWN, and gliding then would
-		// slide the link out from under the cursor before mouse UP.
 		viewEl.addEventListener('focusin', (e) => {
 			if (!(e.target as Element).matches(':focus-visible')) return;
 			const a = (e.target as Element).closest('a');
@@ -883,8 +796,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			});
 		};
 
-		// Re-measure at most once per frame, and only if something it depends on changed size (layout() forces
-		// several reflows).
 		let layoutQueued = false;
 		let forceNext = false;
 		const queueLayout = (force = false) => {
@@ -910,13 +821,11 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			dirty = true;
 			queueLayout(true);
 		});
-		// Lists change size when fonts load or the panel is resized; the sidebar when it becomes a floating card.
 		const ro = new ResizeObserver(() => queueLayout());
 		ro.observe(heads);
 		ro.observe(membersCol);
 		if (sidebarEl) ro.observe(sidebarEl);
 
-		// The page's own rows move when the page changes size (code tabs, fonts, images, left sidebar collapsing).
 		const pageRo = new ResizeObserver(() => {
 			dirty = true;
 			onScroll();
@@ -937,66 +846,17 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		}
 	});
 
-	// Collapsing the whole right sidebar (same idea as the left one, see Sidebar.astro): the button next to
-	// "On this page" collapses it (or pins it open again); collapsed, it hides at the right edge, peeks out as a
-	// floating card when the mouse touches that edge, and closes when the mouse leaves the card.
-	{
-		const root = document.documentElement;
-		const wide = matchMedia('(min-width: 72rem)'); // the right sidebar only exists at this width
-		const EDGE = 6; // px from the right edge that triggers the peek
-		const CLOSE_DELAY = 150; // ms before the peeking card slides away
-		const KEY = 'toc-sidebar-collapsed';
-		const pane = () => document.querySelector<HTMLElement>('.right-sidebar');
-
-		let closeTimer = 0;
-		const cancelClose = () => {
-			clearTimeout(closeTimer);
-			closeTimer = 0;
-		};
-		const peek = (on: boolean) => {
-			cancelClose();
-			root.toggleAttribute('data-toc-peek', on);
-		};
-		const scheduleClose = () => {
-			if (closeTimer) return;
-			closeTimer = window.setTimeout(() => {
-				closeTimer = 0;
-				peek(false);
-			}, CLOSE_DELAY);
-		};
-
-		document.addEventListener('click', (event) => {
-			if (!(event.target as Element).closest('.toc-sb-toggle')) return;
-			if (root.hasAttribute('data-toc-collapsed')) root.removeAttribute('data-toc-collapsed');
-			else root.setAttribute('data-toc-collapsed', '');
-			peek(false);
-			try {
-				localStorage.setItem(KEY, root.hasAttribute('data-toc-collapsed') ? '1' : '0');
-			} catch {}
-		});
-
-		document.addEventListener('mousemove', (event) => {
-			if (!wide.matches || !root.hasAttribute('data-toc-collapsed')) return;
-			// clientWidth excludes the page's own scrollbar, so the edge is the strip just left of it
-			if (event.clientX >= root.clientWidth - EDGE) {
-				peek(true);
-			} else if (root.hasAttribute('data-toc-peek')) {
-				const r = pane()?.getBoundingClientRect();
-				const inside =
-					!!r && event.clientX >= r.left && event.clientX <= r.right && event.clientY >= r.top && event.clientY <= r.bottom;
-				if (inside) cancelClose();
-				else scheduleClose();
-			}
-		});
-		document.addEventListener('mouseleave', () => {
-			if (root.hasAttribute('data-toc-peek')) scheduleClose();
-		});
-	}
+	setupCollapsibleSidebar({
+		name: 'toc',
+		storageKey: 'toc-sidebar-collapsed',
+		toggle: '.toc-sb-toggle',
+		pane: () => document.querySelector<HTMLElement>('.right-sidebar'),
+		media: '(min-width: 72rem)',
+		edge: 'right',
+	});
 </script>
 
 <style is:global>
-	/* Jump links put their target --toc-jump-gap below the top bar (Starlight adds 1.5rem, which showed a strip of
-	   the previous section). The TOC's reading line is read from this same value, so jumping and highlighting agree. */
 	html:root:has(.api-toc) {
 		--toc-jump-gap: 0rem;
 		scroll-padding-top: calc(var(--toc-jump-gap) + var(--sl-nav-height) + var(--sl-mobile-toc-height));
@@ -1007,13 +867,11 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		}
 	}
 
-	/* One row: line-height 1.25 x font size + 0.25rem padding above and below (see ".api-toc a"). The members
-	   list's top padding and the gap heights are calculated from it, so they are exact on first paint. */
+	/* one row: 1.25 line-height x font size + 0.5rem padding */
 	.api-toc {
 		--row-h: calc(1.25 * var(--sl-text-xs) + 0.5rem);
 	}
 
-	/* Font size, link colour, hover colour and the h2 style are inherited from Starlight's .right-sidebar-panel. */
 	.api-toc ul {
 		list-style: none;
 		margin: 0;
@@ -1026,7 +884,7 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		--pad-inline: 0.5rem;
 		display: block;
 		border-radius: 0.25rem;
-		font-size: var(--sl-text-xs); /* same as Starlight's; stated so --row-h can rely on it */
+		font-size: var(--sl-text-xs);
 		padding-block: 0.25rem;
 		padding-inline: calc(1rem * var(--d, 0) + var(--pad-inline)) var(--pad-inline);
 		line-height: 1.25;
@@ -1039,12 +897,10 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		display: none;
 	}
 
-	/* Rows inside a collapsed section (headings, member lists, gaps). */
 	.api-toc .toc-hidden {
 		display: none !important;
 	}
 
-	/* The "v" button after headings that have sub-headings. Points down when open, right when collapsed. */
 	.api-toc li.has-kids {
 		display: flex;
 		align-items: stretch;
@@ -1086,14 +942,10 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		transform: rotate(-90deg);
 	}
 
-	/* Sections the current row sits in: same soft grey as the current class's members (keep in step with
-	   .members-group.active-group below). gray-1 is brighter, gray-2 softer. */
 	.api-toc li.active-ancestor > a:not([aria-current='true']) {
 		color: var(--sl-color-gray-2);
 	}
 
-	/* Each class's members: a faint vertical line on the left; the block padding keeps the "{" curves clear of the
-	   first and last member. */
 	.api-toc .members-group {
 		--group-pad: 0.1875rem;
 		padding-block: var(--group-pad);
@@ -1102,12 +954,10 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 	.api-toc :is(.members-group, .members-gap) + :is(.members-group, .members-gap) {
 		margin-top: 0.25rem;
 	}
-	/* Gap for a class without members: half a row in total, counting the margin. Wide screens only. */
 	.api-toc .members-gap {
 		display: none;
 		height: calc(var(--row-h) / 2 - 0.25rem);
 	}
-	/* The curly "{" SVG, redrawn by the script. */
 	.api-toc .toc-line {
 		position: absolute;
 		top: 0;
@@ -1120,15 +970,12 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		padding-inline: var(--pad-inline);
 	}
 
-	/* Narrow screens (dropdown TOC): headings, then the members underneath. */
 	.api-toc .toc-members {
 		position: relative;
 		margin-top: 0.75rem;
 	}
 
-	/* Wide screens (right sidebar visible). */
 	@media (min-width: 72rem) {
-		/* Starlight fixes the right panel at the sidebar width. Let it use all the room it has instead. */
 		.right-sidebar-panel:has(.api-toc),
 		.right-sidebar-panel .sl-container:has(.api-toc) {
 			max-width: 100%;
@@ -1137,22 +984,18 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			width: auto;
 		}
 		.right-sidebar-panel:has(.api-toc) {
-			width: max-content; /* as wide as the TOC; the sidebar is pinned to the right edge (see below) */
+			width: max-content;
 		}
 
-		/* The whole TOC (heading + lists) aligns to the right edge of the visible column. */
 		.api-toc {
 			width: fit-content;
 			max-width: 100%;
 			margin-inline: auto 0;
 			--toc-member-max: 14rem; /* longer members are cut with "..." (full name on hover) */
-			--toc-max: calc(100vh - var(--sl-nav-height) - 1rem); /* sidebar height minus the panel's top padding, until the script fits the lists exactly */
-			/* Scrollbar track height until the script measures the real one: sidebar height minus the panel's top
-			   padding (1rem), the "On this page" row (1.9rem) and its margin (0.5rem). */
+			--toc-max: calc(100vh - var(--sl-nav-height) - 1rem);
 			--toc-rail: calc(100vh - var(--sl-nav-height) - 3.4rem);
 		}
 
-		/* A clipped window onto the two lists; the script slides the lists inside it. */
 		.api-toc .toc-view {
 			display: flex;
 			align-items: flex-start;
@@ -1162,17 +1005,13 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			max-height: var(--toc-max);
 			overflow: clip;
 		}
-		/* Each list is as wide as its longest entry (no truncating, no wrapping). */
 		.api-toc .toc-col {
 			flex: none;
 			will-change: transform;
 		}
 		.api-toc .toc-members {
 			margin-top: 0;
-			/* Level the first member with its class heading before any script runs: that many heading rows,
-			   minus the member list's own top padding. Same number layout() measures. */
 			padding-top: max(0rem, calc(var(--first-rows, 0) * var(--row-h) - var(--group-pad, 0.1875rem)));
-			/* Room under the last class so the "{"'s bottom curve isn't cut off at the end of the list. */
 			padding-bottom: var(--toc-brace-room, 0.375rem);
 		}
 		.api-toc .members-gap {
@@ -1190,7 +1029,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			text-overflow: ellipsis;
 		}
 
-		/* The scrollbar, a flex item at the right end of the view. Its thumb is moved by the script. */
 		.api-toc .toc-scroll:not([hidden]) {
 			display: block;
 			flex: none;
@@ -1215,7 +1053,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			background: var(--sl-color-gray-3);
 		}
 
-		/* The ">" on the current class's heading, pointing across at its members. */
 		.api-toc li.has-members > a {
 			position: relative;
 			padding-inline-end: 1.5rem;
@@ -1232,41 +1069,11 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		.api-toc li.has-members.active-group > a:not([aria-current='true']) {
 			color: var(--sl-color-white);
 		}
-		/* Members of the current class: between the default grey (gray-3) and white. */
 		.api-toc .members-group.active-group a:not([aria-current='true']) {
 			color: var(--sl-color-gray-2);
 		}
 	}
 
-	/* The toggle button next to "On this page" (same look as the left sidebar's). */
-	.toc-sb-toggle {
-		display: inline-flex;
-		flex: none;
-		align-items: center;
-		justify-content: center;
-		width: 1.9rem;
-		height: 1.9rem;
-		padding: 0;
-		border: 0;
-		border-radius: 0.4rem;
-		background: none;
-		color: var(--sl-color-white);
-		cursor: pointer;
-	}
-	.toc-sb-toggle:hover,
-	.toc-sb-toggle:focus-visible {
-		background: color-mix(in srgb, var(--sl-color-white) 12%, transparent);
-	}
-	.toc-sb-toggle svg {
-		width: 18px;
-		height: 18px;
-		fill: none;
-		stroke: currentColor;
-		stroke-width: 2;
-		stroke-linecap: round;
-		stroke-linejoin: round;
-	}
-	/* Two-column TOC: the button sits in a row with the heading. */
 	.api-toc .toc-head {
 		display: flex;
 		align-items: center;
@@ -1276,7 +1083,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 	.api-toc .toc-head h2 {
 		margin: 0;
 	}
-	/* Starlight's own TOC: the button floats over the left of its heading, which makes room for it. */
 	.toc-default {
 		position: relative;
 	}
@@ -1288,7 +1094,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 	.toc-default h2 {
 		padding-inline-start: 2.25rem;
 	}
-	/* Below the width where the right sidebar exists the TOC is the dropdown: no button there. */
 	@media (max-width: 71.999rem) {
 		.toc-sb-toggle {
 			display: none;
@@ -1300,10 +1105,9 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 
 	@media (min-width: 72rem) {
 		html:root .right-sidebar {
-			background-color: var(--sl-color-bg-sidebar); /* same as the left sidebar */
+			background-color: var(--sl-color-bg-sidebar);
 		}
 
-		/* API pages: the sidebar is only as wide as the TOC, flush against the window's right edge. */
 		html:root .right-sidebar:has(.api-toc) {
 			inset-inline-start: auto;
 			inset-inline-end: 0;
@@ -1311,7 +1115,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			max-width: 100vw;
 		}
 
-		/* Regular pages: exactly as wide as the left sidebar, pinned right, so the page stays centred. */
 		html:root .right-sidebar:not(:has(.api-toc)) {
 			inset-inline-start: auto;
 			inset-inline-end: 0;
@@ -1323,8 +1126,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		html:root .right-sidebar-panel:not(:has(.api-toc)) .sl-container {
 			margin-inline: auto;
 		}
-		/* API pages: lists run to the window bottom; --toc-edge is the ONLY gap right of the scrollbar (same as the
-		   left sidebar's border -> title gap). Set it on :root to nudge it. */
 		html:root .right-sidebar-panel:has(.api-toc) {
 			padding-bottom: 0;
 			padding-inline-end: var(--toc-edge, var(--sl-sidebar-pad-x, 1rem));
@@ -1338,8 +1139,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			padding-inline: 0;
 		}
 
-		/* The right column takes no space itself; the page's right side is reserved with animated padding on
-		   .main-frame (as wide as the left sidebar, so the page is centred). Collapsed = 0. */
 		html:root .right-sidebar-container {
 			width: 0;
 			flex: none;
@@ -1351,9 +1150,7 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		html:root[data-toc-collapsed] {
 			--toc-reserve: 0px;
 		}
-		/* Starlight pushes the page to the right end of .main-pane expecting the right column to fill the rest;
-		   with that column at width 0 it left an empty strip. So the pane fills all the room and the page is centred.
-		   (Unlayered CSS beats Starlight's @layer rules.) */
+		/* unlayered, so it beats Starlight's @layer rules */
 		html:root .main-pane {
 			width: 100%;
 			--sl-content-margin-inline: auto;
@@ -1368,7 +1165,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 				padding-inline-end 0.2s ease;
 		}
 
-		/* Collapsed: a rounded floating card parked off-screen at the right edge until you peek. */
 		html:root[data-toc-collapsed] .right-sidebar {
 			top: var(--sb-float, 0.75rem);
 			height: calc(100vh - 2 * var(--sb-float, 0.75rem));
@@ -1377,12 +1173,12 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			width: max-content;
 			max-width: calc(100vw - 2 * var(--sb-float, 0.75rem));
 			border-radius: var(--sb-float-radius, 1rem);
-			border-inline-start-color: transparent; /* the outline below replaces the straight edge */
+			border-inline-start-color: transparent;
 			box-shadow:
 				0 0 0 1px var(--sl-color-gray-5),
 				0 8px 32px rgb(0 0 0 / 0.4);
-			transform: translateX(calc(100% + 2 * var(--sb-float, 0.75rem))); /* fully off-screen */
-			visibility: hidden; /* also removes hidden links from the tab order */
+			transform: translateX(calc(100% + 2 * var(--sb-float, 0.75rem)));
+			visibility: hidden;
 			z-index: 10;
 			transition:
 				transform 0.2s ease,
@@ -1394,10 +1190,9 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		html:root[data-toc-collapsed] .right-sidebar-panel:not(:has(.api-toc)) {
 			width: var(--sl-sidebar-width);
 		}
-		/* Peeking: collapsed + mouse on the right edge -> the card slides in. */
 		html:root[data-toc-collapsed][data-toc-peek] .right-sidebar {
 			transform: none;
-			visibility: visible; /* show immediately, don't wait for the slide */
+			visibility: visible;
 			transition:
 				transform 0.2s ease,
 				visibility 0s;

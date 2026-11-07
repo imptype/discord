@@ -1,0 +1,28 @@
+/* Shared icon button. :where() keeps specificity at zero so other rules can override it. */
+:where(.icon-btn) {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 1.9rem;
+	height: 1.9rem;
+	padding: 0;
+	border: 0;
+	border-radius: 0.4rem;
+	background: none;
+	color: var(--sl-color-white);
+	cursor: pointer;
+}
+:where(.icon-btn:hover, .icon-btn:focus-visible) {
+	background: color-mix(in srgb, var(--sl-color-white) 12%, transparent);
+}
+:where(.icon-btn) svg {
+	display: block;
+	width: 18px;
+	height: 18px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}

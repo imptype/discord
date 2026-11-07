@@ -1,0 +1,13 @@
+---
+import Default from '@astrojs/starlight/components/Head.astro';
+---
+
+<Default><slot /></Default>
+
+<script is:inline>
+	try {
+		const root = document.documentElement;
+		if (localStorage.getItem('sidebar-collapsed') === '1') root.setAttribute('data-sidebar-collapsed', '');
+		if (localStorage.getItem('toc-sidebar-collapsed') === '1') root.setAttribute('data-toc-collapsed', '');
+	} catch {}
+</script>

@@ -1,0 +1,16 @@
+---
+interface Props {
+	side: 'left' | 'right';
+	class?: string;
+	label?: string;
+}
+const { side, class: className, label } = Astro.props;
+const ariaLabel = label ?? (side === 'left' ? 'Toggle sidebar' : 'Toggle table of contents sidebar');
+---
+
+<button class:list={['icon-btn', className]} type="button" aria-label={ariaLabel} title="Toggle sidebar">
+	<svg viewBox="0 0 24 24" aria-hidden="true">
+		<rect x="3" y="4" width="18" height="16" rx="2"></rect>
+		<path d={side === 'left' ? 'M9 4v16' : 'M15 4v16'}></path>
+	</svg>
+</button>
