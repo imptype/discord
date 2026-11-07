@@ -21,9 +21,11 @@ walk(toc?.items as Item[] | undefined);
 const hasToggles = flat.some((i) => i.kids > 0);
 ---
 
-{/* Restores the "right sidebar collapsed" state before the page is painted, so it doesn't flash open on load. */}
+{/* Restores the "right sidebar collapsed" state before the page is painted, so it doesn't flash open on load.
+    Also marks the page as having JS, so the "hidden until measured" rule below can never leave the TOC hidden without JS. */}
 <script is:inline>
 	try {
+		document.documentElement.setAttribute('data-js', '');
 		if (localStorage.getItem('toc-sidebar-collapsed') === '1') document.documentElement.setAttribute('data-toc-collapsed', '');
 	} catch (e) {}
 </script>
@@ -108,6 +110,7 @@ const hasToggles = flat.some((i) => i.kids > 0);
 	const TRAIL = 28; // how far its ends reach to the right before fading out
 	const TIP = 8; // how far its middle point sticks out to the left
 	const TIP_R = 5; // roundness of that point
+	const REVEAL_FONT_WAIT = 400; // ms. Longest the TOC waits for web fonts before it is shown anyway.
 	let braceId = 0;
 
 	// Shortest path ("taut string") through a corridor: one value per row i, always between lo[i] and hi[i], the first
@@ -167,11 +170,18 @@ const hasToggles = flat.some((i) => i.kids > 0);
 	};
 
 	const init = (nav: HTMLElement) => {
+		// The TOC is hidden by CSS until it has been measured and positioned (see ".api-toc:not([data-ready])" below),
+		// so it never shows at a wrong size for a moment. Every way out of init must reveal it.
+		const ready = () => nav.setAttribute('data-ready', '');
+
 		const viewEl = nav.querySelector<HTMLElement>('.toc-view');
 		const heads = nav.querySelector<HTMLElement>('.toc-heads');
 		const membersCol = nav.querySelector<HTMLElement>('.toc-members');
 		const list = heads?.querySelector('ul');
-		if (!viewEl || !heads || !membersCol || !list) return;
+		if (!viewEl || !heads || !membersCol || !list) {
+			ready();
+			return;
+		}
 
 		const idOf = (a: HTMLAnchorElement) => decodeURIComponent(a.hash.slice(1));
 
@@ -296,7 +306,10 @@ const hasToggles = flat.some((i) => i.kids > 0);
 		const order = (x: { el: HTMLElement | null }, y: { el: HTMLElement | null }) =>
 			x.el && y.el ? (x.el.compareDocumentPosition(y.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1) : 0;
 		const everything = all.filter((t): t is Target => !!t.el).sort(order);
-		if (!everything.length) return;
+		if (!everything.length) {
+			ready();
+			return;
+		}
 
 		// The rows currently in play. Rows inside a collapsed section are left out (see "Collapsing" below), so
 		// everything that follows (the reading position, the paths, the "{") only ever sees the visible rows.
@@ -395,6 +408,7 @@ const hasToggles = flat.some((i) => i.kids > 0);
 		//    different class, the "{" starts a fixed-length (BRACE_MS) animation and always finishes it, however
 		//    slowly (or not at all) you keep scrolling. Only its middle point keeps following u.
 		const desktop = matchMedia('(min-width: 72rem)');
+		const sidebarEl = nav.closest<HTMLElement>('.right-sidebar');
 		let live = false; // false while this copy of the TOC is hidden or on a narrow screen
 		let view = 0; // visible height of the lists
 		let maxL = 0; // how far each list can slide before it runs out
@@ -432,6 +446,12 @@ const hasToggles = flat.some((i) => i.kids > 0);
 		let tStart = 0;
 		let scrollable = false; // the lists are taller than the window, so the scrollbar is shown
 		let thumbH = 0; // height of the scrollbar's thumb
+
+		// A cheap fingerprint of everything whose size makes the layout need re-measuring. Used to skip pointless
+		// layout() runs (the ResizeObserver fires once straight after observe(), and again after layout's own writes).
+		let lastKey = '';
+		const sizeKey = () =>
+			`${heads.offsetWidth}x${heads.offsetHeight}|${membersCol.offsetWidth}x${membersCol.offsetHeight}|${sidebarEl?.clientHeight ?? 0}`;
 
 		const clamp = (v: number, max: number) => Math.max(0, Math.min(max, v));
 		const snap = (v: number) => Math.round(v * (devicePixelRatio || 1)) / (devicePixelRatio || 1); // sharp text
@@ -760,6 +780,7 @@ const hasToggles = flat.some((i) => i.kids > 0);
 				setBrace(Math.max(0, active), true);
 				setTip(Math.max(0, active), true);
 			}
+			lastKey = sizeKey(); // remember what was measured, so a ResizeObserver echo of our own writes is skipped
 			render();
 		};
 
@@ -767,19 +788,38 @@ const hasToggles = flat.some((i) => i.kids > 0);
 		// Reading line = exactly where the browser puts a jump-link target (the page's scroll-padding-top), so a row
 		// you jump to is at the line, not a few pixels below it. The 1px absorbs sub-pixel rounding of the scroll.
 		const getOffset = () => (parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0) + 1;
+
+		// Positions of every row of the page, measured ONCE (in document coordinates) and reused on every scroll
+		// frame. Before, each frame forced a style recalculation (getComputedStyle) and ~12 getBoundingClientRect
+		// calls. Now a scroll frame reads only scrollY. `dirty` is set whenever the page's layout may have changed
+		// (its size changes, the window resizes, the breakpoint flips); the next read re-measures.
+		let rowTops: number[] = [];
+		let readLine = 0;
+		let docH = 0;
+		let dirty = true;
+		const measurePositions = () => {
+			const sy = scrollY;
+			rowTops = everything.map((t) => t.el.getBoundingClientRect().top + sy);
+			readLine = getOffset();
+			docH = document.documentElement.scrollHeight;
+			dirty = false;
+		};
+
 		// Positions are measured on EVERY row of the page, including rows hidden by a collapsed section, so a collapsed
 		// section still takes up its real stretch of the page. The result is then mapped onto the visible rows (vis):
 		// inside a collapsed section u stays on that section's heading, and only moves on to the next visible heading
 		// over the same last stretch it would cover if the section were open.
-		const topOf = (i: number) => everything[i].el.getBoundingClientRect().top;
 		const pageU = () => {
+			if (dirty) measurePositions();
+			const sy = scrollY;
+			const topOf = (i: number) => rowTops[i] - sy;
 			const N = everything.length;
-			let r = getOffset();
+			let r = readLine;
 			// Near the page bottom the last rows can never reach the reading line, so ease the line down
 			// over the last screenful until the final row is reached. Keeps u continuous all the way to the end.
-			const maxScroll = document.documentElement.scrollHeight - innerHeight;
-			const lastAtBottom = topOf(N - 1) - (maxScroll - scrollY);
-			if (lastAtBottom > r) r += (lastAtBottom - r) * Math.min(1, Math.max(0, (scrollY - (maxScroll - innerHeight)) / innerHeight));
+			const maxScroll = docH - innerHeight;
+			const lastAtBottom = topOf(N - 1) - (maxScroll - sy);
+			if (lastAtBottom > r) r += (lastAtBottom - r) * Math.min(1, Math.max(0, (sy - (maxScroll - innerHeight)) / innerHeight));
 			// Last row at or above the reading line (rows are in page order, so this is a binary search).
 			let lo = 0;
 			let hi = N - 1;
@@ -910,22 +950,51 @@ const hasToggles = flat.some((i) => i.kids > 0);
 				update();
 			});
 		};
+
+		// Re-measure the TOC at most once per frame, and only if something it depends on actually changed size.
+		// (layout() is expensive: it forces several reflows. It used to run on every ResizeObserver callback, including
+		// the one that fires straight after observe() and the echoes of its own style writes.)
+		let layoutQueued = false;
+		let forceNext = false;
+		const queueLayout = (force = false) => {
+			forceNext ||= force;
+			if (layoutQueued) return;
+			layoutQueued = true;
+			requestAnimationFrame(() => {
+				layoutQueued = false;
+				const f = forceNext;
+				forceNext = false;
+				if (!f && sizeKey() === lastKey) return;
+				layout();
+				onScroll();
+			});
+		};
+
 		addEventListener('scroll', onScroll, { passive: true });
 		addEventListener('resize', () => {
-			layout();
-			onScroll();
+			dirty = true;
+			queueLayout(true);
 		});
 		desktop.addEventListener('change', () => {
-			layout();
-			onScroll();
+			dirty = true;
+			queueLayout(true);
 		});
 		// Lists change size when fonts load or the panel is resized: just re-measure.
-		const ro = new ResizeObserver(layout);
+		const ro = new ResizeObserver(() => queueLayout());
 		ro.observe(heads);
 		ro.observe(membersCol);
 		// The sidebar changes size when it is collapsed into a floating card (and back): re-measure then too.
-		const sidebarEl = nav.closest<HTMLElement>('.right-sidebar');
 		if (sidebarEl) ro.observe(sidebarEl);
+
+		// The page's own rows move when the page changes size (code tabs, fonts, images, the left sidebar collapsing...):
+		// throw the cached positions away and re-read the reading position.
+		const pageRo = new ResizeObserver(() => {
+			dirty = true;
+			onScroll();
+		});
+		pageRo.observe(document.documentElement);
+		const pageContent = document.querySelector('.sl-markdown-content');
+		if (pageContent) pageRo.observe(pageContent);
 
 		// Width of the visible right-hand column (it changes with the window and when the left sidebar collapses).
 		const container = nav.closest<HTMLElement>('.right-sidebar-container');
@@ -939,9 +1008,27 @@ const hasToggles = flat.some((i) => i.kids > 0);
 
 		layout();
 		update();
+
+		// Reveal once measured. Wait briefly for web fonts (they change text widths, so measuring before they load
+		// would show a second jump), but never longer than REVEAL_FONT_WAIT.
+		const fonts = document.fonts?.ready ?? Promise.resolve();
+		Promise.race([fonts, new Promise((r) => setTimeout(r, REVEAL_FONT_WAIT))]).then(() => {
+			if (sizeKey() !== lastKey) {
+				layout();
+				update();
+			}
+			requestAnimationFrame(ready);
+		});
 	};
 
-	document.querySelectorAll<HTMLElement>('nav.api-toc').forEach(init);
+	document.querySelectorAll<HTMLElement>('nav.api-toc').forEach((nav) => {
+		try {
+			init(nav);
+		} catch (err) {
+			console.error(err);
+			nav.setAttribute('data-ready', ''); // never leave the TOC hidden if something goes wrong
+		}
+	});
 
 	// Collapsing the whole right sidebar. Same idea as the left sidebar (see Sidebar.astro):
 	//   - the button next to "On this page" collapses it (or, when collapsed / peeking, pins it open again)
@@ -1146,6 +1233,15 @@ const hasToggles = flat.some((i) => i.kids > 0);
 
 	/* Wide screens (right sidebar visible). */
 	@media (min-width: 72rem) {
+		/* No flicker on load: the sidebar is built and sized by script (members list, widths, heights), so until the
+		   script has measured everything the whole sidebar (background included, since its width follows the TOC) is
+		   kept invisible but still laid out, so it can be measured. The script sets data-ready on the nav when done.
+		   Scoped to html[data-js] so the TOC can never stay hidden when scripts don't run, and skipped while the
+		   sidebar is collapsed (it is already hidden then, and its peek rules must win). */
+		html[data-js]:not([data-toc-collapsed]) .right-sidebar:has(.api-toc:not([data-ready])) {
+			visibility: hidden;
+		}
+
 		/* Starlight fixes the right panel at the sidebar width. Let it use all the room it has instead. */
 		.right-sidebar-panel:has(.api-toc),
 		.right-sidebar-panel .sl-container:has(.api-toc) {
