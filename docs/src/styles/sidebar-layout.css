@@ -194,3 +194,21 @@
 	width: 1px;
 	background: var(--sl-color-gray-5);
 }
+
+/* Home / splash page: with the top bar gone, the hero sat too high. Make the page fill the window
+   (below the header on mobile) and centre the hero vertically in it. */
+html[data-has-hero] main {
+	--home-lift: 5rem; /* how far above exact centre the hero sits (0 = dead centre) */
+	padding: 0 0 calc(var(--home-lift) * 2); /* extra bottom space lifts the centred hero by half of it */
+	min-height: calc(100dvh - var(--sl-nav-height));
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+/* The empty page body and empty footer under the hero take up space, so hide them while they're empty. */
+html[data-has-hero] .sl-markdown-content:empty {
+	display: none;
+}
+html[data-has-hero] footer:not(:has(a, time, p)) {
+	display: none;
+}
