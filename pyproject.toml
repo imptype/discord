@@ -65,5 +65,5 @@ ignore = [
 ]
 '*.pyi' = [
   'F401', # unused import
-  'E402' # import not at top of file
+  'E402'  # import not at top of file
 ]

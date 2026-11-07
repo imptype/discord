@@ -30,7 +30,7 @@ class SignalCog(discord.Cog):
     print('release start')
 
     # Comment out to see the differnet ways to fire, "send()" and "defer()" are probably the only useful ones.
-    # You can also pass args, kwargs when triggering a signal, see discord/ext/signal.py for examples
+    # You can also pass args when triggering a signal, see discord/ext/signal.py for examples
 
     await self.bot.signal.fire('foo')       # runs concurrently and exits when all yield
     # await self.bot.signal.fire_each('foo')  # runs sequentially and exits when last one yields
