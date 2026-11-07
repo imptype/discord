@@ -1,0 +1,24 @@
+:root {
+  --sl-color-bg: #000;
+  --sl-color-bg-nav: #000;
+  --sl-color-bg-sidebar: #000;
+  --sl-color-hairline-shade: #202227;
+  --sl-color-text-invert: #fff;
+  --sl-color-text-accent: #335EFD;
+  --sl-text-xs: 0.85rem;
+}
+
+:root[data-theme='light'] {
+  --sl-color-bg: #F7F7F8;
+  --sl-color-bg-nav: #E6E7EA;
+  --sl-color-bg-sidebar: #EEEFF1;
+  --sl-color-hairline-shade: #D5D7DD;
+  --sl-color-text-invert: #fff;
+  --sl-color-text-accent: #335FFF;
+}
+
+.sl-markdown-content :is(h1, h2, h3, h4, h5, h6):not(:where(.not-content *)),
+.site-title,
+#_top {
+  font-weight: 800;
+}
