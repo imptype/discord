@@ -19,6 +19,34 @@ const walk = (items: Item[] = [], parent = '') => {
 };
 walk(toc?.items as Item[] | undefined);
 const hasToggles = flat.some((i) => i.kids > 0);
+
+// ---- Members list, rendered on the server ----
+// scripts/genapi.py writes src/data/api-members.json next to api.mdx: { "Category": { "Class": ["Class.member", ...] } }.
+// With it, the right-hand column arrives as real HTML instead of being built in the browser after the page loads.
+// import.meta.glob (rather than a plain import) so a missing file just means "no manifest", not a build error.
+const DIM_PREFIX = false; // show "NumberGroup." dimmed in front of each member (false = plain full names)
+type Manifest = Record<string, Record<string, string[]>>;
+const manifestFile = Object.values(
+	import.meta.glob('../data/api-members.json', { eager: true, import: 'default' }),
+)[0] as Manifest | undefined;
+const manifest = dynamic && id.startsWith('reference/api') ? manifestFile : undefined;
+
+const textOf = new Map(flat.map((i) => [i.slug, i.text]));
+let seenGroup = false;
+// One row per heading, in the same order as the headings list: its member ids (if its class has any), or whether it
+// gets the small empty gap instead (a gap is only kept once a member list has come before it).
+const rows = flat.map((i) => {
+	const members = manifest && i.depth === 3 ? manifest[textOf.get(i.parent) ?? '']?.[i.text] : undefined;
+	const has = !!members?.length;
+	const gap = !has && seenGroup;
+	if (has) seenGroup = true;
+	return { ...i, members: has ? members : undefined, gap };
+});
+const groupCount = rows.filter((r) => r.members).length;
+// How many heading rows sit above the first class that has members. The members column is pushed down by that many
+// rows so its first member starts level with that heading. CSS does it from this number, so it is right on first
+// paint instead of after the script has measured (the script still re-measures and overrides it).
+const firstGroupRow = rows.findIndex((r) => r.members);
 ---
 
 {/* Restores the "right sidebar collapsed" state before the page is painted, so it doesn't flash open on load.
@@ -46,11 +74,11 @@ const hasToggles = flat.some((i) => i.kids > 0);
 			<div class="toc-view">
 				<div class="toc-col toc-heads">
 					<ul class:list={['toc-list', hasToggles && 'has-toggles']}>
-						{flat.map((i) => (
+						{rows.map((i) => (
 							<li
 								data-group={i.slug}
 								data-parent={i.parent}
-								class:list={[i.kids > 0 && 'has-kids']}
+								class:list={[i.kids > 0 && 'has-kids', i.members && 'has-members']}
 								style={`--d:${i.depth - 2}`}
 							>
 								<a href={`#${i.slug}`}>{i.text}</a>
@@ -70,8 +98,32 @@ const hasToggles = flat.some((i) => i.kids > 0);
 						))}
 					</ul>
 				</div>
-				{/* Filled in by the script below with every class member on the page. */}
-				<div class="toc-col toc-members" hidden></div>
+				{/* Every class member on the page. Pre-rendered from api-members.json when there is one; otherwise empty
+				    and filled in by the script below, which scans the page. */}
+				<div
+					class="toc-col toc-members"
+					hidden={groupCount === 0}
+					style={firstGroupRow > 0 ? `--first-rows:${firstGroupRow}` : undefined}
+				>
+					{rows.map((r) =>
+						r.members ? (
+							<ul class="members-group" data-group={r.slug}>
+								{r.members.map((m) => (
+									<li><a href={`#${m}`} title={m}>{DIM_PREFIX && m.startsWith(`${r.text}.`) ? <><span class="pfx">{`${r.text}.`}</span>{m.slice(r.text.length + 1)}</> : m}</a></li>
+								))}
+							</ul>
+						) : r.gap ? (
+							<div class="members-gap" data-gap={r.slug} aria-hidden="true"></div>
+						) : null,
+					)}
+				</div>
+				{/* The scrollbar's track, rendered here (when there are members) so its width is reserved from the first paint
+				    and the sidebar doesn't widen when the script starts. The script sizes it and moves the thumb. */}
+				{manifest && groupCount > 0 && (
+					<div class="toc-scroll" aria-hidden="true">
+						<div class="toc-thumb" />
+					</div>
+				)}
 			</div>
 		</nav>
 	) : (
@@ -86,6 +138,34 @@ const hasToggles = flat.some((i) => i.kids > 0);
 		</div>
 	)
 }
+
+{/* FIRST-PAINT SIZING. Runs while the page is still being parsed (is:inline = no separate file to download), so the
+    scrollbar thumb already has its height when the page is first painted. It does ONE thing: the thumb's height is
+    view * view / total, a length divided by a length, which CSS cannot do yet. Everything else (the members list's top
+    padding, the gap heights) is plain CSS from --row-h, so it is already right here. The big script below takes over
+    afterwards and writes the same numbers, so nothing moves. */}
+<script is:inline>
+	(function () {
+		try {
+			if (!matchMedia('(min-width: 72rem)').matches) return;
+			var nav = document.querySelector('nav.api-toc');
+			if (!nav) return;
+			var heads = nav.querySelector('.toc-heads');
+			var members = nav.querySelector('.toc-members');
+			var track = nav.querySelector('.toc-scroll');
+			var thumb = nav.querySelector('.toc-thumb');
+			if (!heads || !members || !track || !thumb) return;
+			// The track is as tall as the room the sidebar has (--toc-rail). The lists are as tall as their rows.
+			var view = track.offsetHeight;
+			var total = Math.max(heads.offsetHeight, members.hidden ? 0 : members.offsetHeight);
+			if (total > view + 1) {
+				thumb.style.height = Math.max(24, (view * view) / total) + 'px';
+			} else {
+				track.hidden = true; // everything fits: no scrollbar, same as layout() decides
+			}
+		} catch (e) {}
+	})();
+</script>
 
 <script>
 	const START_COLLAPSED = false; // true = sections with sub-headings (ABC, Core, ...) start collapsed
@@ -188,71 +268,87 @@ const hasToggles = flat.some((i) => i.kids > 0);
 		type Target = { a: HTMLAnchorElement; el: HTMLElement; group: string };
 		const all: { a: HTMLAnchorElement; el: HTMLElement | null; group: string }[] = [];
 
-		// 1. Left list: headings (rendered by the server).
+		// 2a. Right list: every member of every class, grouped per class. Normally the server already rendered it
+		// (from api-members.json, see the frontmatter): just pick the lists and gaps up. Without a manifest it is empty
+		// and built by scanning the page (2b below).
+		const groups = new Map<string, HTMLUListElement>(); // class heading id -> its member list
+		const gaps = new Map<string, HTMLElement>(); // class heading id -> its gap
+		const prebuilt = !!membersCol.querySelector('ul.members-group');
+		if (prebuilt) {
+			membersCol.querySelectorAll<HTMLUListElement>('ul.members-group').forEach((ul) => groups.set(ul.dataset.group!, ul));
+			membersCol.querySelectorAll<HTMLElement>('.members-gap').forEach((g) => gaps.set(g.dataset.gap!, g));
+		}
+
+		// 1. Left list: headings (rendered by the server). With a prebuilt members list, each class's members are added
+		// right after their heading, which is already the order they have on the page (so no sorting is needed later).
 		const headLis = new Map<string, HTMLLIElement>();
 		const parentOf = new Map<string, string>(); // heading id -> id of the heading it sits under ('' = top level)
 		list.querySelectorAll<HTMLLIElement>('li').forEach((li) => {
 			const a = li.querySelector('a')!;
-			headLis.set(li.dataset.group!, li);
-			parentOf.set(li.dataset.group!, li.dataset.parent ?? '');
-			all.push({ a, el: document.getElementById(idOf(a)), group: li.dataset.group! });
+			const slug = li.dataset.group!;
+			headLis.set(slug, li);
+			parentOf.set(slug, li.dataset.parent ?? '');
+			all.push({ a, el: document.getElementById(idOf(a)), group: slug });
+			groups.get(slug)?.querySelectorAll('a').forEach((m) => {
+				all.push({ a: m, el: document.getElementById(idOf(m)), group: slug });
+			});
 		});
 
-		// 2. Right list: every member of every class, grouped per class, listed once.
-		const found = document.querySelectorAll<HTMLElement>(
-			'.sl-markdown-content :is(h2, h3)[id], .api-member > dt[id]',
-		);
-		const groups = new Map<string, HTMLUListElement>(); // class heading id -> its member list
-		let groupList: HTMLUListElement | undefined;
-		let parent = '';
-		for (const el of found) {
-			// tagName check (not el.matches) so TS doesn't narrow `el` to never in the else branch
-			if (el.tagName === 'DT') {
-				if (!headLis.has(parent)) continue;
-				if (!groupList) {
-					groupList = document.createElement('ul');
-					groupList.className = 'members-group';
-					groups.set(parent, groupList);
-					headLis.get(parent)!.classList.add('has-members');
+		if (!prebuilt) {
+			// 2b. Fallback (no manifest, e.g. a hand-written page): scan the page for every member and build the lists here.
+			const found = document.querySelectorAll<HTMLElement>(
+				'.sl-markdown-content :is(h2, h3)[id], .api-member > dt[id]',
+			);
+			let groupList: HTMLUListElement | undefined;
+			let parent = '';
+			for (const el of found) {
+				// tagName check (not el.matches) so TS doesn't narrow `el` to never in the else branch
+				if (el.tagName === 'DT') {
+					if (!headLis.has(parent)) continue;
+					if (!groupList) {
+						groupList = document.createElement('ul');
+						groupList.className = 'members-group';
+						groups.set(parent, groupList);
+						headLis.get(parent)!.classList.add('has-members');
+					}
+					const li = document.createElement('li');
+					const a = document.createElement('a');
+					a.href = `#${el.id}`;
+					a.title = el.id; // full name on hover, since long ones get cut with "..."
+					// e.g. NumberGroup.divide -> dimmed "NumberGroup." + "divide"
+					const prefix = `${parent}.`;
+					if (el.id.startsWith(prefix)) {
+						const dim = document.createElement('span');
+						dim.className = 'pfx';
+						dim.textContent = prefix;
+						a.append(dim, el.id.slice(prefix.length));
+					} else {
+						a.textContent = el.id;
+					}
+					li.append(a);
+					groupList.append(li);
+					all.push({ a, el, group: parent });
+				} else if (headLis.has(el.id)) {
+					parent = el.id;
+					groupList = undefined;
 				}
-				const li = document.createElement('li');
-				const a = document.createElement('a');
-				a.href = `#${el.id}`;
-				a.title = el.id; // full name on hover, since long ones get cut with "..."
-				// e.g. NumberGroup.divide -> dimmed "NumberGroup." + "divide"
-				const prefix = `${parent}.`;
-				if (el.id.startsWith(prefix)) {
-					const dim = document.createElement('span');
-					dim.className = 'pfx';
-					dim.textContent = prefix;
-					a.append(dim, el.id.slice(prefix.length));
-				} else {
-					a.textContent = el.id;
-				}
-				li.append(a);
-				groupList.append(li);
-				all.push({ a, el, group: parent });
-			} else if (headLis.has(el.id)) {
-				parent = el.id;
-				groupList = undefined;
 			}
-		}
-		// Lay the members list out in the same order as the headings list. After the first class that has members,
-		// every class WITHOUT members gets a small empty gap (half a row) in its place, so the list keeps pace with
-		// the headings and scrolling past such a class moves it a little instead of not at all.
-		const gaps = new Map<string, HTMLElement>(); // class heading id -> its gap
-		let seenGroup = false;
-		for (const slug of headLis.keys()) {
-			const ul = groups.get(slug);
-			if (ul) {
-				membersCol.append(ul);
-				seenGroup = true;
-			} else if (seenGroup) {
-				const gap = document.createElement('div');
-				gap.className = 'members-gap';
-				gap.setAttribute('aria-hidden', 'true');
-				membersCol.append(gap);
-				gaps.set(slug, gap);
+			// Lay the members list out in the same order as the headings list. After the first class that has members,
+			// every class WITHOUT members gets a small empty gap (half a row) in its place, so the list keeps pace with
+			// the headings and scrolling past such a class moves it a little instead of not at all.
+			let seenGroup = false;
+			for (const slug of headLis.keys()) {
+				const ul = groups.get(slug);
+				if (ul) {
+					membersCol.append(ul);
+					seenGroup = true;
+				} else if (seenGroup) {
+					const gap = document.createElement('div');
+					gap.className = 'members-gap';
+					gap.setAttribute('aria-hidden', 'true');
+					membersCol.append(gap);
+					gaps.set(slug, gap);
+				}
 			}
 		}
 		membersCol.hidden = groups.size === 0;
@@ -293,19 +389,24 @@ const hasToggles = flat.some((i) => i.kids > 0);
 
 		// A scrollbar for the whole TOC, on its right edge. The lists are slid by script, never scrolled natively,
 		// so this is drawn by hand: the thumb shows how far through the page's rows you are, and can be dragged.
-		const track = document.createElement('div');
-		track.className = 'toc-scroll';
-		track.setAttribute('aria-hidden', 'true');
-		track.hidden = true;
-		const thumb = document.createElement('div');
+		// Normally the server already rendered it (so its width is reserved from the first paint): reuse that one.
+		const serverTrack = viewEl.querySelector<HTMLElement>(':scope > .toc-scroll');
+		const track = serverTrack ?? document.createElement('div');
+		const thumb = track.querySelector<HTMLElement>('.toc-thumb') ?? document.createElement('div');
 		thumb.className = 'toc-thumb';
-		track.append(thumb);
-		viewEl.append(track);
+		if (!thumb.parentElement) track.append(thumb);
+		if (!serverTrack) {
+			track.className = 'toc-scroll';
+			track.setAttribute('aria-hidden', 'true');
+			track.hidden = true;
+			viewEl.append(track);
+		}
 
 		// Every row of the TOC (headings and members), in the order they appear on the page.
 		const order = (x: { el: HTMLElement | null }, y: { el: HTMLElement | null }) =>
 			x.el && y.el ? (x.el.compareDocumentPosition(y.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1) : 0;
-		const everything = all.filter((t): t is Target => !!t.el).sort(order);
+		const everything = all.filter((t): t is Target => !!t.el);
+		if (!prebuilt) everything.sort(order); // a prebuilt list is already in page order
 		if (!everything.length) {
 			ready();
 			return;
@@ -421,7 +522,7 @@ const hasToggles = flat.some((i) => i.kids > 0);
 		let BSs: number[] = [];
 		let OLs: number[] = []; // per row: how far the left list is slid when the page is exactly on that row (smoothed)
 		let ORs: number[] = []; // per row: the same for the right list, chosen so the row's heading and member are level
-		let rowH = 28; // height of one row
+		let rowH = 24.25; // height of one row (measured exactly in layout(); matches --row-h in the CSS)
 		let target = 0; // u the page is at
 		let cur = 0; // u as currently shown (eased)
 		let raf = 0;
@@ -699,7 +800,8 @@ const hasToggles = flat.some((i) => i.kids > 0);
 			viewEl.style.minWidth = '';
 			if (desktop.matches) {
 				viewEl.style.minWidth = `${Math.ceil(fullWidth())}px`;
-				rowH = heads.querySelector('a')?.offsetHeight || 28;
+				// Exact (fractional) row height, same value as --row-h in the CSS. offsetHeight would round 24.25 to 24.
+				rowH = heads.querySelector('a')?.getBoundingClientRect().height || 24.25;
 				membersCol.style.setProperty('--row', `${rowH}px`); // sizes the gaps for classes without members
 				// Empty space on top of the members list, as tall as the headings above the first VISIBLE class that has
 				// members (Overview, ABC, ...). That class's members then start level with its heading, and the
@@ -1113,6 +1215,13 @@ const hasToggles = flat.some((i) => i.kids > 0);
 		}
 	}
 
+	/* ONE row of the TOC, written down once: line-height 1.25 x font size, plus 0.25rem padding above and below
+	   (see ".api-toc a" below). The members list's top padding and the gap heights are calculated from it, so they
+	   are exact on first paint. (An "em" there would have used the container's 16px instead of the link's font size.) */
+	.api-toc {
+		--row-h: calc(1.25 * var(--sl-text-xs) + 0.5rem);
+	}
+
 	/* Matches Starlight's TableOfContentsList. Font size, link colour, hover colour and the
 	   h2 heading style are inherited from Starlight's .right-sidebar-panel rules. */
 	.api-toc ul {
@@ -1127,6 +1236,7 @@ const hasToggles = flat.some((i) => i.kids > 0);
 		--pad-inline: 0.5rem;
 		display: block;
 		border-radius: 0.25rem;
+		font-size: var(--sl-text-xs); /* same value Starlight gives these links; stated so --row-h can rely on it */
 		padding-block: 0.25rem;
 		padding-inline: calc(1rem * var(--d, 0) + var(--pad-inline)) var(--pad-inline);
 		line-height: 1.25;
@@ -1210,7 +1320,7 @@ const hasToggles = flat.some((i) => i.kids > 0);
 	/* Gap for a class without members: half a row in total, counting the margin. Wide screens only. */
 	.api-toc .members-gap {
 		display: none;
-		height: calc(var(--row, 28px) / 2 - 0.25rem);
+		height: calc(var(--row-h) / 2 - 0.25rem);
 	}
 	/* The accent line: a curly "{" SVG, redrawn by the script. */
 	.api-toc .toc-line {
@@ -1238,9 +1348,11 @@ const hasToggles = flat.some((i) => i.kids > 0);
 		   kept invisible but still laid out, so it can be measured. The script sets data-ready on the nav when done.
 		   Scoped to html[data-js] so the TOC can never stay hidden when scripts don't run, and skipped while the
 		   sidebar is collapsed (it is already hidden then, and its peek rules must win). */
+		/* DISABLED: the sidebar now shows immediately. Uncomment to hide it until the script has measured.
 		html[data-js]:not([data-toc-collapsed]) .right-sidebar:has(.api-toc:not([data-ready])) {
 			visibility: hidden;
 		}
+		*/
 
 		/* Starlight fixes the right panel at the sidebar width. Let it use all the room it has instead. */
 		.right-sidebar-panel:has(.api-toc),
@@ -1268,6 +1380,9 @@ const hasToggles = flat.some((i) => i.kids > 0);
 		.api-toc {
 			--toc-member-max: 14rem; /* members longer than this are cut with "..." (full name on hover) */
 			--toc-max: calc(100vh - var(--sl-nav-height) - 1rem); /* Starlight's right sidebar height minus the panel's top padding. A limit until the script fits the lists exactly. */
+			/* Height of the scrollbar's track before the script has measured the real one: the sidebar's height minus the
+			   panel's top padding (1rem), the "On this page" row (1.9rem) and its margin (0.5rem). The script overrides it. */
+			--toc-rail: calc(100vh - var(--sl-nav-height) - 3.4rem);
 		}
 
 		/* A clipped window onto the two lists; the script slides the lists inside it. */
@@ -1287,6 +1402,9 @@ const hasToggles = flat.some((i) => i.kids > 0);
 		}
 		.api-toc .toc-members {
 			margin-top: 0;
+			/* Level the first member with its class heading before any script has run: that many heading rows
+			   (--row-h, see above), minus the member list's own top padding. Same number layout() measures. */
+			padding-top: max(0rem, calc(var(--first-rows, 0) * var(--row-h) - var(--group-pad, 0.1875rem)));
 			/* A little empty room under the last class, so when the list is scrolled to its end the "{"'s bottom
 			   curve sits inside the window instead of being cut off by its bottom edge. */
 			padding-bottom: var(--toc-brace-room, 0.375rem);
@@ -1315,6 +1433,7 @@ const hasToggles = flat.some((i) => i.kids > 0);
 			margin-inline-start: auto; /* pin to the right end of the view, whatever the width of the lists */
 			position: relative;
 			width: 0.375rem;
+			height: var(--toc-rail);
 			border-radius: 0.1875rem;
 			background: color-mix(in srgb, var(--sl-color-gray-4) 25%, transparent);
 			touch-action: none;
