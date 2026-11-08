@@ -7,13 +7,13 @@ class HTTPClient(API):
   TODO
 
   Attributes:
-    token: TODO
+    token: The token used to make authorized HTTP requests.
     application_id: TODO
     use_sync: TODO
     cleanup_task: TODO
   """
 
-  token: Any # TODO
+  token: str | None
   application_id: Any # TODO
   use_sync: Any # TODO
   cleanup_task: Any # TODO

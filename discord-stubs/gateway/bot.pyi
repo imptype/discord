@@ -2,6 +2,7 @@ from typing import Any
 from ..core import AppBase
 from ..core import CommandProxy
 from .connection import Connection
+from .intents import Intents
 
 class BotCommandProxy(CommandProxy):
   def __call__(self, *args, **kwargs) -> Any: ...
@@ -11,16 +12,16 @@ class Bot(AppBase):
   TODO
 
   Attributes:
-    intents: TODO
-    prefix: TODO
+    intents: The bot's gateway intents.
+    prefix: The prefix for gateway message commands.
     connection: TODO
     event_handlers: TODO
     command_handlers: TODO
     ready_at: TODO
   """
 
-  intents: Any # TODO
-  prefix: Any # TODO
+  intents: Intents
+  prefix: str
   connection: Connection
   event_handlers: Any # TODO
   command_handlers: Any # TODO

@@ -2,6 +2,7 @@ from typing import Any
 from contextlib import AsyncExitStack
 from ..abc import BaseHandler
 import asyncio
+from ..core.http import HTTPClient
 
 class Lifespan(BaseHandler):
   """
@@ -34,14 +35,14 @@ class LifespanMixin:
   TODO
 
   Attributes:
-    http: TODO
+    http: The app's HTTPClient.
     stack: TODO
     lifespan_handlers: TODO
     loop: TODO
     started_at: TODO
   """
 
-  http: Any # TODO
+  http: HTTPClient
   stack: AsyncExitStack
   lifespan_handlers: Any # TODO
   loop: asyncio.AbstractEventLoop
