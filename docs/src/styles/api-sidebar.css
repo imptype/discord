@@ -1,0 +1,30 @@
+/* Loaded only on reference/api (see Head.astro), from <head>, so it applies at first paint. */
+html {
+	--toc-width: calc(var(--sl-sidebar-width) * 1.6);
+	--toc-container-margin: 0;
+	--toc-jump-gap: 0rem;
+	scroll-padding-top: calc(var(--toc-jump-gap) + var(--sl-nav-height) + var(--sl-mobile-toc-height));
+}
+@media (min-width: 72em) {
+	html {
+		scroll-padding-top: calc(var(--toc-jump-gap) + var(--sl-nav-height));
+	}
+}
+@media (min-width: 72rem) {
+	html:root .right-sidebar-panel,
+	html:root .right-sidebar-panel .sl-container {
+		max-width: 100%;
+	}
+	html:root .right-sidebar-panel .sl-container {
+		width: auto;
+		padding-inline: 0;
+	}
+	html:root .right-sidebar-panel {
+		padding-bottom: 0;
+		padding-inline-end: var(--toc-edge, var(--sl-sidebar-pad-x, 1rem));
+	}
+	html:root .right-sidebar {
+		scrollbar-gutter: auto;
+		padding-inline-end: 0;
+	}
+}

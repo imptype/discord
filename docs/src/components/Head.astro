@@ -1,8 +1,15 @@
 ---
 import Default from '@astrojs/starlight/components/Head.astro';
+import apiSidebarCss from '../styles/api-sidebar.css?url';
+
+// Known on the server from the page id, so the <link> is in <head> and the right sidebar
+// has its final width on first paint. No JS and no waiting for the sidebar to be parsed.
+const wide = Astro.locals.starlightRoute.id === 'reference/api';
 ---
 
 <Default><slot /></Default>
+
+{wide && <link rel="stylesheet" href={apiSidebarCss} />}
 
 <script is:inline>
 	try {

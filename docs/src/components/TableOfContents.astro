@@ -559,27 +559,9 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		track.addEventListener('pointerup', endDrag);
 		track.addEventListener('pointercancel', endDrag);
 
-		// Width with every section open, so collapsing does not shift the centred TOC.
-		const fullWidth = () => {
-			const hiddenEls = [...nav.querySelectorAll<HTMLElement>('.toc-hidden')];
-			const wasHidden = membersCol.hidden;
-			const trackWasHidden = track.hidden;
-			viewEl.style.minWidth = '';
-			for (const el of hiddenEls) el.classList.remove('toc-hidden');
-			membersCol.hidden = groups.size === 0;
-			track.hidden = false;
-			const w = viewEl.getBoundingClientRect().width;
-			track.hidden = trackWasHidden;
-			membersCol.hidden = wasHidden;
-			for (const el of hiddenEls) el.classList.add('toc-hidden');
-			return w;
-		};
-
 		const layout = () => {
 			live = false;
-			viewEl.style.minWidth = '';
 			if (desktop.matches) {
-				viewEl.style.minWidth = `${Math.ceil(fullWidth())}px`;
 				rowH = heads.querySelector('a')?.getBoundingClientRect().height || 24.25;
 				const firstSlug = [...groups.keys()].find((s) => !hiddenSlugs.has(s));
 				const firstHead = firstSlug ? headLis.get(firstSlug)!.querySelector('a') : null;
@@ -857,15 +839,7 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 </script>
 
 <style is:global>
-	html:root:has(.api-toc) {
-		--toc-jump-gap: 0rem;
-		scroll-padding-top: calc(var(--toc-jump-gap) + var(--sl-nav-height) + var(--sl-mobile-toc-height));
-	}
-	@media (min-width: 72em) {
-		html:root:has(.api-toc) {
-			scroll-padding-top: calc(var(--toc-jump-gap) + var(--sl-nav-height));
-		}
-	}
+	/* API-page-only layout rules (width, scroll padding, panel padding) live in Head.astro, so they apply at first paint. */
 
 	/* one row: 1.25 line-height x font size + 0.5rem padding */
 	.api-toc {
@@ -976,21 +950,9 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 	}
 
 	@media (min-width: 72rem) {
-		.right-sidebar-panel:has(.api-toc),
-		.right-sidebar-panel .sl-container:has(.api-toc) {
-			max-width: 100%;
-		}
-		.right-sidebar-panel .sl-container:has(.api-toc) {
-			width: auto;
-		}
-		.right-sidebar-panel:has(.api-toc) {
-			width: max-content;
-		}
-
+		/* --toc-width is only set on the API page (Head.astro); other pages fall back to --sl-sidebar-width. */
 		.api-toc {
-			width: fit-content;
-			max-width: 100%;
-			margin-inline: auto 0;
+			width: 100%;
 			--toc-member-max: 14rem; /* longer members are cut with "..." (full name on hover) */
 			--toc-max: calc(100vh - var(--sl-nav-height) - 1rem);
 			--toc-rail: calc(100vh - var(--sl-nav-height) - 3.4rem);
@@ -1000,8 +962,7 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			display: flex;
 			align-items: flex-start;
 			column-gap: 0.75rem;
-			width: max-content;
-			max-width: 100%;
+			width: 100%;
 			max-height: var(--toc-max);
 			overflow: clip;
 		}
@@ -1108,35 +1069,16 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			background-color: var(--sl-color-bg-sidebar);
 		}
 
-		html:root .right-sidebar:has(.api-toc) {
+		html:root .right-sidebar {
 			inset-inline-start: auto;
 			inset-inline-end: 0;
-			width: max-content;
-			max-width: 100vw;
+			width: var(--toc-width, var(--sl-sidebar-width));
 		}
-
-		html:root .right-sidebar:not(:has(.api-toc)) {
-			inset-inline-start: auto;
-			inset-inline-end: 0;
-			width: var(--sl-sidebar-width);
+		html:root .right-sidebar-panel {
+			width: 100%;
 		}
-		html:root .right-sidebar-panel:not(:has(.api-toc)) {
-			width: var(--sl-sidebar-width);
-		}
-		html:root .right-sidebar-panel:not(:has(.api-toc)) .sl-container {
-			margin-inline: auto;
-		}
-		html:root .right-sidebar-panel:has(.api-toc) {
-			padding-bottom: 0;
-			padding-inline-end: var(--toc-edge, var(--sl-sidebar-pad-x, 1rem));
-		}
-		html:root .right-sidebar:has(.api-toc) {
-			scrollbar-gutter: auto;
-			padding-inline-end: 0;
-		}
-		html:root .right-sidebar-panel:has(.api-toc) .sl-container {
-			margin-inline: 0;
-			padding-inline: 0;
+		html:root .right-sidebar-panel .sl-container {
+			margin-inline: var(--toc-container-margin, auto);
 		}
 
 		html:root .right-sidebar-container {
@@ -1170,8 +1112,7 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			height: calc(100vh - 2 * var(--sb-float, 0.75rem));
 			inset-inline-start: auto;
 			inset-inline-end: var(--sb-float, 0.75rem);
-			width: max-content;
-			max-width: calc(100vw - 2 * var(--sb-float, 0.75rem));
+			width: var(--toc-width, var(--sl-sidebar-width));
 			border-radius: var(--sb-float-radius, 1rem);
 			border-inline-start-color: transparent;
 			box-shadow:
@@ -1183,12 +1124,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			transition:
 				transform 0.2s ease,
 				visibility 0s linear 0.2s;
-		}
-		html:root[data-toc-collapsed] .right-sidebar-panel:has(.api-toc) {
-			width: max-content;
-		}
-		html:root[data-toc-collapsed] .right-sidebar-panel:not(:has(.api-toc)) {
-			width: var(--sl-sidebar-width);
 		}
 		html:root[data-toc-collapsed][data-toc-peek] .right-sidebar {
 			transform: none;
