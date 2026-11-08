@@ -30,22 +30,88 @@ def lifespan(callback = ..., *, name = ...) -> Any: # TODO
   """
 
 class LifespanMixin:
-  def __init__(self, registrars, http) -> None: ...
+  """
+  TODO
 
-  def lifespan(self, callback = ...) -> Any: ...
+  Attributes:
+    http: TODO
+    stack: TODO
+    lifespan_handlers: TODO
+    loop: TODO
+    started_at: TODO
+  """
 
-  async def enter_lifespan(self, handler) -> Any: ...
+  def __init__(self, registrars, http) -> None: # TODO
+    """
+    TODO
 
-  async def add_lifespans(self, *handlers) -> Any: ...
+    Args:
+      registrars: TODO
+      http: TODO
+    """
 
-  async def remove_lifespans(self, *handlers) -> Any: ...
+  def lifespan(self, callback = ...) -> Any: # TODO
+    """
+    TODO
 
-  async def startup_lifespans(self) -> Any: ...
+    Args:
+      callback: TODO
 
-  async def shutdown_lifespans(self) -> Any: ...
+    Returns:
+      TODO
+    """
 
-  http: Any
+  async def enter_lifespan(self, handler) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      handler: TODO
+
+    Returns:
+      TODO
+    """
+
+  async def add_lifespans(self, *handlers) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      *handlers: TODO
+
+    Returns:
+      TODO
+    """
+
+  async def remove_lifespans(self, *handlers) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      *handlers: TODO
+
+    Returns:
+      TODO
+    """
+
+  async def startup_lifespans(self) -> Any: # TODO
+    """
+    TODO
+
+    Returns:
+      TODO
+    """
+
+  async def shutdown_lifespans(self) -> Any: # TODO
+    """
+    TODO
+
+    Returns:
+      TODO
+    """
+
+  http: Any # TODO
   stack: AsyncExitStack
-  lifespan_handlers: Any
+  lifespan_handlers: Any # TODO
   loop: asyncio.AbstractEventLoop
-  started_at: Any
+  started_at: Any # TODO

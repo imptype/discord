@@ -3,7 +3,7 @@ from ..abc import Handler
 import asyncio
 
 DEFAULT_WAITER_TIMEOUT: int
-DEFAULT_HANDLER_TIMEOUT: Any
+DEFAULT_HANDLER_TIMEOUT: Any # TODO
 
 class SignalTimeoutError(TimeoutError): ...
 
@@ -161,7 +161,7 @@ class SignalModule:
 
   def __call__(self, callback = ..., *, name = ..., priority = ..., timeout = ..., max_runs = ..., once = ...) -> Any: ...
 
-  app: Any
+  app: Any # TODO
 
 def signal(callback = ..., *, name = ..., priority = ..., timeout = ..., max_runs = ..., once = ...) -> Any: # TODO
   """
@@ -180,12 +180,45 @@ def signal(callback = ..., *, name = ..., priority = ..., timeout = ..., max_run
   """
 
 class SignalMixin:
-  def __init__(self, registrars) -> None: ...
+  """
+  TODO
 
-  def add_signals(self, *signals) -> Any: ...
+  Attributes:
+    signal_handlers: TODO
+    signal_waiters: TODO
+    signal: TODO
+  """
 
-  def remove_signals(self, *signals) -> Any: ...
+  def __init__(self, registrars) -> None: # TODO
+    """
+    TODO
 
-  signal_handlers: Any
-  signal_waiters: Any
+    Args:
+      registrars: TODO
+    """
+
+  def add_signals(self, *signals) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      *signals: TODO
+
+    Returns:
+      TODO
+    """
+
+  def remove_signals(self, *signals) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      *signals: TODO
+
+    Returns:
+      TODO
+    """
+
+  signal_handlers: Any # TODO
+  signal_waiters: Any # TODO
   signal: SignalModule

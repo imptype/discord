@@ -11,8 +11,8 @@ class Payload:
 
   def encode(self) -> Any: ...
 
-  body: Any
-  files: Any
+  body: Any # TODO
+  files: Any # TODO
 
 def send_params(content = ..., *, app = ..., embed = ..., embeds = ..., file = ..., files = ..., view = ..., components = ..., flags = ..., ephemeral = ..., allowed = ...) -> Any: ...
 

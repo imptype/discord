@@ -5,18 +5,79 @@ from collections.abc import Coroutine
 from ..abc import PartialModel
 
 class BaseWebhook(PartialModel):
-  def __init__(self, webhook_id, token = ..., app = ..., http = ...) -> None: ...
+  """
+  TODO
 
-  def require_token(self) -> Any: ...
+  Attributes:
+    token: TODO
+    http: TODO
+  """
 
-  async def fetch_message(self, message_id, *, thread_id = ...) -> Any: ...
+  def __init__(self, webhook_id, token = ..., app = ..., http = ...) -> None: # TODO
+    """
+    TODO
 
-  async def edit_message(self, message_id, content = ..., *, embed = ..., embeds = ..., file = ..., files = ..., view = ..., components = ..., flags = ..., thread_id = ...) -> Any: ...
+    Args:
+      webhook_id: TODO
+      token: TODO
+      app: TODO
+      http: TODO
+    """
 
-  async def delete_message(self, message_id, *, thread_id = ...) -> Any: ...
+  def require_token(self) -> Any: # TODO
+    """
+    TODO
 
-  token: Any
-  http: Any
+    Returns:
+      TODO
+    """
+
+  async def fetch_message(self, message_id, *, thread_id = ...) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      message_id: TODO
+      thread_id: TODO
+
+    Returns:
+      TODO
+    """
+
+  async def edit_message(self, message_id, content = ..., *, embed = ..., embeds = ..., file = ..., files = ..., view = ..., components = ..., flags = ..., thread_id = ...) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      message_id: TODO
+      content: TODO
+      embed: TODO
+      embeds: TODO
+      file: TODO
+      files: TODO
+      view: TODO
+      components: TODO
+      flags: TODO
+      thread_id: TODO
+
+    Returns:
+      TODO
+    """
+
+  async def delete_message(self, message_id, *, thread_id = ...) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      message_id: TODO
+      thread_id: TODO
+
+    Returns:
+      TODO
+    """
+
+  token: Any # TODO
+  http: Any # TODO
 
 class PartialWebhook(BaseWebhook):
   """

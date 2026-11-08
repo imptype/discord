@@ -90,7 +90,7 @@ class Event(Handler):
 
   async def __call__(self, *args) -> Any: ...
 
-  gateway_name: Any
+  gateway_name: Any # TODO
 
 def event(callback = ..., *, name = ...) -> Any: # TODO
   """

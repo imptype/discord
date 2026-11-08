@@ -41,26 +41,107 @@ class Cog:
   instances: Any # TODO
 
 class CogMixin:
-  def __init__(self, registrars, reload = ...) -> None: ...
+  """
+  TODO
 
-  async def run_registrars(self, handlers, remove = ...) -> Any: ...
+  Attributes:
+    registrars: TODO
+    reload: TODO
+    cogs: TODO
+    cog_handlers: TODO
+    extensions: TODO
+    extension_files: TODO
+    reload_task: TODO
+  """
 
-  async def add_cogs(self, *cogs) -> Any: ...
+  def __init__(self, registrars, reload = ...) -> None: # TODO
+    """
+    TODO
 
-  async def remove_cogs(self, *cogs) -> Any: ...
+    Args:
+      registrars: TODO
+      reload: TODO
+    """
 
-  async def load_extensions(self, *names) -> Any: ...
+  async def run_registrars(self, handlers, remove = ...) -> Any: # TODO
+    """
+    TODO
 
-  async def import_extensions(self, *names) -> Any: ...
+    Args:
+      handlers: TODO
+      remove: TODO
 
-  async def unload_extensions(self, *names) -> Any: ...
+    Returns:
+      TODO
+    """
 
-  async def watch_extensions(self) -> Any: ...
+  async def add_cogs(self, *cogs) -> Any: # TODO
+    """
+    TODO
 
-  registrars: Any
-  reload: Any
-  cogs: Any
-  cog_handlers: Any
-  extensions: Any
-  extension_files: Any
-  reload_task: Any
+    Args:
+      *cogs: TODO
+
+    Returns:
+      TODO
+    """
+
+  async def remove_cogs(self, *cogs) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      *cogs: TODO
+
+    Returns:
+      TODO
+    """
+
+  async def load_extensions(self, *names) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      *names: TODO
+
+    Returns:
+      TODO
+    """
+
+  async def import_extensions(self, *names) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      *names: TODO
+
+    Returns:
+      TODO
+    """
+
+  async def unload_extensions(self, *names) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      *names: TODO
+
+    Returns:
+      TODO
+    """
+
+  async def watch_extensions(self) -> Any: # TODO
+    """
+    TODO
+
+    Returns:
+      TODO
+    """
+
+  registrars: Any # TODO
+  reload: Any # TODO
+  cogs: Any # TODO
+  cog_handlers: Any # TODO
+  extensions: Any # TODO
+  extension_files: Any # TODO
+  reload_task: Any # TODO

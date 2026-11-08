@@ -6,7 +6,7 @@ def ansi(hex_color) -> Any: ...
 class Formatter(logging.Formatter):
   def format(self, record) -> Any: ...
 
-handler: Any
+handler: Any # TODO
 
 class LogSettings:
   """

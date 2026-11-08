@@ -1,7 +1,10 @@
 from typing import Any
 from ..abc import Handler
 
-class BaseCommand(Handler): ...
+class BaseCommand(Handler):
+  """
+  TODO
+  """
 
 class PrefixCommand(BaseCommand):
   """
@@ -70,24 +73,92 @@ class InteractionCommand(BaseCommand):
   key: Any # TODO
 
 class SlashNode:
-  def __init__(self, callback = ..., name = ..., description = ..., options = ..., level = ...) -> None: ...
+  """
+  TODO
 
-  def subcommand(self, callback = ..., *, name = ..., description = ..., options = ...) -> Any: ...
+  Attributes:
+    callback: TODO
+    name: TODO
+    description: TODO
+    options: TODO
+    level: TODO
+    subcommands: TODO
+    autocomplete: TODO
+  """
 
-  def on_autocomplete(self, callback = ...) -> Any: ...
+  def __init__(self, callback = ..., name = ..., description = ..., options = ..., level = ...) -> None: # TODO
+    """
+    TODO
 
-  def find(self, names) -> Any: ...
+    Args:
+      callback: TODO
+      name: TODO
+      description: TODO
+      options: TODO
+      level: TODO
+    """
 
-  def to_json(self) -> Any: ...
+  def subcommand(self, callback = ..., *, name = ..., description = ..., options = ...) -> Any: # TODO
+    """
+    TODO
 
-  def bind(self, cog_instance) -> Any: ...
+    Args:
+      callback: TODO
+      name: TODO
+      description: TODO
+      options: TODO
 
-  callback: Any
-  name: Any
-  description: Any
-  options: Any
-  level: Any
-  subcommands: Any
+    Returns:
+      TODO
+    """
+
+  def on_autocomplete(self, callback = ...) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      callback: TODO
+
+    Returns:
+      TODO
+    """
+
+  def find(self, names) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      names: TODO
+
+    Returns:
+      TODO
+    """
+
+  def to_json(self) -> Any: # TODO
+    """
+    TODO
+
+    Returns:
+      TODO
+    """
+
+  def bind(self, cog_instance) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      cog_instance: TODO
+
+    Returns:
+      TODO
+    """
+
+  callback: Any # TODO
+  name: Any # TODO
+  description: Any # TODO
+  options: Any # TODO
+  level: Any # TODO
+  subcommands: Any # TODO
   autocomplete: Any
 
 class SubCommand(SlashNode):
@@ -237,21 +308,79 @@ class CommandProxy:
 
   def __getattr__(self, name) -> Any: ...
 
-  app: Any
-  target: Any
+  app: Any # TODO
+  target: Any # TODO
 
 class CommandMixin:
-  def __init__(self, registrars) -> None: ...
+  """
+  TODO
 
-  def set_proxy(self) -> Any: ...
+  Attributes:
+    registry: TODO
+    command: TODO
+  """
 
-  def add_commands(self, *commands) -> Any: ...
+  def __init__(self, registrars) -> None: # TODO
+    """
+    TODO
 
-  def remove_commands(self, *commands) -> Any: ...
+    Args:
+      registrars: TODO
+    """
 
-  async def run_command(self, payload, is_from_http) -> Any: ...
+  def set_proxy(self) -> Any: # TODO
+    """
+    TODO
 
-  async def run_autocomplete(self, payload, is_from_http) -> Any: ...
+    Returns:
+      TODO
+    """
 
-  registry: Any
+  def add_commands(self, *commands) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      *commands: TODO
+
+    Returns:
+      TODO
+    """
+
+  def remove_commands(self, *commands) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      *commands: TODO
+
+    Returns:
+      TODO
+    """
+
+  async def run_command(self, payload, is_from_http) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      payload: TODO
+      is_from_http: TODO
+
+    Returns:
+      TODO
+    """
+
+  async def run_autocomplete(self, payload, is_from_http) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      payload: TODO
+      is_from_http: TODO
+
+    Returns:
+      TODO
+    """
+
+  registry: Any # TODO
   command: CommandNamespace

@@ -54,14 +54,14 @@ class Connection:
 
   async def send(self, payload) -> Any: ...
 
-  http: Any
-  token: Any
-  masked_token: Any
-  intents: Any
-  on_event: Any
-  sequence: Any
-  session_id: Any
-  resume_url: Any
-  heartbeat_task: Any
-  acked: Any
-  last_beat: Any
+  http: Any # TODO
+  token: Any # TODO
+  masked_token: Any # TODO
+  intents: Any # TODO
+  on_event: Any # TODO
+  sequence: Any # TODO
+  session_id: Any # TODO
+  resume_url: Any # TODO
+  heartbeat_task: Any # TODO
+  acked: Any # TODO
+  last_beat: Any # TODO

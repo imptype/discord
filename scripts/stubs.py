@@ -42,7 +42,7 @@ class Member:
   count: int = 1 # definitions sharing the name (overloads, property setters)
   import_lines: tuple = ()
   members: dict = field(default_factory = dict)
-  light: bool = False # internal name, stubbed without docstrings or TODOs
+  light: bool = False # internal name, stubbed without docstrings (Any attributes are still marked with a TODO)
 
 @dataclass
 class Action:
@@ -65,6 +65,7 @@ class Module:
   imports: dict = field(default_factory = dict) # bound name -> (module it comes from, original name)
   stars: list = field(default_factory = list) # modules it star imports
   refs: dict = field(default_factory = dict) # name -> the name it was built from, for x = Cls(), x = Cls, x = Cls.attr
+  bases: dict = field(default_factory = dict) # class name -> names of its base classes
 
 # ----- reading source and stubs
 
@@ -114,6 +115,11 @@ def self_attribute(target):
   match target:
     case ast.Attribute(value = ast.Name(id = 'self'), attr = attr):
       return attr
+
+def base_name(base): # Name or pkg.Name -> Name, anything else (subscripts, calls) is ignored
+  match base:
+    case ast.Name(id = name) | ast.Attribute(attr = name):
+      return name
 
 def reexport(level, module, alias):
   line = f"from {'.' * level}{module or ''} import {alias.name}"
@@ -244,6 +250,8 @@ def index_module(name, is_package, tree):
     match node:
       case ast.FunctionDef() | ast.AsyncFunctionDef() | ast.ClassDef():
         module.definitions.add(node.name)
+        if isinstance(node, ast.ClassDef):
+          module.bases[node.name] = [found for base in node.bases if (found := base_name(base))]
       case ast.TypeAlias(name = ast.Name(id = alias)):
         module.definitions.add(alias)
       case ast.Assign():
@@ -301,7 +309,8 @@ def set_light(member):
     set_light(inner)
 
 def exported(modules):
-  """(defining module, name) for everything the root __init__.py imports, plus the classes behind exported instances and aliases"""
+  """(defining module, name) for everything the root __init__.py imports, plus the classes behind exported
+  instances and aliases, plus the base classes of every exported class (mixins users reach through Bot, etc.)"""
   root = modules['']
   found = set()
   for target, original in root.imports.values():
@@ -316,13 +325,17 @@ def exported(modules):
         found.add(result)
 
   # command = command_namespace, command_namespace = CommandNamespace() exports CommandNamespace too
+  # class Bot(AppBase) exports AppBase, and so on up the chain
   queue = list(found)
   while queue:
     target, name = queue.pop()
     ref = modules[target].refs.get(name)
-    if ref and ref[:1].isupper() and (result := resolve(modules, target, ref)) and result not in found:
-      found.add(result)
-      queue.append(result)
+    candidates = [ref] if ref and ref[:1].isupper() else []
+    candidates += modules[target].bases.get(name, [])
+    for candidate in candidates:
+      if (result := resolve(modules, target, candidate)) and result not in found:
+        found.add(result)
+        queue.append(result)
   return found
 
 # ----- generating placeholders
@@ -428,7 +441,7 @@ def stub_variable(name, node, indent, used, light = False):
     case ast.Constant(value = int() | float() | str() | bytes() as constant):
       return [f'{indent}{name}: {type(constant).__name__}']
   used.add('Any')
-  return [f'{indent}{name}: Any' + ('' if light else f' {MARKER}')]
+  return [f'{indent}{name}: Any {MARKER}'] # always marked, even in light classes, an Any hides gaps from type checkers
 
 def stub_class(node, members, indent, used, light = False):
   bases = [ast.unparse(base) for base in node.bases]

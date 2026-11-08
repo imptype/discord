@@ -21,8 +21,8 @@ class OriginalInteractionMessage:
 
   async def delete(self) -> Any: ...
 
-  interaction: Any
-  app: Any
+  interaction: Any # TODO
+  app: Any # TODO
 
 class Interaction(Snowflake):
   """
@@ -163,7 +163,7 @@ class ComponentInteraction(Interaction):
 class SelectInteraction(ComponentInteraction):
   def __init__(self, data, app, is_from_http, select) -> None: ...
 
-  values: Any
+  values: Any # TODO
 
 class ModalInteraction(Interaction):
   """

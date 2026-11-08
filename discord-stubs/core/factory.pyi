@@ -15,24 +15,24 @@ class ModelHTTP:
 
   async def webhook(self, webhook_id, token = ...) -> Any: ...
 
-  app: Any
-  model: Any
+  app: Any # TODO
+  model: Any # TODO
 
 class ModelFactory:
   def __init__(self, app) -> None: ...
 
   http: ModelHTTP
-  partial_guild: Any
-  partial_channel: Any
-  partial_user: Any
-  partial_member: Any
-  partial_message: Any
-  partial_webhook: Any
-  followup_webhook: Any
-  guild: Any
-  channel: Any
-  user: Any
-  member: Any
-  message: Any
-  webhook: Any
-  context: Any
+  partial_guild: Any # TODO
+  partial_channel: Any # TODO
+  partial_user: Any # TODO
+  partial_member: Any # TODO
+  partial_message: Any # TODO
+  partial_webhook: Any # TODO
+  followup_webhook: Any # TODO
+  guild: Any # TODO
+  channel: Any # TODO
+  user: Any # TODO
+  member: Any # TODO
+  message: Any # TODO
+  webhook: Any # TODO
+  context: Any # TODO

@@ -4,16 +4,16 @@ from .enums import InteractionType
 class InteractionResult:
   def __init__(self, app, data) -> None: ...
 
-  data: Any
-  interaction_id: Any
+  data: Any # TODO
+  interaction_id: Any # TODO
   interaction_type: InteractionType
-  activity_instance_id: Any
-  response_message_id: Any
-  response_message_loading: Any
-  response_message_ephemeral: Any
-  resource_type: Any
-  activity_instance: Any
-  message: Any
+  activity_instance_id: Any # TODO
+  response_message_id: Any # TODO
+  response_message_loading: Any # TODO
+  response_message_ephemeral: Any # TODO
+  resource_type: Any # TODO
+  activity_instance: Any # TODO
+  message: Any # TODO
 
 class InteractionResponse:
   """
@@ -53,21 +53,115 @@ class InteractionResponse:
   responded: Any # TODO
 
 class MessageMixin(InteractionResponse):
-  async def send(self, content = ..., *, embed = ..., embeds = ..., file = ..., files = ..., view = ..., components = ..., flags = ..., ephemeral = ..., with_response = ...) -> Any: ...
+  """
+  TODO
+  """
 
-  async def defer(self, *, ephemeral = ..., with_response = ...) -> Any: ...
+  async def send(self, content = ..., *, embed = ..., embeds = ..., file = ..., files = ..., view = ..., components = ..., flags = ..., ephemeral = ..., with_response = ...) -> Any: # TODO
+    """
+    TODO
 
-  async def premium_required(self, *, with_response = ...) -> Any: ...
+    Args:
+      content: TODO
+      embed: TODO
+      embeds: TODO
+      file: TODO
+      files: TODO
+      view: TODO
+      components: TODO
+      flags: TODO
+      ephemeral: TODO
+      with_response: TODO
 
-  async def launch_activity(self, *, with_response = ...) -> Any: ...
+    Returns:
+      TODO
+    """
+
+  async def defer(self, *, ephemeral = ..., with_response = ...) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      ephemeral: TODO
+      with_response: TODO
+
+    Returns:
+      TODO
+    """
+
+  async def premium_required(self, *, with_response = ...) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      with_response: TODO
+
+    Returns:
+      TODO
+    """
+
+  async def launch_activity(self, *, with_response = ...) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      with_response: TODO
+
+    Returns:
+      TODO
+    """
 
 class ModalMixin(InteractionResponse):
-  async def send_modal(self, modal, *, with_response = ...) -> Any: ...
+  """
+  TODO
+  """
+
+  async def send_modal(self, modal, *, with_response = ...) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      modal: TODO
+      with_response: TODO
+
+    Returns:
+      TODO
+    """
 
 class UpdateMixin(InteractionResponse):
-  async def update(self, content = ..., *, embed = ..., embeds = ..., file = ..., files = ..., view = ..., components = ..., flags = ..., with_response = ...) -> Any: ...
+  """
+  TODO
+  """
 
-  async def defer_update(self, *, with_response = ...) -> Any: ...
+  async def update(self, content = ..., *, embed = ..., embeds = ..., file = ..., files = ..., view = ..., components = ..., flags = ..., with_response = ...) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      content: TODO
+      embed: TODO
+      embeds: TODO
+      file: TODO
+      files: TODO
+      view: TODO
+      components: TODO
+      flags: TODO
+      with_response: TODO
+
+    Returns:
+      TODO
+    """
+
+  async def defer_update(self, *, with_response = ...) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      with_response: TODO
+
+    Returns:
+      TODO
+    """
 
 class CommandResponse(MessageMixin, ModalMixin):
   """

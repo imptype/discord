@@ -11,30 +11,141 @@ def resolve_timeout(component, view = ...) -> Any: ...
 def validate_timeout(component, view = ...) -> Any: ...
 
 class ComponentMixin:
-  def __init__(self, registrars, loop) -> None: ...
+  """
+  TODO
 
-  def add_views(self, *views) -> Any: ...
+  Attributes:
+    component_cache: TODO
+    component_timers: TODO
+    modal_cache: TODO
+    modal_timers: TODO
+    loop: TODO
+  """
 
-  def remove_views(self, *views) -> Any: ...
+  def __init__(self, registrars, loop) -> None: # TODO
+    """
+    TODO
 
-  def add_components(self, *components) -> Any: ...
+    Args:
+      registrars: TODO
+      loop: TODO
+    """
 
-  def remove_components(self, *components) -> Any: ...
+  def add_views(self, *views) -> Any: # TODO
+    """
+    TODO
 
-  def add_interactables(self, *interactables, view = ...) -> Any: ...
+    Args:
+      *views: TODO
 
-  def remove_interactables(self, *interactables) -> Any: ...
+    Returns:
+      TODO
+    """
 
-  def add_modals(self, *modals) -> Any: ...
+  def remove_views(self, *views) -> Any: # TODO
+    """
+    TODO
 
-  def remove_modals(self, *modals) -> Any: ...
+    Args:
+      *views: TODO
 
-  async def run_component(self, payload, is_from_http) -> Any: ...
+    Returns:
+      TODO
+    """
 
-  async def run_modal(self, payload, is_from_http) -> Any: ...
+  def add_components(self, *components) -> Any: # TODO
+    """
+    TODO
 
-  component_cache: Any
-  component_timers: Any
-  modal_cache: Any
-  modal_timers: Any
-  loop: Any
+    Args:
+      *components: TODO
+
+    Returns:
+      TODO
+    """
+
+  def remove_components(self, *components) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      *components: TODO
+
+    Returns:
+      TODO
+    """
+
+  def add_interactables(self, *interactables, view = ...) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      *interactables: TODO
+      view: TODO
+
+    Returns:
+      TODO
+    """
+
+  def remove_interactables(self, *interactables) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      *interactables: TODO
+
+    Returns:
+      TODO
+    """
+
+  def add_modals(self, *modals) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      *modals: TODO
+
+    Returns:
+      TODO
+    """
+
+  def remove_modals(self, *modals) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      *modals: TODO
+
+    Returns:
+      TODO
+    """
+
+  async def run_component(self, payload, is_from_http) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      payload: TODO
+      is_from_http: TODO
+
+    Returns:
+      TODO
+    """
+
+  async def run_modal(self, payload, is_from_http) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      payload: TODO
+      is_from_http: TODO
+
+    Returns:
+      TODO
+    """
+
+  component_cache: Any # TODO
+  component_timers: Any # TODO
+  modal_cache: Any # TODO
+  modal_timers: Any # TODO
+  loop: Any # TODO
