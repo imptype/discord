@@ -2,10 +2,10 @@ from .cog import Cog as Cog
 from .cog import CogMixin as CogMixin
 from .color import color as color
 from .color import colour as colour
-from .lifespan import Lifespan as Lifespan
-from .lifespan import LifespanMixin as LifespanMixin
-from .lifespan import lifespan as lifespan
-from .signal import SignalHandler as SignalHandler
+from .signal import signal as signal
 from .signal import SignalMixin as SignalMixin
 from .signal import SignalWaiter as SignalWaiter
-from .signal import signal as signal
+from .signal import SignalHandler as SignalHandler
+from .lifespan import Lifespan as Lifespan
+from .lifespan import lifespan as lifespan
+from .lifespan import LifespanMixin as LifespanMixin

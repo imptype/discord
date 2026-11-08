@@ -1,7 +1,7 @@
 from typing import Any
-from .member import Member
-from .enums import MessageFlags
 from ..abc import PartialModel
+from .enums import MessageFlags
+from .member import Member
 
 class PartialMessage(PartialModel):
   """

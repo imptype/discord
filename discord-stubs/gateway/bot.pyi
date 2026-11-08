@@ -1,8 +1,8 @@
 from typing import Any
 from ..core import AppBase
 from ..core import CommandProxy
-from .connection import Connection
 from .intents import Intents
+from .connection import Connection
 
 class BotCommandProxy(CommandProxy):
   def __call__(self, *args, **kwargs) -> Any: ...

@@ -1,6 +1,6 @@
 from typing import Any
-from collections.abc import Callable
 from typing import Concatenate
+from collections.abc import Callable
 from collections.abc import Coroutine
 from ..abc import PartialModel
 

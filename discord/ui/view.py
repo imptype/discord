@@ -3,10 +3,10 @@ import uuid
 import types
 import inspect
 from .. import MISSING
+from ..abc import Component, Interactable
 from .button import Button
 from .layout import ActionRow
 from .select import BaseSelect
-from ..abc import Component, Interactable
 
 MAX_BUTTONS_PER_ROW = 5
 

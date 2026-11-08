@@ -1,6 +1,6 @@
 from typing import Any
-from ..core import AppBase
 from nacl.signing import VerifyKey
+from ..core import AppBase
 
 class App(AppBase):
   """

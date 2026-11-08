@@ -1,6 +1,6 @@
 from typing import Any
-from .enums import ButtonStyle
 from ..abc import Interactable
+from .enums import ButtonStyle
 
 class Button(Interactable):
   """

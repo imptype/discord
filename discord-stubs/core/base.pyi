@@ -1,10 +1,10 @@
 from typing import Any
 from ..ext import CogMixin
-from .command import CommandMixin
-from .component import ComponentMixin
-from ..ext import LifespanMixin
-from .factory import ModelFactory
 from ..ext import SignalMixin
+from ..ext import LifespanMixin
+from .command import CommandMixin
+from .factory import ModelFactory
+from .component import ComponentMixin
 
 class AppBase(CommandMixin, LifespanMixin, ComponentMixin, CogMixin, SignalMixin):
   model: ModelFactory

@@ -1,5 +1,5 @@
-from typing import Any
 from enum import IntFlag
+from typing import Any
 
 class MessageFlags(IntFlag):
   """

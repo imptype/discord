@@ -1,6 +1,6 @@
 from typing import Any
-from .enums import ComponentType
 from ..abc import Interactable
+from .enums import ComponentType
 
 def format_defaults(kind, ids) -> Any: ...
 

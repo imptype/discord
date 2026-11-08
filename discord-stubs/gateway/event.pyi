@@ -1,7 +1,7 @@
-from typing import Any
 from enum import Enum
-from ..abc import Handler
 from enum import StrEnum
+from typing import Any
+from ..abc import Handler
 
 class CustomEvent(StrEnum):
   ANY_EVENT = ...

@@ -1,9 +1,9 @@
 from typing import Any
 from .. import MISSING
 from ..abc import Snowflake
+from ..models import edit_params
 from .enums import OptionType
 from .modal import ModalResult
-from ..models import edit_params
 from .response import AutocompleteResponse, CommandResponse, ComponentResponse, ModalResponse
 
 def resolve_user(interaction, user_id):

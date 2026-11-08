@@ -2,10 +2,10 @@ import time
 import asyncio
 import logging
 from typing import cast
+from ..core import AppBase, CommandNamespace, CommandProxy, InteractionType, PrefixCommand, command_namespace
+from .event import CustomEvent, Event, EventIntents
 from .intents import Intents
 from .connection import Connection
-from .event import CustomEvent, Event, EventIntents
-from ..core import AppBase, CommandNamespace, CommandProxy, InteractionType, PrefixCommand, command_namespace
 
 log = logging.getLogger(__name__)
 

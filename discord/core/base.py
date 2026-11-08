@@ -1,8 +1,8 @@
+from ..ext import CogMixin, LifespanMixin, SignalMixin
 from .http import HTTPClient
 from .command import CommandMixin
 from .factory import ModelFactory
 from .component import ComponentMixin
-from ..ext import CogMixin, LifespanMixin, SignalMixin
 
 class AppBase(CommandMixin, LifespanMixin, ComponentMixin, CogMixin, SignalMixin):
   def __init__(self, token = None, application_id = None, reload = False):

@@ -1,5 +1,5 @@
-from typing import Any
 from enum import IntEnum
+from typing import Any
 
 def convert(hex_color: str) -> Any: ...
 

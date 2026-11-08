@@ -1,10 +1,10 @@
 from typing import Any
-from .response import AutocompleteResponse
+from ..abc import Snowflake
+from .modal import ModalResult
+from .response import ModalResponse
 from .response import CommandResponse
 from .response import ComponentResponse
-from .response import ModalResponse
-from .modal import ModalResult
-from ..abc import Snowflake
+from .response import AutocompleteResponse
 
 def resolve_user(interaction, user_id) -> Any: ...
 

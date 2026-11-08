@@ -1,6 +1,6 @@
 from .. import MISSING
-from .enums import InteractionType, ResponseType
 from ..models import MessageFlags, Payload, edit_params, send_params, RESPONSE_MESSAGE_FLAGS
+from .enums import InteractionType, ResponseType
 
 class InteractionResult: # wraps InteractionCallbackResponse for with_response = True
   def __init__(self, app, data):

@@ -1,9 +1,9 @@
 from functools import partial
-from .webhook import FollowupWebhook, PartialWebhook, Webhook
 from ..models import (
   Channel, Context, Guild, Member, Message, PartialChannel, PartialGuild,
   PartialMember, PartialMessage, PartialUser, User
 )
+from .webhook import FollowupWebhook, PartialWebhook, Webhook
 
 class ModelHTTP:
   def __init__(self, app, model):

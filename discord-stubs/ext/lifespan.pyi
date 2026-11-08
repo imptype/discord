@@ -1,7 +1,7 @@
+import asyncio
 from typing import Any
 from contextlib import AsyncExitStack
 from ..abc import BaseHandler
-import asyncio
 from ..core.http import HTTPClient
 
 class Lifespan(BaseHandler):

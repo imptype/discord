@@ -5,7 +5,8 @@ First it runs Ruff check to achieve the following:
 1. Check for outdated syntax, like Union[int, str] vs int | str.
 2. Check for likely bugs and bad patterns (flake8-bugbear), like mutable default arguments.
 
-Then it runs some extra things outside:
+Then it runs some extra things outside (on *.py files; *.pyi stub files only get rule 8, the
+import sorting, because stubs.py already writes the rest in the right style):
 1. Enforce 2-space indents.
 2. Enforce single quotes (skipping strings with nested quotes).
 3. Enforce LF instead of CRLF newline character.
@@ -16,9 +17,13 @@ Then it runs some extra things outside:
 8. Sort imports by these rules:
    a. Groups first: __future__, then system libs, then 3rd party libs, then local files.
    b. Then "import x" over "from x import y"
-   c. Then shortest line first, so "import os" comes before "import sys" before "import asyncio".
-   d. Then alphabetical when the lengths match.
-   e. Also formats names in "from x import a, b, c" by class, then func, then variable, and alphabetical
+   c. Then "from" imports go furthest away first: from ...x, then from ..x, then from .x, then
+      absolute (from x). Inside the same distance they are grouped by the module they come from
+      (.core with .core), shortest module name first, then alphabetical.
+   d. Then shortest line first inside each module group, so "import os" comes before "import sys"
+      before "import asyncio".
+   e. Then alphabetical when the lengths match.
+   f. Also formats names in "from x import a, b, c" by class, then func, then variable, and alphabetical
    Imports have no blank lines between them, and exactly one blank line after them.
    A comment on an import line like # is preserved, but not counted in the line length.
    A comment or docstring outside an import line, are not touched (they stay in that line index).
@@ -55,16 +60,17 @@ import keyword
 import tokenize
 import sysconfig
 import subprocess
-from pathlib import Path
-from itertools import accumulate
-from functools import cache, lru_cache
 from bisect import bisect_left, bisect_right
+from pathlib import Path
+from functools import cache, lru_cache
+from itertools import accumulate
 
 INDENT = 2
 NAMING_IGNORE = '# naming: ignore'
 MODES = ('', '--check', '--diff', '--selftest')
 
 EXCLUDE_DIRS = {'.git', '.venv', 'venv', 'node_modules', '__pycache__', '.mypy_cache', '.ruff_cache'}
+PYTHON_SUFFIXES = ('.py', '.pyi')
 TEXT_GLOBS = ('*.md', '*.toml', '*.lock', '*.env', '*.yml', '*.yaml', '.gitignore', 'LICENSE', 'LICENSE.*')
 TEXT_NAME = re.compile('|'.join(fnmatch.translate(os.path.normcase(glob)) for glob in TEXT_GLOBS))
 
@@ -516,6 +522,17 @@ def name_kind(name):
     return 0
   return 1
 
+def import_source(node):
+  """The module a 'from' import comes from, without the leading dots (abc for '..abc'). Plain
+  'import x' has none, so they all tie here and fall through to the line length rule."""
+  if isinstance(node, ast.ImportFrom):
+    return node.module or ''
+  return ''
+
+def import_distance(node):
+  """Furthest away first: ... (-3) before .. (-2) before . (-1) before absolute (0)."""
+  return -getattr(node, 'level', 0)
+
 def import_lines(node, lines):
   """Source lines of an import, and the text it is sorted by. A simple one-line 'from' import
   also gets its names sorted. The tree is shared, so the node is copied rather than changed."""
@@ -554,9 +571,10 @@ def fix_imports(src):
     for node in run:
       chunk, text = import_lines(node, lines)
       is_from = isinstance(node, ast.ImportFrom)
-      items.append((import_group(node), is_from, *length_key(text), chunk))
-    items.sort(key = lambda item: item[:5])
-    new = [line for item in items for line in item[5]]
+      # item = (group, is_from, distance, source len, source lower, source, line len, line lower, line, chunk)
+      items.append((import_group(node), is_from, import_distance(node), *length_key(import_source(node)), *length_key(text), chunk))
+    items.sort(key = lambda item: item[:9])
+    new = [line for item in items for line in item[9]]
     after = lines[last:]
     blanks = 0
     while blanks < len(after) and not after[blanks].strip():
@@ -760,6 +778,10 @@ def format_text(path, text):
 # --- pipeline ---
 
 PASSES = [fix_quotes, fix_trailing_commas, fix_spacing, fix_indent, fix_imports, fix_method_order, fix_whitespace]
+STUB_PASSES = [fix_imports]  # .pyi files: stubs.py already writes them in the right style, only the import order needs fixing
+
+def passes_for(path):
+  return STUB_PASSES if path.suffix == '.pyi' else PASSES
 
 STATEMENT_FIELDS = ('body', 'orelse', 'finalbody', 'handlers', 'cases')
 
@@ -806,38 +828,40 @@ def same_tree(old, new):
   except SyntaxError:
     return False
 
-def format_source_checked(src):
+def format_source_checked(src, passes = None):
   """Run every Python pass, checking after each one that the tree is the same. Slow, but it
   can say which pass broke it."""
+  passes = PASSES if passes is None else passes
   try:
     ast.parse(src)
   except SyntaxError as exc:
     return src, f'syntax error: {exc.msg}'
   current = src
-  for step in PASSES:
+  for step in passes:
     new = step(current)
     if new != current and not same_tree(current, new):
       return src, f'{step.__name__} changed the AST'
     current = new
   return current, None
 
-def format_source(src):
-  """Run every Python pass. Returns (new_src, error); on error the source is unchanged.
+def format_source(src, passes = None):
+  """Run every Python pass (or just the given ones). Returns (new_src, error); on error the source is unchanged.
   The tree is only compared once, after the last pass. If that fails (or a pass chokes on the
   broken text an earlier one left), the checked version works out which pass is to blame."""
   try:
     parse(src)
   except SyntaxError as exc:
     return src, f'syntax error: {exc.msg}'
+  passes = PASSES if passes is None else passes
   current = src
   try:
-    for step in PASSES:
+    for step in passes:
       current = step(current)
   except Exception:  # noqa: BLE001
-    return format_source_checked(src)
+    return format_source_checked(src, passes)
   if current == src or same_tree(src, current):
     return current, None
-  return format_source_checked(src)
+  return format_source_checked(src, passes)
 
 # --- naming checks ---
 
@@ -946,12 +970,16 @@ CASES = [
   ('imports not at top', 'def f():\n  import sys\n  import os\n', 'def f():\n  import sys\n  import os\n'),
   ('imports import before from', 'from a import b\nimport numpy_extra\n', 'import numpy_extra\nfrom a import b\n'),
   ('imports lazy', 'lazy import sys\nimport os\nlazy from enum import IntEnum, auto, Flag as F\n', 'import os\nlazy import sys\nlazy from enum import Flag as F, IntEnum, auto\n'),
+  ('imports grouped by module', 'from .ui import Button\nfrom .core import Choice\nfrom .ui import File\n', 'from .ui import File\nfrom .ui import Button\nfrom .core import Choice\n'),
+  ('imports furthest first', 'from .http import H\nfrom ..models import M\nfrom ..abc import P\nfrom .. import R\nfrom ...x import Z\n', 'from ...x import Z\nfrom .. import R\nfrom ..abc import P\nfrom ..models import M\nfrom .http import H\n'),
+  ('imports grouped by module stdlib', 'from typing import Any\nfrom enum import IntEnum\nfrom typing import Concatenate\nfrom enum import Enum\n', 'from enum import Enum\nfrom enum import IntEnum\nfrom typing import Any\nfrom typing import Concatenate\n'),
   ('comments around statements', '# head\nif a:\n    b = 1\n      # between\n    c = 2\n# tail\n', '# head\nif a:\n  b = 1\n    # between\n  c = 2\n# tail\n'),
   ('comments between blocks', 'class A:\n    def f(self):\n        return 1\n        # end of f\n    # between\n\n# top\n', 'class A:\n  def f(self):\n    return 1\n    # end of f\n# between\n\n# top\n'),
   ('comment above a dedent', 'if a:\n    if b:\n        c = 1\n  # odd\n    d = 2\n', 'if a:\n  if b:\n    c = 1\n# odd\n  d = 2\n'),
   ('methods ordered', 'class A:\n  def b(self):\n    return 1\n\n  def __len__(self):\n    return 2\n\n  def __init__(self):\n    pass\n\n  def a(self):\n    return 3\n', 'class A:\n  def __init__(self):\n    pass\n\n  def b(self):\n    return 1\n\n  def a(self):\n    return 3\n\n  def __len__(self):\n    return 2\n'),
   ('methods keep decorators and comments', 'class A:\n  # about len\n  def __len__(self):\n    return 0\n  @property\n  def x(self):\n    return 1\n', 'class A:\n  @property\n  def x(self):\n    return 1\n  # about len\n  def __len__(self):\n    return 0\n'),
-  ('methods skipped when attributes between', 'class A:\n  def __len__(self):\n    return 0\n  y = 1\n  def a(self):\n    return 1\n', 'class A:\n  def __len__(self):\n    return 0\n  y = 1\n  def a(self):\n    return 1\n')
+  ('methods skipped when attributes between', 'class A:\n  def __len__(self):\n    return 0\n  y = 1\n  def a(self):\n    return 1\n', 'class A:\n  def __len__(self):\n    return 0\n  y = 1\n  def a(self):\n    return 1\n'),
+  ('stub file shape', 'from typing import Any\n\nclass A:\n  x: Any # TODO\n\n  def f(self, a = ..., *, b: int = ...) -> None: ...\n', 'from typing import Any\n\nclass A:\n  x: Any # TODO\n\n  def f(self, a = ..., *, b: int = ...) -> None: ...\n')
 ]
 NAME_CASES = [
   ('thing = 1\npoint_RTS = 2\nRTS_point = 3\nRTS = 4\nclass ABC: pass\nclass CoolCar: pass\n', 0),
@@ -1010,6 +1038,12 @@ def selftest():
     if got != want or format_text(Path('x.toml'), got) != got:
       failures += 1
       print(f'FAIL {label}: want {want!r}, got {got!r}')
+  stub_src = 'from typing import Any\nimport asyncio\nx = "a"\n\n\ny=1\n'
+  stub_want = 'import asyncio\nfrom typing import Any\n\nx = "a"\n\n\ny=1\n'
+  got, error = format_source(stub_src, STUB_PASSES)
+  if error or got != stub_want:
+    failures += 1
+    print(f'FAIL stub passes: want {stub_want!r}, got {got!r}')
   if 'No newline' not in diff('x', 'a', 'a\n') or '\\r' not in diff('x', 'a\r\n', 'a\n'):
     failures += 1
     print('FAIL diff output')
@@ -1027,22 +1061,22 @@ def selftest():
   if got != want:
     failures += 1
     print(f'FAIL error names the pass: want {want!r}, got {got!r}')
-  total = len(CASES) + len(NAME_CASES) + len(TEXT_CASES) + len(TOML_CASES) + 2  # + the diff and AST checks
+  total = len(CASES) + len(NAME_CASES) + len(TEXT_CASES) + len(TOML_CASES) + 3  # + the stub, diff and AST checks
   print(f'{total - failures} passed, {failures} failed')
   return 1 if failures else 0
 
 # --- file discovery ---
 
 def find_files():
-  """Every *.py file in the repo, and the other text files that should still end with exactly
-  one LF. One walk that never goes into EXCLUDE_DIRS, instead of one full walk per pattern."""
+  """Every *.py and *.pyi file in the repo, and the other text files that should still end with
+  exactly one LF. One walk that never goes into EXCLUDE_DIRS, instead of one full walk per pattern."""
   python = []
   text = []
   for folder, dirs, names in os.walk('.'):
     dirs[:] = [name for name in dirs if name not in EXCLUDE_DIRS]
     for name in names:
       lowered = os.path.normcase(name)
-      if lowered.endswith('.py'):
+      if lowered.endswith(PYTHON_SUFFIXES):
         python.append(Path(folder, name))
       elif TEXT_NAME.match(lowered):
         text.append(Path(folder, name))
@@ -1117,7 +1151,7 @@ def main(argv):
 
   for path in py_files:
     current = before_py[path] if mode else read(path)
-    new, error = format_source(current)
+    new, error = format_source(current, passes_for(path))
     if error:
       print(f'Skipped {path}: {error}')
       failed = True
@@ -1132,6 +1166,8 @@ def main(argv):
         write(path, new)
       if new != before_py[path]:
         print(f'Reformatted {path}')
+    if path.suffix == '.pyi':
+      continue  # stubs mirror the source, which is already name-checked
     for message in check_names(new if not mode else current, path):
       print(message)
       failed = True

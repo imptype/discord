@@ -1,6 +1,6 @@
+import asyncio
 from typing import Any
 from ..abc import Handler
-import asyncio
 
 class SignalTimeoutError(TimeoutError): ...
 
