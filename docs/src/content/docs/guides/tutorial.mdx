@@ -21,8 +21,7 @@ To get started with **Discord bot development**, follow these steps:
     import os
     import discord
 
-    intents = discord.Intents.default()
-    intents.MESSAGE_CONTENT = True
+    intents = discord.Intents.default() | discord.Intents.MESSAGE_CONTENT
     bot = discord.Bot(token = os.environ['TOKEN'], intents = intents) 
 
     @bot.command
