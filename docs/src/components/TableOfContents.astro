@@ -46,6 +46,30 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			<div class="toc-head">
 				<SidebarToggle side="right" class="toc-sb-toggle" />
 				<h2 id="starlight__on-this-page">{Astro.locals.t('tableOfContents.onThisPage')}</h2>
+				<button type="button" class="icon-btn toc-all" data-mode="collapse" aria-label="Collapse all sections" title="Collapse all">
+					{/* shown when everything is open: click to collapse (lucide: fold-vertical) */}
+					<svg class="icon-collapse" viewBox="0 0 24 24" aria-hidden="true">
+						<path d="M12 22v-6" />
+						<path d="M12 8V2" />
+						<path d="M4 12H2" />
+						<path d="M10 12H8" />
+						<path d="M16 12h-2" />
+						<path d="M22 12h-2" />
+						<path d="m15 19-3-3-3 3" />
+						<path d="m15 5-3 3-3-3" />
+					</svg>
+					{/* shown when something is collapsed: click to expand (lucide: unfold-vertical) */}
+					<svg class="icon-expand" viewBox="0 0 24 24" aria-hidden="true">
+						<path d="M12 22v-6" />
+						<path d="M12 8V2" />
+						<path d="M4 12H2" />
+						<path d="M10 12H8" />
+						<path d="M16 12h-2" />
+						<path d="M22 12h-2" />
+						<path d="m15 19-3 3-3-3" />
+						<path d="m15 5-3-3-3 3" />
+					</svg>
+				</button>
 			</div>
 			<div class="toc-view">
 				<div class="toc-col toc-heads">
@@ -126,9 +150,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 
 <script>
 	import { setupCollapsibleSidebar } from '../scripts/collapsible-sidebar';
-
-	const START_COLLAPSED = false; // true = sections with sub-headings start collapsed
-	const REMEMBER = true; // remember which sections are collapsed, per page
 
 	const ANCHOR = 0.35; // how far down the TOC the current row sits (0 = top, 1 = bottom)
 	const TAU = 90; // ms. Slide smoothing: smaller = snappier
@@ -272,25 +293,22 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		const collapsed = new Set<string>();
 		const hiddenSlugs = new Set<string>();
 		let visibleGroups = 0;
-		const KEY = `toc-collapsed:${location.pathname}`;
-		try {
-			const raw = REMEMBER ? localStorage.getItem(KEY) : null;
-			if (raw !== null) {
-				for (const s of JSON.parse(raw) as string[]) if (kidsSlugs.includes(s)) collapsed.add(s);
-			} else if (START_COLLAPSED) {
-				for (const s of kidsSlugs) collapsed.add(s);
-			}
-		} catch {
-			if (START_COLLAPSED) for (const s of kidsSlugs) collapsed.add(s);
-		}
-		const saveCollapsed = () => {
-			if (!REMEMBER) return;
-			try {
-				localStorage.setItem(KEY, JSON.stringify([...collapsed]));
-			} catch {}
+		// Collapse state is not remembered: every page load starts fully expanded.
+
+		// One button that alternates: "expand all" while anything is collapsed, otherwise "collapse all".
+		const allBtn = nav.querySelector<HTMLButtonElement>('.toc-all');
+		const syncAllBtn = () => {
+			if (!allBtn) return;
+			allBtn.hidden = kidsSlugs.length === 0;
+			const expand = collapsed.size > 0;
+			allBtn.dataset.mode = expand ? 'expand' : 'collapse';
+			const label = expand ? 'Expand all sections' : 'Collapse all sections';
+			allBtn.setAttribute('aria-label', label);
+			allBtn.title = expand ? 'Expand all' : 'Collapse all';
 		};
 
 		const applyCollapse = () => {
+			syncAllBtn();
 			hiddenSlugs.clear();
 			for (const slug of headLis.keys()) {
 				const p = parentOf.get(slug);
@@ -821,8 +839,15 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			const y = a.getBoundingClientRect().top - viewEl.getBoundingClientRect().top;
 			if (collapsed.has(slug)) collapsed.delete(slug);
 			else collapsed.add(slug);
-			saveCollapsed();
 			refresh({ a, y });
+		});
+
+		// Header button: if anything is collapsed, expand everything; otherwise collapse everything.
+		allBtn?.addEventListener('click', () => {
+			const collapse = collapsed.size === 0;
+			collapsed.clear();
+			if (collapse) for (const s of kidsSlugs) collapsed.add(s);
+			refresh();
 		});
 
 		// Wheel: over the headings column (first column) one wheel row moves one HEADING, so it skips through the
@@ -1015,7 +1040,7 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		height: 0.9rem;
 		fill: none;
 		stroke: currentColor;
-		stroke-width: 2.5;
+		stroke-width: 2; /* matches the header icon buttons */
 		stroke-linecap: round;
 		stroke-linejoin: round;
 		transition: transform 0.15s ease;
@@ -1151,6 +1176,17 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 	}
 	.api-toc .toc-head h2 {
 		margin: 0;
+	}
+	/* Single expand / collapse-all button, right next to the heading. Plain icon-btn look. */
+	.api-toc .toc-all[hidden] {
+		display: none;
+	}
+	.api-toc .toc-all .icon-expand,
+	.api-toc .toc-all[data-mode='expand'] .icon-collapse {
+		display: none;
+	}
+	.api-toc .toc-all[data-mode='expand'] .icon-expand {
+		display: block;
 	}
 	.toc-default {
 		position: relative;
