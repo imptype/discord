@@ -4,7 +4,7 @@ build-backend = 'uv_build'
 
 [project]
 name = 'idiscord'
-version = '0.1.1'
+version = '0.2.0'
 description = 'Discord API wrapper'
 readme = 'README.md'
 license = 'MIT'
