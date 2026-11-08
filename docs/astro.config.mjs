@@ -1,11 +1,14 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import { satteri } from '@astrojs/markdown-satteri';
 
 export default defineConfig({
 	site: 'https://imptype.github.io',
 	base: '/discord',
-	markdown: { smartypants: false }, // disables unicode quote chars
+	markdown: {
+    processor: satteri({features: {smartPunctuation: false}}) // disables unicode quote chars
+  },
 	integrations: [
 		starlight({
 			title: 'iDiscord',
