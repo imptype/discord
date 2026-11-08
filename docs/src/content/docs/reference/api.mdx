@@ -121,14 +121,6 @@ import Member from '../../../components/api/Member.astro';
 	name="created_at"
 />
 
-### Functions
-
-<Member
-	of="discord"
-	name="snowflake_time"
-	params={[{ name: 'id' }]}
-/>
-
 ## Core
 
 ### AttachmentOption
@@ -361,7 +353,12 @@ import Member from '../../../components/api/Member.astro';
 	of="HTTPClient"
 	kind="attr"
 	name="token"
-/>
+	type="str | None"
+>
+
+The token used to make authorized HTTP requests.
+
+</Member>
 
 <Member
 	of="HTTPClient"
@@ -1423,20 +1420,6 @@ import Member from '../../../components/api/Member.astro';
 	name="user"
 />
 
-### Functions
-
-<Member
-	of="discord"
-	name="modal"
-	params={[
-		{ name: 'callback', default: '...' },
-		{ name: 'title', default: '...' },
-		{ name: 'components', default: '...' },
-		{ name: 'custom_id', default: '...' },
-		{ name: 'timeout', default: '...' },
-	]}
-/>
-
 ## Extensions
 
 ### Cog
@@ -1637,27 +1620,6 @@ import Member from '../../../components/api/Member.astro';
 	params={[{ name: '*exception' }]}
 />
 
-### Functions
-
-<Member
-	of="discord"
-	name="lifespan"
-	params={[{ name: 'callback', default: '...' }, { name: 'name', default: '...' }]}
-/>
-
-<Member
-	of="discord"
-	name="signal"
-	params={[
-		{ name: 'callback', default: '...' },
-		{ name: 'name', default: '...' },
-		{ name: 'priority', default: '...' },
-		{ name: 'timeout', default: '...' },
-		{ name: 'max_runs', default: '...' },
-		{ name: 'once', default: '...' },
-	]}
-/>
-
 ## Gateway
 
 ### Bot
@@ -1691,13 +1653,23 @@ import Member from '../../../components/api/Member.astro';
 	of="Bot"
 	kind="attr"
 	name="intents"
-/>
+	type="Intents"
+>
+
+The bot's gateway intents.
+
+</Member>
 
 <Member
 	of="Bot"
 	kind="attr"
 	name="prefix"
-/>
+	type="str"
+>
+
+The prefix for gateway message commands.
+
+</Member>
 
 <Member
 	of="Bot"
@@ -1961,14 +1933,6 @@ import Member from '../../../components/api/Member.astro';
 	of="Intents"
 	kind="cls"
 	name="all"
-/>
-
-### Functions
-
-<Member
-	of="discord"
-	name="event"
-	params={[{ name: 'callback', default: '...' }, { name: 'name', default: '...' }]}
 />
 
 ## Models
@@ -3968,10 +3932,60 @@ import Member from '../../../components/api/Member.astro';
 	params={[{ name: 'select' }]}
 />
 
-### Functions
+## Decorators
+
+### Core
 
 <Member
 	of="discord"
+	kind="deco"
+	name="modal"
+	params={[
+		{ name: 'callback', default: '...' },
+		{ name: 'title', default: '...' },
+		{ name: 'components', default: '...' },
+		{ name: 'custom_id', default: '...' },
+		{ name: 'timeout', default: '...' },
+	]}
+/>
+
+### Extensions
+
+<Member
+	of="discord"
+	kind="deco"
+	name="lifespan"
+	params={[{ name: 'callback', default: '...' }, { name: 'name', default: '...' }]}
+/>
+
+<Member
+	of="discord"
+	kind="deco"
+	name="signal"
+	params={[
+		{ name: 'callback', default: '...' },
+		{ name: 'name', default: '...' },
+		{ name: 'priority', default: '...' },
+		{ name: 'timeout', default: '...' },
+		{ name: 'max_runs', default: '...' },
+		{ name: 'once', default: '...' },
+	]}
+/>
+
+### Gateway
+
+<Member
+	of="discord"
+	kind="deco"
+	name="event"
+	params={[{ name: 'callback', default: '...' }, { name: 'name', default: '...' }]}
+/>
+
+### UI
+
+<Member
+	of="discord"
+	kind="deco"
 	name="button"
 	params={[
 		{ name: 'label' },
@@ -3987,6 +4001,7 @@ import Member from '../../../components/api/Member.astro';
 
 <Member
 	of="discord"
+	kind="deco"
 	name="channel_select"
 	params={[
 		{ name: 'channel_types', default: '...' },
@@ -4005,6 +4020,7 @@ import Member from '../../../components/api/Member.astro';
 
 <Member
 	of="discord"
+	kind="deco"
 	name="mentionable_select"
 	params={[
 		{ name: 'default_users', default: '...' },
@@ -4023,6 +4039,7 @@ import Member from '../../../components/api/Member.astro';
 
 <Member
 	of="discord"
+	kind="deco"
 	name="role_select"
 	params={[
 		{ name: 'default_values', default: '...' },
@@ -4040,6 +4057,7 @@ import Member from '../../../components/api/Member.astro';
 
 <Member
 	of="discord"
+	kind="deco"
 	name="string_select"
 	params={[
 		{ name: '*options' },
@@ -4057,6 +4075,7 @@ import Member from '../../../components/api/Member.astro';
 
 <Member
 	of="discord"
+	kind="deco"
 	name="user_select"
 	params={[
 		{ name: 'default_values', default: '...' },
@@ -4070,4 +4089,14 @@ import Member from '../../../components/api/Member.astro';
 		{ name: 'callback', default: '...' },
 		{ name: 'id', default: '...' },
 	]}
+/>
+
+## Functions
+
+### ABC
+
+<Member
+	of="discord"
+	name="snowflake_time"
+	params={[{ name: 'id' }]}
 />

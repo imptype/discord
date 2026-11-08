@@ -5,6 +5,9 @@ export interface Param {
 	doc?: string;
 }
 
+// Must match MODULE in scripts/genapi.py. Module level functions and decorators use it as their `of`.
+const MODULE = 'discord';
+
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 /** Escapes text and turns `code` into <code>. */
@@ -34,9 +37,18 @@ export function memberSig(m: { of: string; name: string; kind: string; type?: st
 	if (m.kind === 'attr') {
 		return `${m.of}.<span class="py-var py-name">${m.name}</span>${m.type ? `: <em>${fmtType(m.type)}</em>` : ''}`;
 	}
+	// 'deco' is a function meant to be used as @discord.name, so it gets an @ in front instead of a keyword.
 	const prefix =
-		m.kind === 'async' ? '<span class="py-ctl">await</span> ' : m.kind === 'cls' ? '<span class="py-kw">classmethod</span> ' : '';
+		m.kind === 'async'
+			? '<span class="py-ctl">await</span> '
+			: m.kind === 'cls'
+				? '<span class="py-kw">classmethod</span> '
+				: m.kind === 'deco'
+					? '<span class="py-fn">@</span>'
+					: '';
+	// The module name (discord) is coloured like a class name, as in VS Code. Class names stay plain.
+	const owner = m.of === MODULE ? `<span class="py-cls">${m.of}</span>` : m.of;
 	const args = m.params.length ? `<em>${sigParams(m.params)}</em>` : '';
 	const ret = m.returns?.type ? ` -&gt; <em>${fmtType(m.returns.type)}</em>` : '';
-	return `${prefix}${m.of}.<span class="py-fn py-name">${m.name}</span>(${args})${ret}`;
+	return `${prefix}${owner}.<span class="py-fn py-name">${m.name}</span>(${args})${ret}`;
 }

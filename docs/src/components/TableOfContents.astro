@@ -2,6 +2,9 @@
 import Default from '@astrojs/starlight/components/TableOfContents.astro';
 import SidebarToggle from './SidebarToggle.astro';
 
+// Must match DECORATORS_TITLE in scripts/genapi.py. Members under this heading are shown with an @ prefix.
+const DECORATORS_HEADING = 'Decorators';
+
 const { id, toc } = Astro.locals.starlightRoute;
 
 // src/data/api-members.json: { "Group": { "Class": ["Class.member", ...] } }. glob, so a missing file means default TOC.
@@ -26,11 +29,12 @@ walk(toc?.items as Item[] | undefined);
 const textOf = new Map(flat.map((i) => [i.slug, i.text]));
 let seenGroup = false;
 const rows = flat.map((i) => {
-	const members = manifest?.[textOf.get(i.parent) ?? '']?.[i.text];
+	const parentText = textOf.get(i.parent) ?? '';
+	const members = manifest?.[parentText]?.[i.text];
 	const has = !!members?.length;
 	const gap = !has && seenGroup;
 	if (has) seenGroup = true;
-	return { ...i, members: has ? members : undefined, gap };
+	return { ...i, members: has ? members : undefined, gap, deco: has && parentText === DECORATORS_HEADING };
 });
 const groupCount = rows.filter((r) => r.members).length;
 const firstGroupRow = rows.findIndex((r) => r.members);
@@ -79,7 +83,7 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 						r.members ? (
 							<ul class="members-group" data-group={r.slug}>
 								{r.members.map((m) => (
-									<li><a href={`#${m}`} title={m}>{m}</a></li>
+									<li><a href={`#${m}`} title={r.deco ? `@${m}` : m}>{r.deco ? '@' : ''}{m}</a></li>
 								))}
 							</ul>
 						) : r.gap ? (

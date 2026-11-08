@@ -3,8 +3,7 @@
     "Component": ["Component.children", "Component.walk", "Component.interactables", "Component.to_json"],
     "Interactable": ["Interactable.has_custom_id", "Interactable.custom_id", "Interactable.disabled", "Interactable.timeout", "Interactable.id"],
     "PartialModel": ["PartialModel.app", "PartialModel.fetch"],
-    "Snowflake": ["Snowflake.id", "Snowflake.created_at"],
-    "Functions": ["discord.snowflake_time"]
+    "Snowflake": ["Snowflake.id", "Snowflake.created_at"]
   },
   "Core": {
     "AutocompleteInteraction": ["AutocompleteInteraction.response"],
@@ -37,19 +36,16 @@
     "SyncWebhook": ["SyncWebhook.send", "SyncWebhook.fetch", "SyncWebhook.edit", "SyncWebhook.delete", "SyncWebhook.fetch_message", "SyncWebhook.edit_message", "SyncWebhook.delete_message", "SyncWebhook.webhook", "SyncWebhook.id", "SyncWebhook.token", "SyncWebhook.from_url"],
     "UserCommand": ["UserCommand.__call__"],
     "UserInteraction": ["UserInteraction.user"],
-    "Webhook": ["Webhook.data", "Webhook.type", "Webhook.name", "Webhook.avatar", "Webhook.application_id", "Webhook.guild_id", "Webhook.channel_id", "Webhook.guild", "Webhook.channel", "Webhook.user"],
-    "Functions": ["discord.modal"]
+    "Webhook": ["Webhook.data", "Webhook.type", "Webhook.name", "Webhook.avatar", "Webhook.application_id", "Webhook.guild_id", "Webhook.channel_id", "Webhook.guild", "Webhook.channel", "Webhook.user"]
   },
   "Extensions": {
     "Cog": ["Cog.app", "Cog.instances", "Cog.cog_load", "Cog.cog_unload"],
     "SignalHandler": ["SignalHandler.priority", "SignalHandler.timeout", "SignalHandler.max_runs", "SignalHandler.runs", "SignalHandler.app", "SignalHandler.cancel", "SignalHandler.__call__"],
-    "SignalWaiter": ["SignalWaiter.app", "SignalWaiter.name", "SignalWaiter.priority", "SignalWaiter.timeout", "SignalWaiter.waiter_future", "SignalWaiter.waiter_done_future", "SignalWaiter.sender_done_future", "SignalWaiter.cancel", "SignalWaiter.receive", "SignalWaiter.__await__", "SignalWaiter.__aenter__", "SignalWaiter.__aexit__"],
-    "Functions": ["discord.lifespan", "discord.signal"]
+    "SignalWaiter": ["SignalWaiter.app", "SignalWaiter.name", "SignalWaiter.priority", "SignalWaiter.timeout", "SignalWaiter.waiter_future", "SignalWaiter.waiter_done_future", "SignalWaiter.sender_done_future", "SignalWaiter.cancel", "SignalWaiter.receive", "SignalWaiter.__await__", "SignalWaiter.__aenter__", "SignalWaiter.__aexit__"]
   },
   "Gateway": {
     "Bot": ["Bot.intents", "Bot.prefix", "Bot.connection", "Bot.event_handlers", "Bot.command_handlers", "Bot.ready_at", "Bot.set_proxy", "Bot.run", "Bot.start", "Bot.add_commands", "Bot.remove_commands", "Bot.event", "Bot.add_events", "Bot.remove_events", "Bot.spawn", "Bot.handle_gateway_command", "Bot.on_event"],
-    "Intents": ["Intents.GUILDS", "Intents.GUILD_MEMBERS", "Intents.GUILD_MODERATION", "Intents.GUILD_EXPRESSIONS", "Intents.GUILD_INTEGRATIONS", "Intents.GUILD_WEBHOOKS", "Intents.GUILD_INVITES", "Intents.GUILD_VOICE_STATES", "Intents.GUILD_PRESENCES", "Intents.GUILD_MESSAGES", "Intents.GUILD_MESSAGE_REACTIONS", "Intents.GUILD_MESSAGE_TYPING", "Intents.DIRECT_MESSAGES", "Intents.DIRECT_MESSAGE_REACTIONS", "Intents.DIRECT_MESSAGE_TYPING", "Intents.MESSAGE_CONTENT", "Intents.GUILD_SCHEDULED_EVENTS", "Intents.AUTO_MODERATION_CONFIGURATION", "Intents.AUTO_MODERATION_EXECUTION", "Intents.GUILD_MESSAGE_POLLS", "Intents.DIRECT_MESSAGE_POLLS", "Intents.none", "Intents.default", "Intents.all"],
-    "Functions": ["discord.event"]
+    "Intents": ["Intents.GUILDS", "Intents.GUILD_MEMBERS", "Intents.GUILD_MODERATION", "Intents.GUILD_EXPRESSIONS", "Intents.GUILD_INTEGRATIONS", "Intents.GUILD_WEBHOOKS", "Intents.GUILD_INVITES", "Intents.GUILD_VOICE_STATES", "Intents.GUILD_PRESENCES", "Intents.GUILD_MESSAGES", "Intents.GUILD_MESSAGE_REACTIONS", "Intents.GUILD_MESSAGE_TYPING", "Intents.DIRECT_MESSAGES", "Intents.DIRECT_MESSAGE_REACTIONS", "Intents.DIRECT_MESSAGE_TYPING", "Intents.MESSAGE_CONTENT", "Intents.GUILD_SCHEDULED_EVENTS", "Intents.AUTO_MODERATION_CONFIGURATION", "Intents.AUTO_MODERATION_EXECUTION", "Intents.GUILD_MESSAGE_POLLS", "Intents.DIRECT_MESSAGE_POLLS", "Intents.none", "Intents.default", "Intents.all"]
   },
   "Models": {
     "Channel": ["Channel.data", "Channel.name"],
@@ -105,7 +101,15 @@
     "TextInputStyle": ["TextInputStyle.Short", "TextInputStyle.Paragraph"],
     "Thumbnail": ["Thumbnail.url", "Thumbnail.description", "Thumbnail.spoiler", "Thumbnail.to_json"],
     "UserSelect": ["UserSelect.default_values", "UserSelect.to_json"],
-    "View": ["View.rows", "View.children", "View.add_interactables", "View.add_buttons", "View.add_select"],
-    "Functions": ["discord.button", "discord.channel_select", "discord.mentionable_select", "discord.role_select", "discord.string_select", "discord.user_select"]
+    "View": ["View.rows", "View.children", "View.add_interactables", "View.add_buttons", "View.add_select"]
+  },
+  "Decorators": {
+    "Core": ["discord.modal"],
+    "Extensions": ["discord.lifespan", "discord.signal"],
+    "Gateway": ["discord.event"],
+    "UI": ["discord.button", "discord.channel_select", "discord.mentionable_select", "discord.role_select", "discord.string_select", "discord.user_select"]
+  },
+  "Functions": {
+    "ABC": ["discord.snowflake_time"]
   }
 }
