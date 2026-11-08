@@ -825,13 +825,47 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			refresh({ a, y });
 		});
 
+		// Wheel: over the headings column (first column) one wheel row moves one HEADING, so it skips through the
+		// members and is much faster. Anywhere else it moves one row of the members column, as before.
+		let headFor: Target[] | null = null;
+		let headIdx: number[] = [];
+		const headRows = () => {
+			if (headFor !== targets) {
+				headFor = targets;
+				headIdx = [];
+				targets.forEach((t, i) => {
+					if (!membersCol.contains(t.a)) headIdx.push(i);
+				});
+				// let the last heading's members count as part of its stretch
+				if (headIdx.length && headIdx[headIdx.length - 1] < n - 1) headIdx.push(n - 1);
+			}
+			return headIdx;
+		};
+		// row position <-> heading position (both continuous)
+		const toHead = (H: number[], u: number) => {
+			let k = 0;
+			while (k + 1 < H.length && H[k + 1] <= u) k++;
+			const next = H[k + 1];
+			return next === undefined || next === H[k] ? k : k + (u - H[k]) / (next - H[k]);
+		};
+		const fromHead = (H: number[], h: number) => {
+			const k = Math.min(H.length - 1, Math.max(0, Math.floor(h)));
+			const next = H[k + 1];
+			return next === undefined ? H[k] : H[k] + (h - k) * (next - H[k]);
+		};
+
 		viewEl.addEventListener(
 			'wheel',
 			(e) => {
 				if (!live || e.ctrlKey) return;
 				const d = (e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? view : 1)) / rowH;
 				e.preventDefault();
-				go(target + d);
+				const H = (e.target as Element).closest('.toc-heads') ? headRows() : [];
+				if (H.length < 2) {
+					go(target + d);
+					return;
+				}
+				go(fromHead(H, Math.min(H.length - 1, Math.max(0, toHead(H, target) + d))));
 			},
 			{ passive: false },
 		);
