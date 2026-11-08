@@ -26,6 +26,7 @@ IGNORED = { # never stubbed, edit to taste
 }
 KEPT_DECORATORS = {'property', 'staticmethod', 'classmethod', 'abstractmethod', 'overload'}
 ENUM_BASES = {'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag'}
+EXPOSED_BASES = set() # extra base class names to treat as public, besides anything ending in Mixin (e.g. {'AppBase'})
 TODO = re.compile(r'\bTODO\b')
 BUILTINS = set(dir(builtins))
 FALLBACK_IMPORTS = { # for names a placeholder needs that the source never imports
@@ -308,9 +309,13 @@ def set_light(member):
   for inner in member.members.values():
     set_light(inner)
 
+def is_exposed_base(name):
+  return name.endswith('Mixin') or name in EXPOSED_BASES
+
 def exported(modules):
   """(defining module, name) for everything the root __init__.py imports, plus the classes behind exported
-  instances and aliases, plus the base classes of every exported class (mixins users reach through Bot, etc.)"""
+  instances and aliases, plus the mixins (see is_exposed_base) anywhere up the base chain of an exported class.
+  Other base classes, like API or Handler, are walked through but stay internal."""
   root = modules['']
   found = set()
   for target, original in root.imports.values():
@@ -325,17 +330,25 @@ def exported(modules):
         found.add(result)
 
   # command = command_namespace, command_namespace = CommandNamespace() exports CommandNamespace too
-  # class Bot(AppBase) exports AppBase, and so on up the chain
   queue = list(found)
+  seen = set(found)
   while queue:
     target, name = queue.pop()
     ref = modules[target].refs.get(name)
-    candidates = [ref] if ref and ref[:1].isupper() else []
-    candidates += modules[target].bases.get(name, [])
-    for candidate in candidates:
-      if (result := resolve(modules, target, candidate)) and result not in found:
+    if ref and ref[:1].isupper() and (result := resolve(modules, target, ref)) and result not in seen:
+      found.add(result)
+      seen.add(result)
+      queue.append(result)
+
+    # class Bot(AppBase), class AppBase(CommandMixin, ...): every ancestor is walked, only mixins are exported
+    for base in modules[target].bases.get(name, []):
+      result = resolve(modules, target, base)
+      if result is None or result in seen:
+        continue
+      seen.add(result)
+      if is_exposed_base(result[1]):
         found.add(result)
-        queue.append(result)
+      queue.append(result)
   return found
 
 # ----- generating placeholders

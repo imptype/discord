@@ -1,10 +1,7 @@
 from typing import Any
 from ..abc import Handler
 
-class BaseCommand(Handler):
-  """
-  TODO
-  """
+class BaseCommand(Handler): ...
 
 class PrefixCommand(BaseCommand):
   """
@@ -73,85 +70,17 @@ class InteractionCommand(BaseCommand):
   key: Any # TODO
 
 class SlashNode:
-  """
-  TODO
+  def __init__(self, callback = ..., name = ..., description = ..., options = ..., level = ...) -> None: ...
 
-  Attributes:
-    callback: TODO
-    name: TODO
-    description: TODO
-    options: TODO
-    level: TODO
-    subcommands: TODO
-    autocomplete: TODO
-  """
+  def subcommand(self, callback = ..., *, name = ..., description = ..., options = ...) -> Any: ...
 
-  def __init__(self, callback = ..., name = ..., description = ..., options = ..., level = ...) -> None: # TODO
-    """
-    TODO
+  def on_autocomplete(self, callback = ...) -> Any: ...
 
-    Args:
-      callback: TODO
-      name: TODO
-      description: TODO
-      options: TODO
-      level: TODO
-    """
+  def find(self, names) -> Any: ...
 
-  def subcommand(self, callback = ..., *, name = ..., description = ..., options = ...) -> Any: # TODO
-    """
-    TODO
+  def to_json(self) -> Any: ...
 
-    Args:
-      callback: TODO
-      name: TODO
-      description: TODO
-      options: TODO
-
-    Returns:
-      TODO
-    """
-
-  def on_autocomplete(self, callback = ...) -> Any: # TODO
-    """
-    TODO
-
-    Args:
-      callback: TODO
-
-    Returns:
-      TODO
-    """
-
-  def find(self, names) -> Any: # TODO
-    """
-    TODO
-
-    Args:
-      names: TODO
-
-    Returns:
-      TODO
-    """
-
-  def to_json(self) -> Any: # TODO
-    """
-    TODO
-
-    Returns:
-      TODO
-    """
-
-  def bind(self, cog_instance) -> Any: # TODO
-    """
-    TODO
-
-    Args:
-      cog_instance: TODO
-
-    Returns:
-      TODO
-    """
+  def bind(self, cog_instance) -> Any: ...
 
   callback: Any # TODO
   name: Any # TODO
