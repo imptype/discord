@@ -385,6 +385,19 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		let scrollable = false;
 		let thumbH = 0;
 
+		// The headings column is as wide as its widest visible row, so collapsing a group that holds the longest
+		// name used to shrink it and shift the members column left (and expanding shifted it back). Measure the
+		// width with every row visible once and keep the column at least that wide.
+		let headsW = 0;
+		const measureFullWidth = () => {
+			heads.style.minWidth = '';
+			const hid = [...list.querySelectorAll<HTMLElement>('li.toc-hidden')];
+			hid.forEach((li) => li.classList.remove('toc-hidden'));
+			const w = heads.offsetWidth;
+			hid.forEach((li) => li.classList.add('toc-hidden'));
+			return w;
+		};
+
 		let lastKey = '';
 		const sizeKey = () =>
 			`${heads.offsetWidth}x${heads.offsetHeight}|${membersCol.offsetWidth}x${membersCol.offsetHeight}|${sidebarEl?.clientHeight ?? 0}`;
@@ -643,6 +656,13 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 
 		const layout = () => {
 			live = false;
+			if (!desktop.matches) {
+				headsW = 0;
+				heads.style.minWidth = '';
+			} else {
+				if (!headsW) headsW = measureFullWidth();
+				heads.style.minWidth = `${headsW}px`;
+			}
 			if (desktop.matches) {
 				rowH = heads.querySelector('a')?.getBoundingClientRect().height || 24.25;
 				const firstSlug = [...groups.keys()].find((s) => !hiddenSlugs.has(s));
@@ -1056,6 +1076,12 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 				onScroll();
 			});
 		};
+
+		// web fonts change text widths, so measure the full width again once they are in
+		document.fonts?.ready.then(() => {
+			headsW = 0;
+			queueLayout(true);
+		});
 
 		addEventListener('scroll', onScroll, { passive: true });
 		addEventListener('resize', () => {
