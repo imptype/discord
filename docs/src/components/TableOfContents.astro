@@ -161,6 +161,7 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 	const TRAIL = 28; // how far its ends reach right before fading out
 	const TIP = 8; // how far its middle point sticks out left
 	const TIP_R = 5; // roundness of that point
+	const COLLAPSE_MS = 220; // ms. Collapse / expand animation (0 = instant)
 	let braceId = 0;
 
 	// Straightest path through a per-row corridor [lo, hi].
@@ -829,6 +830,135 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			}
 		};
 
+		// Animated collapse / expand (FLIP). The layout code above jumps straight to the final state; this wraps
+		// it and plays the difference: rows that stay slide from their old spot, rows that go away fade out as
+		// ghost copies, rows that appear fade in.
+		const ghosts: HTMLElement[] = [];
+		const running: Animation[] = [];
+		type Col = 'h' | 'm'; // headings column / members column
+		const animRows: [HTMLElement, string, Col][] = [
+			...[...headLis].map(([slug, el]): [HTMLElement, string, Col] => [el, slug, 'h']),
+			...[...groups].map(([slug, el]): [HTMLElement, string, Col] => [el, slug, 'm']),
+		];
+		const shown = (el: Element) => el.getClientRects().length > 0;
+		// Collapse / expand by movement only, no fade and no clipping. Every row that belongs to a heading moves the
+		// same distance at the same constant speed (so rows keep their spacing and can never overlap). A row that goes
+		// away vanishes the instant its top reaches the bottom edge of its heading; a row that appears shows up the
+		// instant its top leaves that edge. Rows below simply slide along at the same speed.
+		const animated = (change: () => void) => {
+			if (!live || COLLAPSE_MS <= 0) {
+				change();
+				return;
+			}
+			running.splice(0).forEach((an) => an.cancel());
+			ghosts.splice(0).forEach((g) => g.remove());
+
+			// reads
+			const vr = viewEl.getBoundingClientRect();
+			const before = new Map<HTMLElement, DOMRect>();
+			for (const [el] of animRows) if (shown(el)) before.set(el, el.getBoundingClientRect());
+
+			change();
+
+			// Nearest ancestor heading passing `ok`, and the y of its bottom edge (the goal line). In the members
+			// column that is the bottom of the heading's own members box, if it has one.
+			const goalFor = (slug: string, col: Col, ok: (li: HTMLElement) => boolean) => {
+				for (let p = parentOf.get(slug); p; p = parentOf.get(p)) {
+					const li = headLis.get(p);
+					if (!li || !ok(li)) continue;
+					const box = col === 'm' ? groups.get(p) : undefined;
+					return { key: `${p}|${col}`, goal: (box && shown(box) ? box : li).getBoundingClientRect().bottom };
+				}
+				return undefined;
+			};
+
+			type Job =
+				| { el: HTMLElement; kind: 'move'; old: DOMRect; now: DOMRect }
+				| { el: HTMLElement; kind: 'in'; now: DOMRect; key: string; goal: number }
+				| { el: HTMLElement; kind: 'out'; old: DOMRect; key: string; goal: number };
+			const jobs: Job[] = [];
+			// per heading + column: the lowest bottom edge among its moving rows. The shared travel distance is how
+			// far that edge is from the goal line, so the lowest row arrives exactly when the animation ends.
+			const reach = new Map<string, number>();
+			const grow = (key: string, bottom: number) => reach.set(key, Math.max(reach.get(key) ?? -Infinity, bottom));
+			for (const [el, slug, col] of animRows) {
+				const old = before.get(el);
+				if (shown(el)) {
+					const now = el.getBoundingClientRect();
+					if (old) jobs.push({ el, kind: 'move', old, now });
+					else {
+						const g = goalFor(slug, col, (li) => before.has(li));
+						if (!g) continue;
+						grow(g.key, now.bottom);
+						jobs.push({ el, kind: 'in', now, ...g });
+					}
+				} else if (old) {
+					const g = goalFor(slug, col, shown);
+					if (!g) continue;
+					grow(g.key, old.bottom);
+					jobs.push({ el, kind: 'out', old, ...g });
+				}
+			}
+
+			// writes (after all the reads above, so the browser lays out once)
+			const opts = { duration: COLLAPSE_MS, easing: 'linear' };
+			const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+			const EPS = 0.001; // visibility flips between two keyframes this close together = instantly
+			for (const j of jobs) {
+				if (j.kind === 'move') {
+					const dy = j.old.top - j.now.top;
+					if (Math.abs(dy) > 0.5)
+						running.push(j.el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], opts));
+					continue;
+				}
+				const D = reach.get(j.key)! - j.goal; // shared travel distance
+				if (D < 1) continue;
+				if (j.kind === 'in') {
+					// starts D higher, hidden until its top leaves the goal line, then slides down into place fading in
+					const f = clamp01(1 - (j.now.top - j.goal) / D);
+					running.push(
+						j.el.animate(
+							[
+								{ transform: `translateY(${-D}px)`, opacity: 0, visibility: f > 0 ? 'hidden' : 'visible', offset: 0 },
+								{ visibility: 'hidden', offset: f },
+								{ visibility: 'visible', offset: Math.min(1, f + EPS) },
+								{ transform: 'none', opacity: 1, visibility: 'visible', offset: 1 },
+							],
+							opts,
+						),
+					);
+				} else {
+					// a copy slides up by D, fading out linearly, and is cut off the instant its top reaches the goal line
+					const f = clamp01((j.old.top - j.goal) / D);
+					const clone = j.el.cloneNode(true) as HTMLElement;
+					clone.classList.remove('toc-hidden');
+					let g = clone;
+					if (clone.tagName === 'LI') {
+						g = document.createElement('ul');
+						g.append(clone);
+					}
+					g.classList.add('toc-ghost');
+					g.setAttribute('aria-hidden', 'true');
+					g.style.cssText = `top:${j.old.top - vr.top}px;left:${j.old.left - vr.left}px;width:${j.old.width}px`;
+					viewEl.append(g);
+					ghosts.push(g);
+					const an = g.animate(
+						[
+							{ transform: 'none', opacity: 1, visibility: 'visible', offset: 0 },
+							{ visibility: 'visible', offset: f },
+							{ visibility: 'hidden', offset: Math.min(1, f + EPS) },
+							{ transform: `translateY(${-D}px)`, opacity: 0, visibility: 'hidden', offset: 1 },
+						],
+						{ ...opts, fill: 'forwards' },
+					);
+					an.onfinish = () => g.remove();
+					running.push(an);
+				}
+			}
+			// the brace jumps to its new box instantly, so fade it in instead of letting it float ahead of the rows
+			running.push(line.animate([{ opacity: 0 }, { opacity: line.style.opacity || '0' }], opts));
+		};
+
 		list.addEventListener('click', (e) => {
 			const btn = (e.target as Element).closest<HTMLElement>('.toc-toggle');
 			const li = btn?.closest<HTMLElement>('li');
@@ -839,7 +969,7 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			const y = a.getBoundingClientRect().top - viewEl.getBoundingClientRect().top;
 			if (collapsed.has(slug)) collapsed.delete(slug);
 			else collapsed.add(slug);
-			refresh({ a, y });
+			animated(() => refresh({ a, y }));
 		});
 
 		// Header button: if anything is collapsed, expand everything; otherwise collapse everything.
@@ -847,7 +977,7 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			const collapse = collapsed.size === 0;
 			collapsed.clear();
 			if (collapse) for (const s of kidsSlugs) collapsed.add(s);
-			refresh();
+			animated(() => refresh());
 		});
 
 		// Wheel: over the headings column (first column) one wheel row moves one HEADING, so it skips through the
@@ -1006,6 +1136,16 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 
 	.api-toc .toc-hidden {
 		display: none !important;
+	}
+
+	/* fading-out copies of rows that were just collapsed (see animated() in the script) */
+	.api-toc .toc-view {
+		position: relative;
+	}
+	.api-toc .toc-ghost {
+		position: absolute;
+		margin: 0 !important;
+		pointer-events: none;
 	}
 
 	.api-toc li.has-kids {
