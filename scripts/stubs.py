@@ -20,9 +20,9 @@ from dataclasses import dataclass, field
 PACKAGE = Path('discord')
 STUBS_DIR = Path('discord-stubs')
 MARKER = '# TODO'
-IGNORED = { # never stubbed, edit to taste
+IGNORED = { # never stubbed, edit to taste (internal module level constants are skipped automatically, see main)
   '__repr__', '__str__', '__hash__', '__eq__', '__ne__', '__del__', '__post_init__',
-  'log', 'lazy_filter', 'URL', 'QUERY', 'COLORS', 'RESET', 'FATAL_CODES', 'RESET_CODES', 'P'
+  'lazy_filter' # the root __init__.py is never filtered, so this one needs listing
 }
 KEPT_DECORATORS = {'property', 'staticmethod', 'classmethod', 'abstractmethod', 'overload'}
 ENUM_BASES = {'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag'}
@@ -308,6 +308,23 @@ def set_light(member):
   member.light = True
   for inner in member.members.values():
     set_light(inner)
+
+def imported_anywhere(modules):
+  """(defining module, name) for everything any module in the package imports, so a constant that another
+  module or a package __init__.py re-exports is not mistaken for an internal one"""
+  found = set()
+  for module in modules.values():
+    for target, original in module.imports.values():
+      if result := resolve(modules, target, original):
+        found.add(result)
+    for target in module.stars:
+      source = modules.get(target)
+      if source is None:
+        continue
+      for original in {*source.definitions, *source.imports}:
+        if result := resolve(modules, target, original):
+          found.add(result)
+  return found
 
 def is_exposed_base(name):
   return name.endswith('Mixin') or name in EXPOSED_BASES
@@ -667,6 +684,7 @@ def main():
     print(f'could not read {PACKAGE}/__init__.py, nothing to export from')
     return 1
   exports = exported(modules)
+  shared = imported_anywhere(modules)
 
   problems = [] # (path, line, text)
   notes = []
@@ -681,8 +699,14 @@ def main():
     module = module_name(path)
     source = collect(source_tree.body, imports, {})
     if module: # the root __init__.py defines what is exported, everything else is internal
-      for name, member in source.items():
-        if member.kind != 'import' and resolve(modules, module, name) not in exports:
+      for name, member in list(source.items()):
+        result = resolve(modules, module, name)
+        if member.kind == 'import' or result in exports:
+          continue
+        is_alias = isinstance(member.node, ast.TypeAlias) # signatures can use these, so they stay
+        if member.kind == 'variable' and result not in shared and not is_alias:
+          del source[name] # an internal constant nothing else imports, never stubbed
+        else:
           set_light(member)
     exists = stub_path.exists()
     if not exists and not source:

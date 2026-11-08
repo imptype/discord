@@ -1,7 +1,5 @@
 from typing import Any
 
-DISCORD_EPOCH: int
-
 def snowflake_time(id) -> Any: # TODO
   """
   TODO

@@ -1,9 +1,5 @@
 from typing import Any
 
-SETUP: str
-TEARDOWN: str
-RELOAD_INTERVAL: int
-
 class Cog:
   """
   TODO

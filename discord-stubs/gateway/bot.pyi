@@ -3,8 +3,6 @@ from ..core import AppBase
 from ..core import CommandProxy
 from .connection import Connection
 
-DEFAULT_INTENTS: Any # TODO
-
 class BotCommandProxy(CommandProxy):
   def __call__(self, *args, **kwargs) -> Any: ...
 

@@ -2,8 +2,6 @@ from ..abc import API
 from typing import Any
 from ..abc import Route
 
-USER_AGENT: str
-
 class HTTPClient(API):
   """
   TODO

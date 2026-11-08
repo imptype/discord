@@ -1,7 +1,5 @@
 from typing import Any
 
-MAJOR_PARAMS: Any # TODO
-
 class Route:
   def __init__(self, method, path, **params) -> None: ...
 

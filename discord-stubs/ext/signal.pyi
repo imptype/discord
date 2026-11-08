@@ -2,9 +2,6 @@ from typing import Any
 from ..abc import Handler
 import asyncio
 
-DEFAULT_WAITER_TIMEOUT: int
-DEFAULT_HANDLER_TIMEOUT: Any # TODO
-
 class SignalTimeoutError(TimeoutError): ...
 
 class SignalCancelledError(asyncio.CancelledError): ...

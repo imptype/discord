@@ -1,7 +1,5 @@
 from typing import Any
 
-MAX_BUTTONS_PER_ROW: int
-
 class BaseView:
   """
   TODO
