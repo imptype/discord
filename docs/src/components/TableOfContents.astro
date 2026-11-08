@@ -570,14 +570,34 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 				membersCol.style.paddingTop =
 					firstHead && firstLink ? `${Math.max(0, topIn(firstHead, heads) - topIn(firstLink, membersCol))}px` : '';
 
-				const hL = heads.offsetHeight;
-				const hR = membersCol.hidden ? 0 : membersCol.offsetHeight;
+				heads.style.paddingBottom = membersCol.style.paddingBottom = '';
+				let hL = heads.offsetHeight;
+				let hR = membersCol.hidden ? 0 : membersCol.offsetHeight;
 				if (hL || hR) {
 					const sidebar = viewEl.closest<HTMLElement>('.right-sidebar');
 					const panel = viewEl.closest<HTMLElement>('.right-sidebar-panel');
 					const start = viewEl.getBoundingClientRect().top - (sidebar?.getBoundingClientRect().top ?? 0) + (sidebar?.scrollTop ?? 0);
 					const padBottom = panel ? parseFloat(getComputedStyle(panel).paddingBottom) || 0 : 0;
 					const maxH = (sidebar?.clientHeight ?? innerHeight) - start - padBottom;
+					// Near the end, a late heading sits low and its level members group (and brace) would hang
+					// below the screen. Add the same blank space under BOTH columns, just enough for the worst
+					// group, so every heading can rise far enough. Both columns stay level and the scrolling
+					// logic below is unchanged: it just sees slightly longer columns.
+					if (visibleGroups > 0 && Math.max(hL, hR) > maxH + 1) {
+						let need = 0;
+						for (const [slug, ul] of groups) {
+							if (hiddenSlugs.has(slug)) continue;
+							const headTop = topIn(headLis.get(slug)!.querySelector('a')!, heads);
+							need = Math.max(need, ul.offsetHeight - (hL - headTop));
+						}
+						const extra = need > 0 ? Math.ceil(need) + 8 : 0;
+						if (extra) {
+							heads.style.paddingBottom = `${extra}px`;
+							membersCol.style.paddingBottom = `calc(var(--toc-brace-room, 0.375rem) + ${extra}px)`;
+							hL = heads.offsetHeight;
+							hR = membersCol.offsetHeight;
+						}
+					}
 					view = Math.min(maxH, Math.max(hL, hR));
 					maxL = Math.max(0, hL - view);
 					maxR = Math.max(0, hR - view);
