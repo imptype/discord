@@ -399,26 +399,51 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 			const yLo = Math.max(rowH, A - DRIFT * rowH);
 			const yHi = Math.min(view - 2 * rowH, A + DRIFT * rowH);
 			const old: number[] = [];
-			const lo: number[] = [];
-			const hi: number[] = [];
-			for (let i = 0; i < n; i++) {
-				const v = offsets(i).offL;
-				old.push(v);
-				const l = Math.max(0, LYs[i] - yHi, LYs[i] - RYs[i]);
-				const h = Math.min(maxL, LYs[i] - yLo, maxR + LYs[i] - RYs[i]);
-				lo.push(Math.min(l, v));
-				hi.push(Math.max(h, v));
-			}
-			lo[0] = hi[0] = old[0];
-			lo[n - 1] = hi[n - 1] = old[n - 1];
+			for (let i = 0; i < n; i++) old.push(offsets(i).offL);
+			// m[i]: how far the level row may move down the screen by row i without either column having to
+			// scroll backwards. This is what keeps both columns moving in one direction only.
 			const m: number[] = [0];
 			for (let i = 1; i < n; i++) m.push(m[i - 1] + Math.max(0, Math.min(LYs[i] - LYs[i - 1], RYs[i] - RYs[i - 1])));
-			const qLo = lo.map((_, i) => LYs[i] - hi[i] - m[i]);
-			const qHi = lo.map((_, i) => LYs[i] - lo[i] - m[i]);
-			for (let i = 1; i < n; i++) qHi[i] = Math.min(qHi[i], qHi[i - 1]);
-			for (let i = n - 2; i >= 0; i--) qLo[i] = Math.max(qLo[i], qLo[i + 1]);
-			for (let i = 0; i < n; i++) qLo[i] = Math.min(qLo[i], qHi[i]);
-			const q = tautString(qLo, qHi);
+
+			// soft: also keep the heading inside the comfortable band [yLo, yHi]. pin: start and end at the
+			// ideal (non smooth) offsets. Each is dropped, in that order, if it leaves no one-direction path.
+			const build = (soft: boolean, pin: boolean) => {
+				const lo: number[] = [];
+				const hi: number[] = [];
+				for (let i = 0; i < n; i++) {
+					// hard limits: neither column may scroll past its own start or end
+					const hardLo = Math.max(0, LYs[i] - RYs[i]);
+					const hardHi = Math.min(maxL, maxR + LYs[i] - RYs[i]);
+					let l = hardLo;
+					let h = hardHi;
+					if (soft) {
+						const sl = Math.max(hardLo, LYs[i] - yHi);
+						const sh = Math.min(hardHi, LYs[i] - yLo);
+						if (sl <= sh) {
+							l = sl;
+							h = sh;
+						}
+					}
+					lo.push(Math.min(l, old[i]));
+					hi.push(Math.max(h, old[i]));
+				}
+				if (pin) {
+					lo[0] = hi[0] = old[0];
+					lo[n - 1] = hi[n - 1] = old[n - 1];
+				}
+				const qLo = lo.map((_, i) => LYs[i] - hi[i] - m[i]);
+				const qHi = lo.map((_, i) => LYs[i] - lo[i] - m[i]);
+				for (let i = 1; i < n; i++) qHi[i] = Math.min(qHi[i], qHi[i - 1]);
+				for (let i = n - 2; i >= 0; i--) qLo[i] = Math.max(qLo[i], qLo[i + 1]);
+				let ok = true;
+				for (let i = 0; i < n; i++) if (qLo[i] > qHi[i] + 0.5) ok = false;
+				for (let i = 0; i < n; i++) qLo[i] = Math.min(qLo[i], qHi[i]);
+				return { ok, qLo, qHi };
+			};
+			let r = build(true, true);
+			if (!r.ok) r = build(false, true);
+			if (!r.ok) r = build(false, false);
+			const q = tautString(r.qLo, r.qHi);
 			OLs = q.map((v, i) => clamp(LYs[i] - (v + m[i]), maxL));
 			ORs = OLs.map((v, i) => clamp(RYs[i] - LYs[i] + v, maxR));
 			ORs[0] = offsets(0).offR;
@@ -563,6 +588,40 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 		track.addEventListener('pointerup', endDrag);
 		track.addEventListener('pointercancel', endDrag);
 
+		// Where every row sits in both columns (LYs / RYs) plus the brace box per row. Bottom padding does not
+		// change any of these, so layout() can measure them before deciding how much padding to add.
+		const measureRows = () => {
+			const headY = new Map<string, number>();
+			for (const [slug, li] of headLis) headY.set(slug, topIn(li.querySelector('a')!, heads));
+			const groupTop = new Map<string, number>();
+			for (const [slug, ul] of groups) groupTop.set(slug, topIn(ul.querySelector('a')!, membersCol));
+			const boxOf = new Map<string, { top: number; bottom: number }>();
+			for (const [slug, ul] of groups) {
+				const top = topIn(ul, membersCol);
+				boxOf.set(slug, { top, bottom: top + ul.offsetHeight });
+			}
+			LYs = [];
+			RYs = [];
+			BTs = [];
+			BBs = [];
+			BSs = [];
+			for (const t of targets) {
+				const ly = headY.get(t.group)!;
+				LYs.push(ly);
+				const gap = gaps.get(t.group);
+				let r: number;
+				if (membersCol.contains(t.a)) r = topIn(t.a, membersCol);
+				else if (groupTop.has(t.group)) r = groupTop.get(t.group)!;
+				else if (gap && !gap.classList.contains('toc-hidden')) r = topIn(gap, membersCol);
+				else r = ly;
+				RYs.push(r);
+				const b = boxOf.get(t.group);
+				BTs.push(b ? b.top : r);
+				BBs.push(b ? b.bottom : r);
+				BSs.push(b ? 1 : 0);
+			}
+		};
+
 		const layout = () => {
 			live = false;
 			if (desktop.matches) {
@@ -583,26 +642,46 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 					const start = viewEl.getBoundingClientRect().top - (sidebar?.getBoundingClientRect().top ?? 0) + (sidebar?.scrollTop ?? 0);
 					const padBottom = panel ? parseFloat(getComputedStyle(panel).paddingBottom) || 0 : 0;
 					const maxH = (sidebar?.clientHeight ?? innerHeight) - start - padBottom;
-					// Near the end, a late heading sits low and its level members group (and brace) would hang
-					// below the screen. Add the same blank space under BOTH columns, just enough for the worst
-					// group, so every heading can rise far enough. Both columns stay level and the scrolling
-					// logic below is unchanged: it just sees slightly longer columns.
-					if (visibleGroups > 0 && Math.max(hL, hR) > maxH + 1) {
-						let need = 0;
-						for (const [slug, ul] of groups) {
-							if (hiddenSlugs.has(slug)) continue;
-							const headTop = topIn(headLis.get(slug)!.querySelector('a')!, heads);
-							need = Math.max(need, ul.offsetHeight - (hL - headTop));
+					// Panel height before any padding. It stays this tall even when we pad the columns below.
+					const natural = Math.min(maxH, Math.max(hL, hR));
+					measureRows();
+					if (visibleGroups > 0) {
+						let extra = 0;
+						// 1) Tall columns only: near the end a late heading sits low and its members group (and brace)
+						//    would hang below the screen, so leave room under both columns for the worst group.
+						if (Math.max(hL, hR) > maxH + 1) {
+							let need = 0;
+							for (const [slug, ul] of groups) {
+								if (hiddenSlugs.has(slug)) continue;
+								const headTop = topIn(headLis.get(slug)!.querySelector('a')!, heads);
+								need = Math.max(need, ul.offsetHeight - (hL - headTop));
+							}
+							extra = need > 0 ? Math.ceil(need) + 8 : 0;
 						}
-						const extra = need > 0 ? Math.ceil(need) + 8 : 0;
-						if (extra) {
+						// 2) Always, even when everything fits on screen: members groups are taller than their one heading
+						//    row, so with sections collapsed the columns drift apart as you go down. To keep one row level
+						//    in both columns WITHOUT either column ever reversing, the level row may only move down the
+						//    screen by min(dLY, dRY) per step (m below). For that path to exist at every row i, the columns
+						//    must be able to scroll far enough: lowest row y  c_i - extra  <=  M_i + min over j<=i of
+						//    (highest row y_j - M_j). Solve for the smallest extra that satisfies every row and pad both
+						//    columns by it. (Same M as in smoothLeft.)
+						let M = 0;
+						let W = Infinity;
+						for (let i = 0; i < n; i++) {
+							if (i > 0) M += Math.max(0, Math.min(LYs[i] - LYs[i - 1], RYs[i] - RYs[i - 1]));
+							W = Math.min(W, Math.min(LYs[i], RYs[i]) - M);
+							const c = Math.max(LYs[i] - hL, RYs[i] - hR) + natural;
+							const e = Math.ceil(c - M - W);
+							if (e > 0) extra = Math.max(extra, e + 1);
+						}
+						if (extra > 0) {
 							heads.style.paddingBottom = `${extra}px`;
 							membersCol.style.paddingBottom = `calc(var(--toc-brace-room, 0.375rem) + ${extra}px)`;
 							hL = heads.offsetHeight;
 							hR = membersCol.offsetHeight;
 						}
 					}
-					view = Math.min(maxH, Math.max(hL, hR));
+					view = natural;
 					maxL = Math.max(0, hL - view);
 					maxR = Math.max(0, hR - view);
 					hasMembers = visibleGroups > 0;
@@ -614,35 +693,6 @@ const firstGroupRow = rows.findIndex((r) => r.members);
 					track.style.height = `${view}px`;
 					thumb.style.height = `${thumbH}px`;
 
-					const headY = new Map<string, number>();
-					for (const [slug, li] of headLis) headY.set(slug, topIn(li.querySelector('a')!, heads));
-					const groupTop = new Map<string, number>();
-					for (const [slug, ul] of groups) groupTop.set(slug, topIn(ul.querySelector('a')!, membersCol));
-					const boxOf = new Map<string, { top: number; bottom: number }>();
-					for (const [slug, ul] of groups) {
-						const top = topIn(ul, membersCol);
-						boxOf.set(slug, { top, bottom: top + ul.offsetHeight });
-					}
-					LYs = [];
-					RYs = [];
-					BTs = [];
-					BBs = [];
-					BSs = [];
-					for (const t of targets) {
-						const ly = headY.get(t.group)!;
-						LYs.push(ly);
-						const gap = gaps.get(t.group);
-						let r: number;
-						if (membersCol.contains(t.a)) r = topIn(t.a, membersCol);
-						else if (groupTop.has(t.group)) r = groupTop.get(t.group)!;
-						else if (gap && !gap.classList.contains('toc-hidden')) r = topIn(gap, membersCol);
-						else r = ly;
-						RYs.push(r);
-						const b = boxOf.get(t.group);
-						BTs.push(b ? b.top : r);
-						BBs.push(b ? b.bottom : r);
-						BSs.push(b ? 1 : 0);
-					}
 					smoothLeft();
 					live = true;
 				}
