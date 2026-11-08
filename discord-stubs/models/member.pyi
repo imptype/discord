@@ -9,6 +9,8 @@ class PartialMember(PartialUser):
     guild: TODO
   """
 
+  guild: Any # TODO
+
   def __init__(self, app, user_id, guild) -> None: # TODO
     """
     TODO
@@ -27,8 +29,6 @@ class PartialMember(PartialUser):
       TODO
     """
 
-  guild: Any # TODO
-
 class Member(PartialMember):
   """
   TODO
@@ -38,6 +38,10 @@ class Member(PartialMember):
     username: TODO
     joined_at: TODO
   """
+
+  data: Any # TODO
+  username: Any # TODO
+  joined_at: Any # TODO
 
   def __init__(self, app, payload, *, user = ..., guild = ...) -> None: # TODO
     """
@@ -49,7 +53,3 @@ class Member(PartialMember):
       user: TODO
       guild: TODO
     """
-
-  data: Any # TODO
-  username: Any # TODO
-  joined_at: Any # TODO

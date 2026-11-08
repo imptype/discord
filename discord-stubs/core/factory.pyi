@@ -1,6 +1,9 @@
 from typing import Any
 
 class ModelHTTP:
+  app: Any # TODO
+  model: Any # TODO
+
   def __init__(self, app, model) -> None: ...
 
   async def guild(self, guild_id) -> Any: ...
@@ -15,12 +18,7 @@ class ModelHTTP:
 
   async def webhook(self, webhook_id, token = ...) -> Any: ...
 
-  app: Any # TODO
-  model: Any # TODO
-
 class ModelFactory:
-  def __init__(self, app) -> None: ...
-
   http: ModelHTTP
   partial_guild: Any # TODO
   partial_channel: Any # TODO
@@ -36,3 +34,5 @@ class ModelFactory:
   message: Any # TODO
   webhook: Any # TODO
   context: Any # TODO
+
+  def __init__(self, app) -> None: ...

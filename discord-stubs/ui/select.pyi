@@ -16,6 +16,12 @@ class SelectOption:
     default: TODO
   """
 
+  label: Any # TODO
+  value: Any # TODO
+  description: Any # TODO
+  emoji: Any # TODO
+  default: Any # TODO
+
   def __init__(self, label, value = ..., *, description = ..., emoji = ..., default = ...) -> None: # TODO
     """
     TODO
@@ -36,12 +42,6 @@ class SelectOption:
       TODO
     """
 
-  label: Any # TODO
-  value: Any # TODO
-  description: Any # TODO
-  emoji: Any # TODO
-  default: Any # TODO
-
 class BaseSelect(Interactable):
   """
   TODO
@@ -53,6 +53,12 @@ class BaseSelect(Interactable):
     max_values: TODO
     required: TODO
   """
+
+  type: ComponentType
+  placeholder: Any # TODO
+  min_values: Any # TODO
+  max_values: Any # TODO
+  required: Any # TODO
 
   def __init__(self, type, *, placeholder = ..., min_values = ..., max_values = ..., required = ..., custom_id = ..., disabled = ..., timeout = ..., callback = ..., id = ...) -> None: # TODO
     """
@@ -79,12 +85,6 @@ class BaseSelect(Interactable):
       TODO
     """
 
-  type: ComponentType
-  placeholder: Any # TODO
-  min_values: Any # TODO
-  max_values: Any # TODO
-  required: Any # TODO
-
 class StringSelect(BaseSelect):
   """
   TODO
@@ -92,6 +92,8 @@ class StringSelect(BaseSelect):
   Attributes:
     options: TODO
   """
+
+  options: Any # TODO
 
   def __init__(self, *options, placeholder = ..., min_values = ..., max_values = ..., required = ..., custom_id = ..., disabled = ..., timeout = ..., callback = ..., id = ...) -> None: # TODO
     """
@@ -118,8 +120,6 @@ class StringSelect(BaseSelect):
       TODO
     """
 
-  options: Any # TODO
-
 class UserSelect(BaseSelect):
   """
   TODO
@@ -127,6 +127,8 @@ class UserSelect(BaseSelect):
   Attributes:
     default_values: TODO
   """
+
+  default_values: Any # TODO
 
   def __init__(self, *, default_values = ..., placeholder = ..., min_values = ..., max_values = ..., required = ..., custom_id = ..., disabled = ..., timeout = ..., callback = ..., id = ...) -> None: # TODO
     """
@@ -152,8 +154,6 @@ class UserSelect(BaseSelect):
     Returns:
       TODO
     """
-
-  default_values: Any # TODO
 
 class RoleSelect(BaseSelect):
   """
@@ -163,6 +163,8 @@ class RoleSelect(BaseSelect):
     default_values: TODO
   """
 
+  default_values: Any # TODO
+
   def __init__(self, *, default_values = ..., placeholder = ..., min_values = ..., max_values = ..., required = ..., custom_id = ..., disabled = ..., timeout = ..., callback = ..., id = ...) -> None: # TODO
     """
     TODO
@@ -188,8 +190,6 @@ class RoleSelect(BaseSelect):
       TODO
     """
 
-  default_values: Any # TODO
-
 class MentionableSelect(BaseSelect):
   """
   TODO
@@ -198,6 +198,9 @@ class MentionableSelect(BaseSelect):
     default_users: TODO
     default_roles: TODO
   """
+
+  default_users: Any # TODO
+  default_roles: Any # TODO
 
   def __init__(self, *, default_users = ..., default_roles = ..., placeholder = ..., min_values = ..., max_values = ..., required = ..., custom_id = ..., disabled = ..., timeout = ..., callback = ..., id = ...) -> None: # TODO
     """
@@ -225,9 +228,6 @@ class MentionableSelect(BaseSelect):
       TODO
     """
 
-  default_users: Any # TODO
-  default_roles: Any # TODO
-
 class ChannelSelect(BaseSelect):
   """
   TODO
@@ -236,6 +236,9 @@ class ChannelSelect(BaseSelect):
     channel_types: TODO
     default_values: TODO
   """
+
+  channel_types: Any # TODO
+  default_values: Any # TODO
 
   def __init__(self, *, channel_types = ..., default_values = ..., placeholder = ..., min_values = ..., max_values = ..., required = ..., custom_id = ..., disabled = ..., timeout = ..., callback = ..., id = ...) -> None: # TODO
     """
@@ -262,9 +265,6 @@ class ChannelSelect(BaseSelect):
     Returns:
       TODO
     """
-
-  channel_types: Any # TODO
-  default_values: Any # TODO
 
 def string_select(*options, placeholder = ..., min_values = ..., max_values = ..., required = ..., custom_id = ..., disabled = ..., timeout = ..., callback = ..., id = ...) -> Any: # TODO
   """

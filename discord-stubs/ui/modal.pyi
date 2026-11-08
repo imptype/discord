@@ -11,6 +11,9 @@ class ModalInput(Component):
     id: TODO
   """
 
+  custom_id: Any # TODO
+  id: Any # TODO
+
   def __init__(self, *, custom_id = ..., id = ...) -> None: # TODO
     """
     TODO
@@ -19,9 +22,6 @@ class ModalInput(Component):
       custom_id: TODO
       id: TODO
     """
-
-  custom_id: Any # TODO
-  id: Any # TODO
 
 class TextInput(ModalInput):
   """
@@ -35,6 +35,13 @@ class TextInput(ModalInput):
     value: TODO
     placeholder: TODO
   """
+
+  style: TextInputStyle
+  min_length: Any # TODO
+  max_length: Any # TODO
+  required: Any # TODO
+  value: Any # TODO
+  placeholder: Any # TODO
 
   def __init__(self, *, style = ..., min_length = ..., max_length = ..., required = ..., value = ..., placeholder = ..., custom_id = ..., id = ...) -> None: # TODO
     """
@@ -59,13 +66,6 @@ class TextInput(ModalInput):
       TODO
     """
 
-  style: TextInputStyle
-  min_length: Any # TODO
-  max_length: Any # TODO
-  required: Any # TODO
-  value: Any # TODO
-  placeholder: Any # TODO
-
 class GroupOption:
   """
   TODO
@@ -76,6 +76,11 @@ class GroupOption:
     description: TODO
     default: TODO
   """
+
+  label: Any # TODO
+  value: Any # TODO
+  description: Any # TODO
+  default: Any # TODO
 
   def __init__(self, label, value = ..., *, description = ..., default = ...) -> None: # TODO
     """
@@ -96,11 +101,6 @@ class GroupOption:
       TODO
     """
 
-  label: Any # TODO
-  value: Any # TODO
-  description: Any # TODO
-  default: Any # TODO
-
 class RadioGroup(ModalInput):
   """
   TODO
@@ -109,6 +109,9 @@ class RadioGroup(ModalInput):
     options: TODO
     required: TODO
   """
+
+  options: Any # TODO
+  required: Any # TODO
 
   def __init__(self, *options, required = ..., custom_id = ..., id = ...) -> None: # TODO
     """
@@ -129,9 +132,6 @@ class RadioGroup(ModalInput):
       TODO
     """
 
-  options: Any # TODO
-  required: Any # TODO
-
 class CheckboxGroup(ModalInput):
   """
   TODO
@@ -142,6 +142,11 @@ class CheckboxGroup(ModalInput):
     max_values: TODO
     required: TODO
   """
+
+  options: Any # TODO
+  min_values: Any # TODO
+  max_values: Any # TODO
+  required: Any # TODO
 
   def __init__(self, *options, min_values = ..., max_values = ..., required = ..., custom_id = ..., id = ...) -> None: # TODO
     """
@@ -164,11 +169,6 @@ class CheckboxGroup(ModalInput):
       TODO
     """
 
-  options: Any # TODO
-  min_values: Any # TODO
-  max_values: Any # TODO
-  required: Any # TODO
-
 class Checkbox(ModalInput):
   """
   TODO
@@ -176,6 +176,8 @@ class Checkbox(ModalInput):
   Attributes:
     default: TODO
   """
+
+  default: Any # TODO
 
   def __init__(self, *, default = ..., custom_id = ..., id = ...) -> None: # TODO
     """
@@ -195,8 +197,6 @@ class Checkbox(ModalInput):
       TODO
     """
 
-  default: Any # TODO
-
 class FileUpload(ModalInput):
   """
   TODO
@@ -207,6 +207,11 @@ class FileUpload(ModalInput):
     required: TODO
     file_types: TODO
   """
+
+  min_values: Any # TODO
+  max_values: Any # TODO
+  required: Any # TODO
+  file_types: Any # TODO
 
   def __init__(self, *, min_values = ..., max_values = ..., required = ..., file_types = ..., custom_id = ..., id = ...) -> None: # TODO
     """
@@ -228,8 +233,3 @@ class FileUpload(ModalInput):
     Returns:
       TODO
     """
-
-  min_values: Any # TODO
-  max_values: Any # TODO
-  required: Any # TODO
-  file_types: Any # TODO

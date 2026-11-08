@@ -20,6 +20,9 @@ class Snowflake:
     created_at: TODO
   """
 
+  id: Any # TODO
+  created_at: Any # TODO
+
   def __init__(self, id) -> None: # TODO
     """
     TODO
@@ -28,9 +31,6 @@ class Snowflake:
       id: TODO
     """
 
-  id: Any # TODO
-  created_at: Any # TODO
-
 class PartialModel(Snowflake):
   """
   TODO
@@ -38,6 +38,8 @@ class PartialModel(Snowflake):
   Attributes:
     app: TODO
   """
+
+  app: Any # TODO
 
   def __init__(self, app, id) -> None: # TODO
     """
@@ -55,5 +57,3 @@ class PartialModel(Snowflake):
     Returns:
       TODO
     """
-
-  app: Any # TODO

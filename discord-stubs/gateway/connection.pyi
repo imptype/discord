@@ -31,6 +31,17 @@ def format_debug(payload, redact = ...) -> Any: ...
 
 class Connection:
   ws: aiohttp.ClientWebSocketResponse
+  http: Any # TODO
+  token: Any # TODO
+  masked_token: Any # TODO
+  intents: Any # TODO
+  on_event: Any # TODO
+  sequence: Any # TODO
+  session_id: Any # TODO
+  resume_url: Any # TODO
+  heartbeat_task: Any # TODO
+  acked: Any # TODO
+  last_beat: Any # TODO
 
   def __init__(self, http, token, intents, on_event) -> None: ...
 
@@ -53,15 +64,3 @@ class Connection:
   def reset(self) -> Any: ...
 
   async def send(self, payload) -> Any: ...
-
-  http: Any # TODO
-  token: Any # TODO
-  masked_token: Any # TODO
-  intents: Any # TODO
-  on_event: Any # TODO
-  sequence: Any # TODO
-  session_id: Any # TODO
-  resume_url: Any # TODO
-  heartbeat_task: Any # TODO
-  acked: Any # TODO
-  last_beat: Any # TODO

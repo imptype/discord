@@ -18,6 +18,12 @@ class SignalHandler(Handler):
     app: TODO
   """
 
+  priority: Any # TODO
+  timeout: Any # TODO
+  max_runs: Any # TODO
+  runs: Any # TODO
+  app: Any # TODO
+
   def __init__(self, callback = ..., name = ..., priority = ..., timeout = ..., max_runs = ..., once = ...) -> None: # TODO
     """
     TODO
@@ -50,12 +56,6 @@ class SignalHandler(Handler):
       TODO
     """
 
-  priority: Any # TODO
-  timeout: Any # TODO
-  max_runs: Any # TODO
-  runs: Any # TODO
-  app: Any # TODO
-
 class SignalWaiter:
   """
   TODO
@@ -69,6 +69,14 @@ class SignalWaiter:
     waiter_done_future: TODO
     sender_done_future: TODO
   """
+
+  app: Any # TODO
+  name: Any # TODO
+  priority: Any # TODO
+  timeout: Any # TODO
+  waiter_future: Any # TODO
+  waiter_done_future: Any # TODO
+  sender_done_future: Any # TODO
 
   def __init__(self, app, name, priority = ..., timeout = ...) -> None: # TODO
     """
@@ -127,15 +135,9 @@ class SignalWaiter:
       TODO
     """
 
-  app: Any # TODO
-  name: Any # TODO
-  priority: Any # TODO
-  timeout: Any # TODO
-  waiter_future: Any # TODO
-  waiter_done_future: Any # TODO
-  sender_done_future: Any # TODO
-
 class SignalModule:
+  app: Any # TODO
+
   def __init__(self, app) -> None: ...
 
   def spawn(self, coro, eager = ...) -> Any: ...
@@ -157,8 +159,6 @@ class SignalModule:
   def wait(self, name, priority = ..., timeout = ...) -> Any: ...
 
   def __call__(self, callback = ..., *, name = ..., priority = ..., timeout = ..., max_runs = ..., once = ...) -> Any: ...
-
-  app: Any # TODO
 
 def signal(callback = ..., *, name = ..., priority = ..., timeout = ..., max_runs = ..., once = ...) -> Any: # TODO
   """
@@ -185,6 +185,10 @@ class SignalMixin:
     signal_waiters: TODO
     signal: TODO
   """
+
+  signal_handlers: Any # TODO
+  signal_waiters: Any # TODO
+  signal: SignalModule
 
   def __init__(self, registrars) -> None: # TODO
     """
@@ -215,7 +219,3 @@ class SignalMixin:
     Returns:
       TODO
     """
-
-  signal_handlers: Any # TODO
-  signal_waiters: Any # TODO
-  signal: SignalModule

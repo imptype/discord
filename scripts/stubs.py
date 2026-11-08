@@ -479,7 +479,8 @@ def stub_class(node, members, indent, used, light = False):
   enum = is_enum(node)
   inner = names_in(*node.bases, *(k.value for k in node.keywords), *node.type_params)
   blocks = []
-  for name, member in members.items():
+  ordered = sorted(members.items(), key = lambda item: item[1].kind != 'variable') # attributes first, stable within each group
+  for name, member in ordered:
     if enum and member.kind == 'variable':
       blocks.append([f'{indent}  {name} = ...'])
     else:

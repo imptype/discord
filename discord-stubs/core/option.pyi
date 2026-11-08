@@ -10,6 +10,9 @@ class Choice:
     value: TODO
   """
 
+  name: Any # TODO
+  value: Any # TODO
+
   def __init__(self, name, value = ...) -> None: # TODO
     """
     TODO
@@ -27,9 +30,6 @@ class Choice:
       TODO
     """
 
-  name: Any # TODO
-  value: Any # TODO
-
 def format_choices(choices) -> Any: ...
 
 class Option:
@@ -42,6 +42,11 @@ class Option:
     description: TODO
     required: TODO
   """
+
+  type: OptionType
+  name: Any # TODO
+  description: Any # TODO
+  required: Any # TODO
 
   def __init__(self, type, name, description = ..., *, required = ...) -> None: # TODO
     """
@@ -62,11 +67,6 @@ class Option:
       TODO
     """
 
-  type: OptionType
-  name: Any # TODO
-  description: Any # TODO
-  required: Any # TODO
-
 class StringOption(Option):
   """
   TODO
@@ -77,6 +77,11 @@ class StringOption(Option):
     max_length: TODO
     autocomplete: TODO
   """
+
+  choices: Any # TODO
+  min_length: Any # TODO
+  max_length: Any # TODO
+  autocomplete: Any # TODO
 
   def __init__(self, name, description = ..., *, required = ..., choices = ..., min_length = ..., max_length = ..., autocomplete = ...) -> None: # TODO
     """
@@ -100,11 +105,6 @@ class StringOption(Option):
       TODO
     """
 
-  choices: Any # TODO
-  min_length: Any # TODO
-  max_length: Any # TODO
-  autocomplete: Any # TODO
-
 class IntegerOption(Option):
   """
   TODO
@@ -115,6 +115,11 @@ class IntegerOption(Option):
     max_value: TODO
     autocomplete: TODO
   """
+
+  choices: Any # TODO
+  min_value: Any # TODO
+  max_value: Any # TODO
+  autocomplete: Any # TODO
 
   def __init__(self, name, description = ..., *, required = ..., choices = ..., min_value = ..., max_value = ..., autocomplete = ...) -> None: # TODO
     """
@@ -138,11 +143,6 @@ class IntegerOption(Option):
       TODO
     """
 
-  choices: Any # TODO
-  min_value: Any # TODO
-  max_value: Any # TODO
-  autocomplete: Any # TODO
-
 class NumberOption(IntegerOption):
   """
   TODO
@@ -150,6 +150,8 @@ class NumberOption(IntegerOption):
   Attributes:
     type: TODO
   """
+
+  type: Any # TODO
 
   def __init__(self, name, description = ..., *, required = ..., choices = ..., min_value = ..., max_value = ..., autocomplete = ...) -> None: # TODO
     """
@@ -164,8 +166,6 @@ class NumberOption(IntegerOption):
       max_value: TODO
       autocomplete: TODO
     """
-
-  type: Any # TODO
 
 class BooleanOption(Option):
   """
@@ -205,6 +205,8 @@ class ChannelOption(Option):
     channel_types: TODO
   """
 
+  channel_types: Any # TODO
+
   def __init__(self, name, description = ..., *, required = ..., channel_types = ...) -> None: # TODO
     """
     TODO
@@ -223,8 +225,6 @@ class ChannelOption(Option):
     Returns:
       TODO
     """
-
-  channel_types: Any # TODO
 
 class RoleOption(Option):
   """

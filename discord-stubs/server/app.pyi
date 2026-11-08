@@ -11,6 +11,9 @@ class App(AppBase):
     pending_interactions: TODO
   """
 
+  verify_key: VerifyKey
+  pending_interactions: Any # TODO
+
   def __init__(self, public_key, token = ..., application_id = ..., reload = ...) -> None: # TODO
     """
     TODO
@@ -59,6 +62,3 @@ class App(AppBase):
     Returns:
       TODO
     """
-
-  verify_key: VerifyKey
-  pending_interactions: Any # TODO

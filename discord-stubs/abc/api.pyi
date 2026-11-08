@@ -1,12 +1,12 @@
 from typing import Any
 
 class Route:
-  def __init__(self, method, path, **params) -> None: ...
-
   method: Any # TODO
   path: Any # TODO
   key: Any # TODO
   major: Any # TODO
+
+  def __init__(self, method, path, **params) -> None: ...
 
 class API:
   async def request(self, route: Route, *, body: Any = ..., authorize: bool | str = ..., reason: str | None = ..., **params: Any) -> Any: ...

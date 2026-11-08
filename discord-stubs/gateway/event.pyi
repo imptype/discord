@@ -83,14 +83,14 @@ class EventIntents(Enum):
   MESSAGE_POLL_VOTE_REMOVE = ...
 
 class Event(Handler):
+  gateway_name: Any # TODO
+
   def __init__(self, callback = ..., name: str | None = ...) -> None: ...
 
   @property
   def count(self) -> Any: ...
 
   async def __call__(self, *args) -> Any: ...
-
-  gateway_name: Any # TODO
 
 def event(callback = ..., *, name = ...) -> Any: # TODO
   """

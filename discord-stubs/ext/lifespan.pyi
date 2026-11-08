@@ -41,6 +41,12 @@ class LifespanMixin:
     started_at: TODO
   """
 
+  http: Any # TODO
+  stack: AsyncExitStack
+  lifespan_handlers: Any # TODO
+  loop: asyncio.AbstractEventLoop
+  started_at: Any # TODO
+
   def __init__(self, registrars, http) -> None: # TODO
     """
     TODO
@@ -109,9 +115,3 @@ class LifespanMixin:
     Returns:
       TODO
     """
-
-  http: Any # TODO
-  stack: AsyncExitStack
-  lifespan_handlers: Any # TODO
-  loop: asyncio.AbstractEventLoop
-  started_at: Any # TODO

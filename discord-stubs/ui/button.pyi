@@ -12,6 +12,10 @@ class Button(Interactable):
     row: TODO
   """
 
+  label: Any # TODO
+  style: ButtonStyle
+  row: Any # TODO
+
   def __init__(self, label, *, style = ..., custom_id = ..., disabled = ..., timeout = ..., callback = ..., row = ..., id = ...) -> None: # TODO
     """
     TODO
@@ -34,10 +38,6 @@ class Button(Interactable):
     Returns:
       TODO
     """
-
-  label: Any # TODO
-  style: ButtonStyle
-  row: Any # TODO
 
 def button(label, *, style = ..., custom_id = ..., disabled = ..., timeout = ..., callback = ..., row = ..., id = ...) -> Any: # TODO
   """

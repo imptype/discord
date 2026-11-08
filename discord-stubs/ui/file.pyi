@@ -11,6 +11,11 @@ class File:
     content_type: TODO
   """
 
+  data: Any # TODO
+  filename: Any # TODO
+  description: Any # TODO
+  content_type: Any # TODO
+
   def __init__(self, data, filename, *, description = ...) -> None: # TODO
     """
     TODO
@@ -31,8 +36,3 @@ class File:
     Returns:
       TODO
     """
-
-  data: Any # TODO
-  filename: Any # TODO
-  description: Any # TODO
-  content_type: Any # TODO

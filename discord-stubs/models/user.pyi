@@ -31,6 +31,9 @@ class User(PartialUser):
     username: TODO
   """
 
+  data: Any # TODO
+  username: Any # TODO
+
   def __init__(self, app, payload) -> None: # TODO
     """
     TODO
@@ -39,6 +42,3 @@ class User(PartialUser):
       app: TODO
       payload: TODO
     """
-
-  data: Any # TODO
-  username: Any # TODO

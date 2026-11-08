@@ -11,6 +11,8 @@ class PartialMessage(PartialModel):
     channel: TODO
   """
 
+  channel: Any # TODO
+
   def __init__(self, app, message_id, channel) -> None: # TODO
     """
     TODO
@@ -47,8 +49,6 @@ class PartialMessage(PartialModel):
       TODO
     """
 
-  channel: Any # TODO
-
 class Message(PartialMessage):
   """
   TODO
@@ -62,6 +62,13 @@ class Message(PartialMessage):
     author: TODO
   """
 
+  data: Any # TODO
+  guild: Any # TODO
+  content: Any # TODO
+  flags: MessageFlags
+  edited_at: Any # TODO
+  author: Member
+
   def __init__(self, app, payload, *, channel = ..., guild = ...) -> None: # TODO
     """
     TODO
@@ -72,10 +79,3 @@ class Message(PartialMessage):
       channel: TODO
       guild: TODO
     """
-
-  data: Any # TODO
-  guild: Any # TODO
-  content: Any # TODO
-  flags: MessageFlags
-  edited_at: Any # TODO
-  author: Member

@@ -9,6 +9,8 @@ class ModalResult:
     fields: TODO
   """
 
+  fields: Any # TODO
+
   def __init__(self, data) -> None: # TODO
     """
     TODO
@@ -28,8 +30,6 @@ class ModalResult:
       TODO
     """
 
-  fields: Any # TODO
-
 class Modal(Handler):
   """
   TODO
@@ -41,6 +41,12 @@ class Modal(Handler):
     timeout: TODO
     components: TODO
   """
+
+  title: Any # TODO
+  has_custom_id: Any # TODO
+  custom_id: Any # TODO
+  timeout: Any # TODO
+  components: Any # TODO
 
   def __init__(self, *components, title, custom_id = ..., timeout = ..., callback = ...) -> None: # TODO
     """
@@ -83,12 +89,6 @@ class Modal(Handler):
     Returns:
       TODO
     """
-
-  title: Any # TODO
-  has_custom_id: Any # TODO
-  custom_id: Any # TODO
-  timeout: Any # TODO
-  components: Any # TODO
 
 def modal(callback = ..., *, title = ..., components = ..., custom_id = ..., timeout = ...) -> Any: # TODO
   """

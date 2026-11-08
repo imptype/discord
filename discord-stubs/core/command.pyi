@@ -11,6 +11,8 @@ class PrefixCommand(BaseCommand):
     name: TODO
   """
 
+  name: Any # TODO
+
   def __init__(self, callback = ..., name = ...) -> None: # TODO
     """
     TODO
@@ -37,8 +39,6 @@ class PrefixCommand(BaseCommand):
       TODO
     """
 
-  name: Any # TODO
-
 class InteractionCommand(BaseCommand):
   """
   TODO
@@ -47,6 +47,9 @@ class InteractionCommand(BaseCommand):
     type: TODO
     key: TODO
   """
+
+  type: Any # TODO
+  key: Any # TODO
 
   def __init__(self, callback = ..., name = ..., type = ...) -> None: # TODO
     """
@@ -66,10 +69,15 @@ class InteractionCommand(BaseCommand):
       TODO
     """
 
-  type: Any # TODO
-  key: Any # TODO
-
 class SlashNode:
+  callback: Any # TODO
+  name: Any # TODO
+  description: Any # TODO
+  options: Any # TODO
+  level: Any # TODO
+  subcommands: Any # TODO
+  autocomplete: Any
+
   def __init__(self, callback = ..., name = ..., description = ..., options = ..., level = ...) -> None: ...
 
   def subcommand(self, callback = ..., *, name = ..., description = ..., options = ...) -> Any: ...
@@ -81,14 +89,6 @@ class SlashNode:
   def to_json(self) -> Any: ...
 
   def bind(self, cog_instance) -> Any: ...
-
-  callback: Any # TODO
-  name: Any # TODO
-  description: Any # TODO
-  options: Any # TODO
-  level: Any # TODO
-  subcommands: Any # TODO
-  autocomplete: Any
 
 class SubCommand(SlashNode):
   """
@@ -233,12 +233,12 @@ class CommandNamespace:
 command_namespace: CommandNamespace
 
 class CommandProxy:
+  app: Any # TODO
+  target: Any # TODO
+
   def __init__(self, app, target) -> None: ...
 
   def __getattr__(self, name) -> Any: ...
-
-  app: Any # TODO
-  target: Any # TODO
 
 class CommandMixin:
   """
@@ -248,6 +248,9 @@ class CommandMixin:
     registry: TODO
     command: TODO
   """
+
+  registry: Any # TODO
+  command: CommandNamespace
 
   def __init__(self, registrars) -> None: # TODO
     """
@@ -310,6 +313,3 @@ class CommandMixin:
     Returns:
       TODO
     """
-
-  registry: Any # TODO
-  command: CommandNamespace

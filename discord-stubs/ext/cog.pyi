@@ -9,6 +9,9 @@ class Cog:
     instances: TODO
   """
 
+  app: Any # TODO
+  instances: Any # TODO
+
   def __init__(self, app) -> None: # TODO
     """
     TODO
@@ -33,9 +36,6 @@ class Cog:
       TODO
     """
 
-  app: Any # TODO
-  instances: Any # TODO
-
 class CogMixin:
   """
   TODO
@@ -49,6 +49,14 @@ class CogMixin:
     extension_files: TODO
     reload_task: TODO
   """
+
+  registrars: Any # TODO
+  reload: Any # TODO
+  cogs: Any # TODO
+  cog_handlers: Any # TODO
+  extensions: Any # TODO
+  extension_files: Any # TODO
+  reload_task: Any # TODO
 
   def __init__(self, registrars, reload = ...) -> None: # TODO
     """
@@ -133,11 +141,3 @@ class CogMixin:
     Returns:
       TODO
     """
-
-  registrars: Any # TODO
-  reload: Any # TODO
-  cogs: Any # TODO
-  cog_handlers: Any # TODO
-  extensions: Any # TODO
-  extension_files: Any # TODO
-  reload_task: Any # TODO

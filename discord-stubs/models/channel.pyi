@@ -9,6 +9,8 @@ class PartialChannel(PartialModel):
     guild: TODO
   """
 
+  guild: Any # TODO
+
   def __init__(self, app, channel_id, guild = ...) -> None: # TODO
     """
     TODO
@@ -45,8 +47,6 @@ class PartialChannel(PartialModel):
       TODO
     """
 
-  guild: Any # TODO
-
 class Channel(PartialChannel):
   """
   TODO
@@ -55,6 +55,9 @@ class Channel(PartialChannel):
     data: TODO
     name: TODO
   """
+
+  data: Any # TODO
+  name: Any # TODO
 
   def __init__(self, app, payload, guild = ...) -> None: # TODO
     """
@@ -65,6 +68,3 @@ class Channel(PartialChannel):
       payload: TODO
       guild: TODO
     """
-
-  data: Any # TODO
-  name: Any # TODO

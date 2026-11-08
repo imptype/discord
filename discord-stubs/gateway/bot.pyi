@@ -19,6 +19,13 @@ class Bot(AppBase):
     ready_at: TODO
   """
 
+  intents: Any # TODO
+  prefix: Any # TODO
+  connection: Connection
+  event_handlers: Any # TODO
+  command_handlers: Any # TODO
+  ready_at: Any # TODO
+
   def __init__(self, token, application_id = ..., intents = ..., prefix = ..., reload = ...) -> None: # TODO
     """
     TODO
@@ -144,10 +151,3 @@ class Bot(AppBase):
     Returns:
       TODO
     """
-
-  intents: Any # TODO
-  prefix: Any # TODO
-  connection: Connection
-  event_handlers: Any # TODO
-  command_handlers: Any # TODO
-  ready_at: Any # TODO

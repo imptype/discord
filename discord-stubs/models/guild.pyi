@@ -23,6 +23,9 @@ class Guild(PartialGuild):
     name: TODO
   """
 
+  data: Any # TODO
+  name: Any # TODO
+
   def __init__(self, app, payload) -> None: # TODO
     """
     TODO
@@ -31,6 +34,3 @@ class Guild(PartialGuild):
       app: TODO
       payload: TODO
     """
-
-  data: Any # TODO
-  name: Any # TODO

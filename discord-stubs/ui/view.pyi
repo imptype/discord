@@ -8,6 +8,8 @@ class BaseView:
     timeout: TODO
   """
 
+  timeout: Any # TODO
+
   def __init__(self, *, timeout = ...) -> None: # TODO
     """
     TODO
@@ -48,8 +50,6 @@ class BaseView:
       TODO
     """
 
-  timeout: Any # TODO
-
 class View(BaseView):
   """
   TODO
@@ -57,6 +57,8 @@ class View(BaseView):
   Attributes:
     rows: TODO
   """
+
+  rows: Any # TODO
 
   def __init__(self, *components, timeout = ...) -> None: # TODO
     """
@@ -108,8 +110,6 @@ class View(BaseView):
       TODO
     """
 
-  rows: Any # TODO
-
 class LayoutView(BaseView):
   """
   TODO
@@ -117,6 +117,8 @@ class LayoutView(BaseView):
   Attributes:
     components: TODO
   """
+
+  components: Any # TODO
 
   def __init__(self, *components, timeout = ...) -> None: # TODO
     """
@@ -145,5 +147,3 @@ class LayoutView(BaseView):
     Returns:
       TODO
     """
-
-  components: Any # TODO

@@ -9,6 +9,8 @@ class ContentComponent(Component):
     id: TODO
   """
 
+  id: Any # TODO
+
   def __init__(self, *, id = ...) -> None: # TODO
     """
     TODO
@@ -17,8 +19,6 @@ class ContentComponent(Component):
       id: TODO
     """
 
-  id: Any # TODO
-
 class TextDisplay(ContentComponent):
   """
   TODO
@@ -26,6 +26,8 @@ class TextDisplay(ContentComponent):
   Attributes:
     content: TODO
   """
+
+  content: Any # TODO
 
   def __init__(self, content, *, id = ...) -> None: # TODO
     """
@@ -44,8 +46,6 @@ class TextDisplay(ContentComponent):
       TODO
     """
 
-  content: Any # TODO
-
 class Thumbnail(ContentComponent):
   """
   TODO
@@ -55,6 +55,10 @@ class Thumbnail(ContentComponent):
     description: TODO
     spoiler: TODO
   """
+
+  url: Any # TODO
+  description: Any # TODO
+  spoiler: Any # TODO
 
   def __init__(self, url, *, description = ..., spoiler = ..., id = ...) -> None: # TODO
     """
@@ -75,10 +79,6 @@ class Thumbnail(ContentComponent):
       TODO
     """
 
-  url: Any # TODO
-  description: Any # TODO
-  spoiler: Any # TODO
-
 class MediaGalleryItem:
   """
   TODO
@@ -88,6 +88,10 @@ class MediaGalleryItem:
     description: TODO
     spoiler: TODO
   """
+
+  url: Any # TODO
+  description: Any # TODO
+  spoiler: Any # TODO
 
   def __init__(self, url, *, description = ..., spoiler = ...) -> None: # TODO
     """
@@ -107,10 +111,6 @@ class MediaGalleryItem:
       TODO
     """
 
-  url: Any # TODO
-  description: Any # TODO
-  spoiler: Any # TODO
-
 class MediaGallery(ContentComponent):
   """
   TODO
@@ -118,6 +118,8 @@ class MediaGallery(ContentComponent):
   Attributes:
     items: TODO
   """
+
+  items: Any # TODO
 
   def __init__(self, *items, id = ...) -> None: # TODO
     """
@@ -136,8 +138,6 @@ class MediaGallery(ContentComponent):
       TODO
     """
 
-  items: Any # TODO
-
 class FileComponent(ContentComponent):
   """
   TODO
@@ -146,6 +146,9 @@ class FileComponent(ContentComponent):
     url: TODO
     spoiler: TODO
   """
+
+  url: Any # TODO
+  spoiler: Any # TODO
 
   def __init__(self, url, *, spoiler = ..., id = ...) -> None: # TODO
     """
@@ -164,6 +167,3 @@ class FileComponent(ContentComponent):
     Returns:
       TODO
     """
-
-  url: Any # TODO
-  spoiler: Any # TODO

@@ -2,8 +2,6 @@ from typing import Any
 from .enums import InteractionType
 
 class InteractionResult:
-  def __init__(self, app, data) -> None: ...
-
   data: Any # TODO
   interaction_id: Any # TODO
   interaction_type: InteractionType
@@ -15,6 +13,8 @@ class InteractionResult:
   activity_instance: Any # TODO
   message: Any # TODO
 
+  def __init__(self, app, data) -> None: ...
+
 class InteractionResponse:
   """
   TODO
@@ -25,6 +25,11 @@ class InteractionResponse:
     body: TODO
     responded: TODO
   """
+
+  interaction: Any # TODO
+  app: Any # TODO
+  body: Any # TODO
+  responded: Any # TODO
 
   def __init__(self, interaction) -> None: # TODO
     """
@@ -46,11 +51,6 @@ class InteractionResponse:
     Returns:
       TODO
     """
-
-  interaction: Any # TODO
-  app: Any # TODO
-  body: Any # TODO
-  responded: Any # TODO
 
 class MessageMixin(InteractionResponse):
   """

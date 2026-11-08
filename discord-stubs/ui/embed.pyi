@@ -17,6 +17,17 @@ class Embed:
     fields: TODO
   """
 
+  title: Any # TODO
+  description: Any # TODO
+  url: Any # TODO
+  color: Any # TODO
+  timestamp: Any # TODO
+  footer: Any # TODO
+  image: Any # TODO
+  thumbnail: Any # TODO
+  author: Any # TODO
+  fields: Any # TODO
+
   def __init__(self, title = ..., description = ..., url = ..., color = ..., timestamp = ...) -> None: # TODO
     """
     TODO
@@ -96,14 +107,3 @@ class Embed:
     Returns:
       TODO
     """
-
-  title: Any # TODO
-  description: Any # TODO
-  url: Any # TODO
-  color: Any # TODO
-  timestamp: Any # TODO
-  footer: Any # TODO
-  image: Any # TODO
-  thumbnail: Any # TODO
-  author: Any # TODO
-  fields: Any # TODO

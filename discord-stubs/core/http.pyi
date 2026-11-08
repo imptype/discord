@@ -13,6 +13,11 @@ class HTTPClient(API):
     cleanup_task: TODO
   """
 
+  token: Any # TODO
+  application_id: Any # TODO
+  use_sync: Any # TODO
+  cleanup_task: Any # TODO
+
   def __init__(self, token = ..., application_id = ..., use_sync = ...) -> None: # TODO
     """
     TODO
@@ -65,8 +70,3 @@ class HTTPClient(API):
     Returns:
       TODO
     """
-
-  token: Any # TODO
-  application_id: Any # TODO
-  use_sync: Any # TODO
-  cleanup_task: Any # TODO

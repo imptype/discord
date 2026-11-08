@@ -7,9 +7,9 @@ from .factory import ModelFactory
 from ..ext import SignalMixin
 
 class AppBase(CommandMixin, LifespanMixin, ComponentMixin, CogMixin, SignalMixin):
+  model: ModelFactory
+  tasks: Any # TODO
+
   def __init__(self, token = ..., application_id = ..., reload = ...) -> None: ...
 
   async def sync(self) -> Any: ...
-
-  model: ModelFactory
-  tasks: Any # TODO

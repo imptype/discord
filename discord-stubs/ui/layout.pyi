@@ -10,6 +10,8 @@ class LayoutComponent(Component):
     id: TODO
   """
 
+  id: Any # TODO
+
   def __init__(self, *, id = ...) -> None: # TODO
     """
     TODO
@@ -18,8 +20,6 @@ class LayoutComponent(Component):
       id: TODO
     """
 
-  id: Any # TODO
-
 class ActionRow(LayoutComponent):
   """
   TODO
@@ -27,6 +27,8 @@ class ActionRow(LayoutComponent):
   Attributes:
     components: TODO
   """
+
+  components: Any # TODO
 
   def __init__(self, *components, id = ...) -> None: # TODO
     """
@@ -53,8 +55,6 @@ class ActionRow(LayoutComponent):
       TODO
     """
 
-  components: Any # TODO
-
 class Section(LayoutComponent):
   """
   TODO
@@ -63,6 +63,9 @@ class Section(LayoutComponent):
     components: TODO
     accessory: TODO
   """
+
+  components: Any # TODO
+  accessory: Any # TODO
 
   def __init__(self, *components, accessory, id = ...) -> None: # TODO
     """
@@ -90,9 +93,6 @@ class Section(LayoutComponent):
       TODO
     """
 
-  components: Any # TODO
-  accessory: Any # TODO
-
 class Separator(LayoutComponent):
   """
   TODO
@@ -101,6 +101,9 @@ class Separator(LayoutComponent):
     divider: TODO
     spacing: TODO
   """
+
+  divider: Any # TODO
+  spacing: SeparatorSpacing
 
   def __init__(self, *, divider = ..., spacing = ..., id = ...) -> None: # TODO
     """
@@ -120,9 +123,6 @@ class Separator(LayoutComponent):
       TODO
     """
 
-  divider: Any # TODO
-  spacing: SeparatorSpacing
-
 class Container(LayoutComponent):
   """
   TODO
@@ -132,6 +132,10 @@ class Container(LayoutComponent):
     accent_color: TODO
     spoiler: TODO
   """
+
+  components: Any # TODO
+  accent_color: Any # TODO
+  spoiler: Any # TODO
 
   def __init__(self, *components, accent_color = ..., spoiler = ..., id = ...) -> None: # TODO
     """
@@ -160,10 +164,6 @@ class Container(LayoutComponent):
       TODO
     """
 
-  components: Any # TODO
-  accent_color: Any # TODO
-  spoiler: Any # TODO
-
 class Label(LayoutComponent):
   """
   TODO
@@ -173,6 +173,10 @@ class Label(LayoutComponent):
     label: TODO
     description: TODO
   """
+
+  component: Any # TODO
+  label: Any # TODO
+  description: Any # TODO
 
   def __init__(self, component, *, label, description = ..., id = ...) -> None: # TODO
     """
@@ -200,7 +204,3 @@ class Label(LayoutComponent):
     Returns:
       TODO
     """
-
-  component: Any # TODO
-  label: Any # TODO
-  description: Any # TODO

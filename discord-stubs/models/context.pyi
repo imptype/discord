@@ -15,6 +15,13 @@ class Context:
     guild: TODO
   """
 
+  app: Any # TODO
+  message: Any # TODO
+  arguments: Any # TODO
+  author: Any # TODO
+  channel: Any # TODO
+  guild: Any # TODO
+
   def __init__(self, app, message, arguments = ...) -> None: # TODO
     """
     TODO
@@ -42,10 +49,3 @@ class Context:
     Returns:
       TODO
     """
-
-  app: Any # TODO
-  message: Any # TODO
-  arguments: Any # TODO
-  author: Any # TODO
-  channel: Any # TODO
-  guild: Any # TODO

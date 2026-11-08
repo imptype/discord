@@ -5,6 +5,9 @@ from collections.abc import Coroutine
 from ..abc import PartialModel
 
 class BaseWebhook(PartialModel):
+  token: Any # TODO
+  http: Any # TODO
+
   def __init__(self, webhook_id, token = ..., app = ..., http = ...) -> None: ...
 
   def require_token(self) -> Any: ...
@@ -14,9 +17,6 @@ class BaseWebhook(PartialModel):
   async def edit_message(self, message_id, content = ..., *, embed = ..., embeds = ..., file = ..., files = ..., view = ..., components = ..., flags = ..., thread_id = ...) -> Any: ...
 
   async def delete_message(self, message_id, *, thread_id = ...) -> Any: ...
-
-  token: Any # TODO
-  http: Any # TODO
 
 class PartialWebhook(BaseWebhook):
   """
@@ -104,15 +104,6 @@ class Webhook(PartialWebhook):
     user: TODO
   """
 
-  def __init__(self, app, payload) -> None: # TODO
-    """
-    TODO
-
-    Args:
-      app: TODO
-      payload: TODO
-    """
-
   data: Any # TODO
   type: Any # TODO
   name: Any # TODO
@@ -123,6 +114,15 @@ class Webhook(PartialWebhook):
   guild: Any # TODO
   channel: Any # TODO
   user: Any # TODO
+
+  def __init__(self, app, payload) -> None: # TODO
+    """
+    TODO
+
+    Args:
+      app: TODO
+      payload: TODO
+    """
 
 class FollowupWebhook(BaseWebhook):
   """
@@ -181,6 +181,17 @@ class SyncWebhook:
     token: TODO
   """
 
+  send: Any # TODO
+  fetch: Any # TODO
+  edit: Any # TODO
+  delete: Any # TODO
+  fetch_message: Any # TODO
+  edit_message: Any # TODO
+  delete_message: Any # TODO
+  webhook: PartialWebhook
+  id: Any # TODO
+  token: Any # TODO
+
   def __init__(self, webhook_id, token = ...) -> None: # TODO
     """
     TODO
@@ -189,14 +200,6 @@ class SyncWebhook:
       webhook_id: TODO
       token: TODO
     """
-
-  send: Any # TODO
-  fetch: Any # TODO
-  edit: Any # TODO
-  delete: Any # TODO
-  fetch_message: Any # TODO
-  edit_message: Any # TODO
-  delete_message: Any # TODO
 
   @classmethod
   def from_url(cls, url) -> Any: # TODO
@@ -209,7 +212,3 @@ class SyncWebhook:
     Returns:
       TODO
     """
-
-  webhook: PartialWebhook
-  id: Any # TODO
-  token: Any # TODO

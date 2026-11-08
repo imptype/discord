@@ -13,6 +13,9 @@ def resolve_option(interaction, option) -> Any: ...
 def parse_options(interaction, is_autocomplete = ...) -> Any: ...
 
 class OriginalInteractionMessage:
+  interaction: Any # TODO
+  app: Any # TODO
+
   def __init__(self, interaction) -> None: ...
 
   async def fetch(self) -> Any: ...
@@ -20,9 +23,6 @@ class OriginalInteractionMessage:
   async def edit(self, content = ..., *, embed = ..., embeds = ..., file = ..., files = ..., view = ..., components = ..., flags = ...) -> Any: ...
 
   async def delete(self) -> Any: ...
-
-  interaction: Any # TODO
-  app: Any # TODO
 
 class Interaction(Snowflake):
   """
@@ -41,16 +41,6 @@ class Interaction(Snowflake):
     author: TODO
   """
 
-  def __init__(self, data, app, is_from_http) -> None: # TODO
-    """
-    TODO
-
-    Args:
-      data: TODO
-      app: TODO
-      is_from_http: TODO
-    """
-
   data: Any # TODO
   app: Any # TODO
   is_from_http: Any # TODO
@@ -62,14 +52,6 @@ class Interaction(Snowflake):
   original_message: OriginalInteractionMessage
   author: Any # TODO
 
-class CommandInteraction(Interaction):
-  """
-  TODO
-
-  Attributes:
-    response: TODO
-  """
-
   def __init__(self, data, app, is_from_http) -> None: # TODO
     """
     TODO
@@ -80,7 +62,25 @@ class CommandInteraction(Interaction):
       is_from_http: TODO
     """
 
+class CommandInteraction(Interaction):
+  """
+  TODO
+
+  Attributes:
+    response: TODO
+  """
+
   response: CommandResponse
+
+  def __init__(self, data, app, is_from_http) -> None: # TODO
+    """
+    TODO
+
+    Args:
+      data: TODO
+      app: TODO
+      is_from_http: TODO
+    """
 
 class SlashInteraction(CommandInteraction):
   """
@@ -105,6 +105,8 @@ class UserInteraction(CommandInteraction):
     user: TODO
   """
 
+  user: Any # TODO
+
   def __init__(self, data, app, is_from_http) -> None: # TODO
     """
     TODO
@@ -114,8 +116,6 @@ class UserInteraction(CommandInteraction):
       app: TODO
       is_from_http: TODO
     """
-
-  user: Any # TODO
 
 class MessageInteraction(CommandInteraction):
   """
@@ -125,6 +125,8 @@ class MessageInteraction(CommandInteraction):
     message: TODO
   """
 
+  message: Any # TODO
+
   def __init__(self, data, app, is_from_http) -> None: # TODO
     """
     TODO
@@ -135,8 +137,6 @@ class MessageInteraction(CommandInteraction):
       is_from_http: TODO
     """
 
-  message: Any # TODO
-
 class ComponentInteraction(Interaction):
   """
   TODO
@@ -145,6 +145,9 @@ class ComponentInteraction(Interaction):
     response: TODO
     component: TODO
   """
+
+  response: ComponentResponse
+  component: Any # TODO
 
   def __init__(self, data, app, is_from_http, component) -> None: # TODO
     """
@@ -157,13 +160,10 @@ class ComponentInteraction(Interaction):
       component: TODO
     """
 
-  response: ComponentResponse
-  component: Any # TODO
-
 class SelectInteraction(ComponentInteraction):
-  def __init__(self, data, app, is_from_http, select) -> None: ...
-
   values: Any # TODO
+
+  def __init__(self, data, app, is_from_http, select) -> None: ...
 
 class ModalInteraction(Interaction):
   """
@@ -174,6 +174,10 @@ class ModalInteraction(Interaction):
     modal: TODO
     result: TODO
   """
+
+  response: ModalResponse
+  modal: Any # TODO
+  result: ModalResult
 
   def __init__(self, data, app, is_from_http, modal) -> None: # TODO
     """
@@ -186,10 +190,6 @@ class ModalInteraction(Interaction):
       modal: TODO
     """
 
-  response: ModalResponse
-  modal: Any # TODO
-  result: ModalResult
-
 class AutocompleteInteraction(Interaction):
   """
   TODO
@@ -197,6 +197,8 @@ class AutocompleteInteraction(Interaction):
   Attributes:
     response: TODO
   """
+
+  response: AutocompleteResponse
 
   def __init__(self, data, app, is_from_http) -> None: # TODO
     """
@@ -207,5 +209,3 @@ class AutocompleteInteraction(Interaction):
       app: TODO
       is_from_http: TODO
     """
-
-  response: AutocompleteResponse

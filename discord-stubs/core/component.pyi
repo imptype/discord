@@ -22,6 +22,12 @@ class ComponentMixin:
     loop: TODO
   """
 
+  component_cache: Any # TODO
+  component_timers: Any # TODO
+  modal_cache: Any # TODO
+  modal_timers: Any # TODO
+  loop: Any # TODO
+
   def __init__(self, registrars, loop) -> None: # TODO
     """
     TODO
@@ -143,9 +149,3 @@ class ComponentMixin:
     Returns:
       TODO
     """
-
-  component_cache: Any # TODO
-  component_timers: Any # TODO
-  modal_cache: Any # TODO
-  modal_timers: Any # TODO
-  loop: Any # TODO

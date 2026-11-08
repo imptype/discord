@@ -52,6 +52,12 @@ class Interactable(Component, Handler):
     id: TODO
   """
 
+  has_custom_id: Any # TODO
+  custom_id: Any # TODO
+  disabled: Any # TODO
+  timeout: Any # TODO
+  id: Any # TODO
+
   def __init__(self, *, custom_id = ..., disabled = ..., timeout = ..., callback = ..., id = ...) -> None: # TODO
     """
     TODO
@@ -63,9 +69,3 @@ class Interactable(Component, Handler):
       callback: TODO
       id: TODO
     """
-
-  has_custom_id: Any # TODO
-  custom_id: Any # TODO
-  disabled: Any # TODO
-  timeout: Any # TODO
-  id: Any # TODO
