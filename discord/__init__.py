@@ -32,5 +32,5 @@ from .models import (
   Channel, Context, Guild, Member, Message, MessageFlags, User, PartialChannel,
   PartialGuild, PartialMember, PartialMessage, PartialUser
 )
-from .server import App
+from .asgi import App
 from .gateway import Bot, Intents, event

@@ -1,9 +1,11 @@
+import asyncio
 import orjson
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
 from ..core import AppBase, HTTPStatus
 from ..models.params import Payload
 from .handler import handler
+from .server import serve
 
 class App(AppBase):
   def __init__(self, public_key, token = None, application_id = None, reload = False):
@@ -11,13 +13,19 @@ class App(AppBase):
     self.verify_key = VerifyKey(bytes.fromhex(public_key))
     self.pending_interactions = {} # {interaction id: (response_future, response_ack_future)}
 
-  async def run_lifespan(self, receive, send):
+  def run(self, host = '127.0.0.1', port = 8000):
+    try:
+      asyncio.run(serve(self, host, port))
+    except KeyboardInterrupt:
+      pass
+
+  async def run_lifespan(self, receive, send): # used when running with uvicorn, etc.
     while True:
       event = await receive()
       if event['type'] == 'lifespan.startup':
         try:
           await self.startup_lifespans()
-        except Exception as e: # noqa: BLE001
+        except Exception as e:
           await self.shutdown_lifespans()
           return await send({'type': 'lifespan.startup.failed', 'message': str(e)})
         await send({'type': 'lifespan.startup.complete'})
@@ -62,7 +70,7 @@ class App(AppBase):
       return await self.respond(send, HTTPStatus.UNAUTHORIZED_401, {'error': 'invalid signature'})
 
     payload = orjson.loads(body)
-    response_ack_future = self.loop.create_future()
+    response_ack_future = asyncio.get_running_loop().create_future()
     try:
       status, body = await handler(self, payload, response_ack_future)
       await self.respond(send, status, body)

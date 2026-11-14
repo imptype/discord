@@ -16,6 +16,9 @@ dependencies = [
   'pynacl>=1.6.2'
 ]
 
+[project.scripts]
+discord = 'discord.core.cli:main'
+
 [project.urls]
 Repository = 'https://github.com/imptype/discord'
 
