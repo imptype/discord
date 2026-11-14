@@ -1,0 +1,22 @@
+name: Vercel
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+jobs:
+  production:
+    runs-on: ubuntu-latest
+    environment:
+      name: Vercel (Example Deploy)
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@v7
+      - run: npm install --global vercel@latest
+      - id: deploy
+        working-directory: examples/deploy/vercel
+        run: |
+          url=$(vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$url" >> "$GITHUB_OUTPUT"

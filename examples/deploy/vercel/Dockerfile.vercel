@@ -1,0 +1,15 @@
+# Use a Python 3.15 image
+FROM python:3.15-slim
+
+# Install uv from GitHub
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
+# Copy our files to an /app folder
+WORKDIR /app
+COPY . .
+
+# Install dependencies from pyproject.toml
+RUN uv sync --no-dev --no-install-project
+
+# Set the run command (as exec form)
+CMD [".venv/bin/uvicorn", "main:app", "--host", "0.0.0.0"]
