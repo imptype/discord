@@ -11,7 +11,7 @@ async def serve(app, host, port):
       # 1. Read first line: "POST /interactions HTTP/1.1" -> ['POST', '/interactions', 'HTTP/1.1']
       method, path, version = (await reader.readline()).decode().strip().split(' ', 2)
 
-      # 2. Build header lines until empty line.
+      # 2. Build header lines until empty line
       headers = [] # (name, value)
       length = 0
       while line := (await reader.readline()).strip():
@@ -20,7 +20,7 @@ async def serve(app, host, port):
         if k == b'content-length':
           length = int(v)
 
-      # 3. Read body based on content length.
+      # 3. Read body based on content length
       body = await reader.readexactly(length)
 
       scope = {
