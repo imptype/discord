@@ -9,6 +9,11 @@ app = discord.App(
   application_id = os.environ['APPLICATION_ID']
 )
 
+# @app.lifespan
+# async def lifespan():
+#   print(f'Synced {len(await app.sync()))} commands!')
+#   yield
+
 instance_id = uuid.uuid4().hex[:8]
 started_at = datetime.now(UTC)
 request_count = 0
