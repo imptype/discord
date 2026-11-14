@@ -27,7 +27,7 @@ async def lifespan():
 # a) python main.py
 # or b) discord main:app --host 127.0.0.1 --port 8000 (args default)
 
-# If you want to use both, keep this guard in. When you use 
+# If you want to use both, keep this if __name__ check in. When you use
 # our CLI or another server like `uvicorn`, it won't run app.run()
 if __name__ == '__main__':
   app.run()

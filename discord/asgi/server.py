@@ -43,7 +43,7 @@ async def serve(app, host, port):
           writer.write(b'\n'.join((
             f'HTTP/1.1 {status.value} {status.phrase}'.encode(),
             b'connection: close',
-            *(k + b': ' + v for k, v in event['headers']),
+            *(k + b': ' + v for k, v in event['headers'])
           )) + b'\n\n')
         else:
           writer.write(event['body'])
@@ -57,7 +57,7 @@ async def serve(app, host, port):
   log.info('app startup complete')
   try:
     server = await asyncio.start_server(callback, host, port)
-    address  = f'{host}:{port}'
+    address = f'{host}:{port}'
     log.info(f'listening on {address}')
     async with server:
       await server.serve_forever()

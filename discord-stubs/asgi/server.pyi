@@ -1,0 +1,3 @@
+from typing import Any
+
+async def serve(app, host, port) -> Any: ...

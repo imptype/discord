@@ -18,6 +18,7 @@ from .ui import (
 )
 from .abc import Component, Interactable, PartialModel, Snowflake, snowflake_time
 from .ext import Cog, Lifespan, SignalHandler, SignalWaiter, color, colour, lifespan, signal
+from .asgi import App
 from .core import (
   AttachmentOption, AutocompleteInteraction, AutocompleteResponse, BooleanOption, ChannelOption,
   Choice, CommandInteraction, CommandResponse, CommandType, ComponentInteraction,
@@ -32,5 +33,4 @@ from .models import (
   Channel, Context, Guild, Member, Message, MessageFlags, User, PartialChannel,
   PartialGuild, PartialMember, PartialMessage, PartialUser
 )
-from .asgi import App
 from .gateway import Bot, Intents, event
