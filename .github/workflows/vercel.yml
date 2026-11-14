@@ -11,12 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: Vercel (Example Deploy)
-      url: ${{ steps.deploy.outputs.url }}
     steps:
       - uses: actions/checkout@v7
       - run: npm install --global vercel@latest
-      - id: deploy
-        working-directory: examples/deploy/vercel
-        run: |
-          url=$(vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }})
-          echo "url=$url" >> "$GITHUB_OUTPUT"
+      - working-directory: examples/deploy/vercel
+        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} > /dev/null
