@@ -11,7 +11,7 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     environment:
-      name: GitHub-Pages (Docs)
+      name: GitHub Pages (Docs)
     steps:
       - uses: actions/checkout@v7
       - uses: withastro/action@v6
