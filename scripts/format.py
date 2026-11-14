@@ -31,7 +31,8 @@ import sorting, because stubs.py already writes the rest in the right style):
 It also ensures all tracked text (.gitignore, *.md, *.toml, *.lock,
 *.env, *.yml, LICENSE) files use LF and end with 1 newline.
 10. For *.toml files (like pyproject.toml) it enforces the same 2-space indent for multi-line arrays
-  and inline tables, and removes trailing commas before a closing ] or }.
+  and inline tables, removes trailing commas before a closing ] or }, and enforces single quotes
+  (skipping strings with a ' or a backslash inside, and triple-quoted strings).
 11. Orders the methods inside a class: __init__ first, then normal methods (not starting and
   ending with __), then dunder methods like __aenter__ or __getitem__. The order inside each
   group is kept. A class is skipped if other statements sit between its methods.
@@ -689,15 +690,17 @@ def normalize_text(text, keep_trailing = False):
   stripped = text.rstrip('\n')
   return stripped + '\n' if stripped else ''
 
-# --- pass: TOML indentation and trailing commas ---
+# --- pass: TOML quotes, indentation and trailing commas ---
 
 TOML_QUOTES = ('"', "'")
 
 def toml_scan(lines):
-  """Walk TOML lines once. Returns (indents, cuts): the wanted indent for each row that
-  starts outside a multiline string, and the column spans to delete on each row."""
+  """Walk TOML lines once. Returns (indents, cuts, quotes): the wanted indent for each row that
+  starts outside a multiline string, the column spans to delete on each row, and the column
+  spans of the double-quoted strings on each row that can become single-quoted."""
   indents = {}
   cuts = {}
+  quotes = {}
   stack = []  # one slot per open bracket: (row, col) of a comma waiting for its closer, or None
   quote = None  # delimiter of the multiline string we are inside
   for row, line in enumerate(lines):
@@ -748,20 +751,35 @@ def toml_scan(lines):
           quote = triple
           col += 3
         else:
+          begin = col
+          plain = True  # no escape and no ' inside, so a literal string means the same thing
           col += 1
           while col < len(line) and line[col] != char:
-            col += 2 if char == '"' and line[col] == '\\' else 1
+            if char == '"' and line[col] == '\\':
+              plain = False
+              col += 2
+            else:
+              if line[col] == "'":
+                plain = False
+              col += 1
+          if char == '"' and plain and col < len(line):
+            quotes.setdefault(row, []).append((begin, col))
           col += 1
       else:
         col += 1
-  return indents, cuts
+  return indents, cuts, quotes
 
 def fix_toml(text):
-  """Indent array and inline table contents by INDENT per bracket level (a closing bracket
-  goes back one level, everything else starts at column 0) and drop commas right before a
-  closing bracket."""
+  """Use single quotes where that means the same thing, indent array and inline table contents
+  by INDENT per bracket level (a closing bracket goes back one level, everything else starts at
+  column 0) and drop commas right before a closing bracket."""
   lines = text.split('\n')
-  indents, cuts = toml_scan(lines)
+  indents, cuts, quotes = toml_scan(lines)
+  for row, spans in quotes.items():
+    chars = list(lines[row])  # same length before and after, so the cut columns stay valid
+    for begin, end in spans:
+      chars[begin] = chars[end] = "'"
+    lines[row] = ''.join(chars)
   for row, spans in cuts.items():
     for begin, end in sorted(spans, reverse = True):
       lines[row] = lines[row][:begin] + lines[row][end:]
@@ -1012,7 +1030,10 @@ TOML_CASES = [
   ('toml comment after comma', "a = [\n  'x', # one\n  'y', # two\n]\n", "a = [\n  'x', # one\n  'y' # two\n]\n"),
   ('toml headers and keys', '[tool.x]\n  a = 1\n  [tool.y]\nb = 2\n', '[tool.x]\na = 1\n[tool.y]\nb = 2\n'),
   ('toml strings untouched', "a = '''\n  x,\n   ]\n'''\nb = ['#', 'a,]']\n", "a = '''\n  x,\n   ]\n'''\nb = ['#', 'a,]']\n"),
-  ('toml inline table', 'a = {x = [1, 2,], y = 3,}\n', 'a = {x = [1, 2], y = 3}\n')
+  ('toml inline table', 'a = {x = [1, 2,], y = 3,}\n', 'a = {x = [1, 2], y = 3}\n'),
+  ('toml quotes', '[project]\nname = "x"\nlist = ["a", "b"]\n"a.b" = "c"\n', "[project]\nname = 'x'\nlist = ['a', 'b']\n'a.b' = 'c'\n"),
+  ('toml quotes left alone', 'a = "it\'s"\nb = "tab\\t"\nc = """\nx\n"""\nd = "#"  # "e"\n', 'a = "it\'s"\nb = "tab\\t"\nc = """\nx\n"""\nd = \'#\'  # "e"\n'),
+  ('toml quotes with comma removal', 'a = [\n  "x",\n  "y",\n]\n', "a = [\n  'x',\n  'y'\n]\n")
 ]
 
 def selftest():

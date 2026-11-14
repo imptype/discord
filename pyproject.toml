@@ -31,13 +31,13 @@ module-root = ''
 
 [dependency-groups]
 dev = [
-  "ty>=0.0.94",
-  "ruff>=0.17.0",
-  "uvicorn>=0.54.0",
-  "psutil>=7.2.2",
-  "pillow>=13.0.0",
-  "pytest>=9.2.0",
-  "pytest-asyncio>=1.4.1.post1"
+  'ty>=0.0.94',
+  'ruff>=0.17.0',
+  'uvicorn>=0.54.0',
+  'psutil>=7.2.2',
+  'pillow>=13.0.0',
+  'pytest>=9.2.0',
+  'pytest-asyncio>=1.4.1.post1'
 ]
 
 [tool.ruff]
@@ -74,4 +74,4 @@ ignore = [
 ]
 
 [tool.pytest.ini_options]
-asyncio_default_fixture_loop_scope = "function"
+asyncio_default_fixture_loop_scope = 'function'
