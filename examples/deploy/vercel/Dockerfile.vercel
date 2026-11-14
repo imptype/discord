@@ -12,4 +12,4 @@ COPY . .
 RUN uv sync --no-dev --no-install-project
 
 # Set the run command (as exec form)
-CMD [".venv/bin/discord", "main:app", "--host", "0.0.0.0"]
+CMD ["sh", "-c", "exec .venv/bin/discord main:app --host 0.0.0.0 --port ${PORT:-8000}"]
