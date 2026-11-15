@@ -11,7 +11,7 @@ app = discord.App(
 
 # @app.lifespan
 # async def lifespan():
-#   print(f'Synced {len(await app.sync()))} commands!')
+#   print(f'Synced {len(await app.sync())} commands!')
 #   yield
 
 instance_id = uuid.uuid4().hex[:8]

@@ -1,0 +1,6 @@
+{
+  "name": "cloudflare-example",
+  "main": "cloudflare.py",
+  "compatibility_date": "2026-11-14",
+  "compatibility_flags": ["python_workers"]
+}

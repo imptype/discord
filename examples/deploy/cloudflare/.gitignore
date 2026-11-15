@@ -1,0 +1,5 @@
+.env
+.venv/
+.wrangler/
+.venv-workers/
+python_modules/

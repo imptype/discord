@@ -1,0 +1,62 @@
+lock-version = '1.0'
+created-by = 'uv'
+requires-python = '>=3.14.2'
+
+[[packages]]
+name = 'aiohappyeyeballs'
+version = '2.7.1'
+wheels = [{ url = 'https://files.pythonhosted.org/packages/71/43/1947f06babed6b3f1d7f38b0c767f52df66bfb2bc10b468c4a7de9eceff2/aiohappyeyeballs-2.7.1-py3-none-any.whl', upload-time = 2026-07-01T17:11:54Z, size = 15038, hashes = { sha256 = '9243213661e29250eb41368e5daa826fc017156c3b8a11440826b2e3ed376472' } }]
+
+[[packages]]
+name = 'aiohttp'
+version = '3.14.5'
+wheels = [{ url = 'https://files.pythonhosted.org/packages/68/30/173960c42b05a6c59f7558e4b12a4b0d9ba376cf6aa9bde7f9e08a30ca8d/aiohttp-3.14.5-py3-none-any.whl', upload-time = 2026-10-11T01:05:08Z, size = 279517, hashes = { sha256 = 'efc21a454892828368b11c2c780de0ff8bc991f73f6b99c6b66e56205470929b' } }]
+
+[[packages]]
+name = 'aiosignal'
+version = '1.4.0'
+wheels = [
+  { url = 'https://cdn.jsdelivr.net/pyodide/v314.0.7/full/aiosignal-1.4.0-py3-none-any.whl', hashes = { sha256 = '2511cc2e015fb6f5da2558409fc1535e756a0447b25ea0cc7a59108234e88fa7' } },
+  { url = 'https://files.pythonhosted.org/packages/fb/76/641ae371508676492379f16e2fa48f4e2c11741bd63c48be4b12a6b09cba/aiosignal-1.4.0-py3-none-any.whl', hashes = { sha256 = '053243f8b92b990551949e63930a839ff0cf0b0ebbe0597b0f3fb19e1a0fe82e' } }
+]
+
+[[packages]]
+name = 'attrs'
+version = '26.1.0'
+wheels = [
+  { url = 'https://cdn.jsdelivr.net/pyodide/v314.0.7/full/attrs-26.1.0-py3-none-any.whl', hashes = { sha256 = '0506ebb8e46c83017941a7239eecb2f74420d332cf1f341bddc43a217ab0bb66' } },
+  { url = 'https://files.pythonhosted.org/packages/64/b4/17d4b0b2a2dc85a6df63d1157e028ed19f90d4cd97c36717afef2bc2f395/attrs-26.1.0-py3-none-any.whl', hashes = { sha256 = 'c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309' } }
+]
+
+[[packages]]
+name = 'frozenlist'
+version = '1.8.0'
+wheels = [
+  { url = 'https://cdn.jsdelivr.net/pyodide/v314.0.7/full/frozenlist-1.8.0-cp314-cp314-pyemscripten_2026_0_wasm32.whl', hashes = { sha256 = '8cafdab2757de20cbccbf014f59c1c1b2d4ff2717b209c1211214dab39cdd48a' } },
+  { url = 'https://files.pythonhosted.org/packages/9a/9a/e35b4a917281c0b8419d4207f4334c8e8c5dbf4f3f5f9ada73958d937dcc/frozenlist-1.8.0-py3-none-any.whl', hashes = { sha256 = '0c18a16eab41e82c295618a77502e17b195883241c563b00f0aa5106fc4eaa0d' } }
+]
+
+[[packages]]
+name = 'idna'
+version = '3.20'
+wheels = [{ url = 'https://files.pythonhosted.org/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl', upload-time = 2026-09-17T14:11:03Z, size = 69583, hashes = { sha256 = 'ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c' } }]
+
+[[packages]]
+name = 'multidict'
+version = '7.2.1'
+wheels = [{ url = 'https://files.pythonhosted.org/packages/9d/96/1aaad0e5df33f1f5af21775c411349c0234a6edd581ea403bc81919a6eab/multidict-7.2.1-py3-none-any.whl', upload-time = 2026-10-24T20:40:59Z, size = 28145, hashes = { sha256 = '08ea94663d9e7c25d14d78222f7aee906c472d4837766bec62477c38f6e419dc' } }]
+
+[[packages]]
+name = 'propcache'
+version = '0.5.4'
+wheels = [{ url = 'https://files.pythonhosted.org/packages/f5/cd/785c64ed382f3f04201870267b02783f63b4678c2acfddc177a3ebcc2727/propcache-0.5.4-py3-none-any.whl', upload-time = 2026-09-16T00:17:13Z, size = 16338, hashes = { sha256 = '62c60aec739ed00124573cce1178138fd690c7676352d67a37328c1cf51d7468' } }]
+
+[[packages]]
+name = 'workers-runtime-sdk'
+version = '1.9.6'
+wheels = [{ url = 'https://files.pythonhosted.org/packages/58/e4/fffa3f6b3eb91b34dcc06f0b9de016cb90c156ae2a2e944054b02618e981/workers_runtime_sdk-1.9.6-py3-none-any.whl', upload-time = 2026-11-04T07:04:34Z, size = 41483, hashes = { sha256 = 'f343880a9c1380dd9b340808df93d584ff3c77428f932e14f4a23c36b7bd1bdc' } }]
+
+[[packages]]
+name = 'yarl'
+version = '1.25.1'
+wheels = [{ url = 'https://files.pythonhosted.org/packages/54/22/318c7980066769c6bcd9221ed2248294f5698811da099013098c670565ed/yarl-1.25.1-py3-none-any.whl', upload-time = 2026-09-15T19:34:59Z, size = 63617, hashes = { sha256 = '681c758b0490f9e96b78e5fa8e8dc6e648e9185bb6eaebe73183c33ea0c445f3' } }]
