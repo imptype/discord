@@ -3,13 +3,15 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any
+from importlib.metadata import version
 import orjson
 import aiohttp
 from ..abc import Route, API
 from ..models import Payload
 
 URL = 'https://discord.com/api/v10'
-USER_AGENT = 'DiscordBot (https://github.com/imptype/discord, v0.1.1)'
+
+USER_AGENT = f'DiscordBot (https://github.com/imptype/discord, v{version('idiscord')})'
 
 class HTTPClient(API):
   def __init__(self, token = None, application_id = None, use_sync = False):
