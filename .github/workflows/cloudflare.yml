@@ -3,14 +3,14 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-env:
-  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 jobs:
   deploy-cloudflare:
     runs-on: ubuntu-latest
     environment:
       name: Cloudflare Workers (Example Deploy)
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.0
@@ -24,4 +24,4 @@ jobs:
           uv run pywrangler secret bulk secrets.env
           rm secrets.env
       - working-directory: examples/deploy/cloudflare
-        run: uv run pywrangler deploy
+        run: uv run pywrangler deploy > /dev/null

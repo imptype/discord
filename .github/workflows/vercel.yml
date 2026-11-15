@@ -11,8 +11,9 @@ jobs:
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - uses: actions/checkout@v7
       - run: npm install --global vercel@latest
       - working-directory: examples/deploy/vercel
-        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} > /dev/null
+        run: vercel deploy --prod > /dev/null
