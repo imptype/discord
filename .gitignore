@@ -2,15 +2,19 @@
 .git/
 .venv/
 .vscode/
+.vercel/
+.wrangler/
 .ruff_cache/
 __pycache__/
+python_modules/
 dist/
 temp/
 
 # Hide personal stuff
-.env
+.env*
 test.py
 NOTES.md
+DUMP.md
 archive/
 scripts/
 !scripts/format.py
