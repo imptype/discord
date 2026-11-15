@@ -11,7 +11,7 @@ import sorting, because stubs.py already writes the rest in the right style):
 2. Enforce single quotes (skipping strings with nested quotes).
 3. Enforce LF instead of CRLF newline character.
 4. Somewhat enforce PascalCase class names and type names.
-5. Somewhat enforce snake_case variable and function names (enum members are skipped).
+5. Somewhat enforce snake_case variable and function names (enum members are skipped, and files in NAMING_SKIP).
 6. Enforce no double blank lines in a row (skipping strings).
 7. Enforce a space between operators like * + (includes = in parameters and assignments)
 8. Sort imports by these rules:
@@ -68,11 +68,12 @@ from itertools import accumulate
 
 INDENT = 2
 NAMING_IGNORE = '# naming: ignore'
+NAMING_SKIP = {'cloudflare.py'}  # cf workers require a "Default" variable
 MODES = ('', '--check', '--diff', '--selftest')
 
-EXCLUDE_DIRS = {'.git', '.venv', 'venv', 'node_modules', '__pycache__', '.mypy_cache', '.ruff_cache'}
+EXCLUDE_DIRS = {'.git', '.venv', 'venv', 'node_modules', '__pycache__', '.mypy_cache', '.ruff_cache', '.venv-workers', 'python_modules'}
 PYTHON_SUFFIXES = ('.py', '.pyi')
-TEXT_GLOBS = ('*.md', '*.toml', '*.lock', '*.env', '*.yml', '*.yaml', '.gitignore', 'LICENSE', 'LICENSE.*')
+TEXT_GLOBS = ('*.md', '*.toml', '*.lock', '*.env', '*.yml', '*.yaml', '.gitignore', 'LICENSE', 'LICENSE.*', 'cloudflare.py')
 TEXT_NAME = re.compile('|'.join(fnmatch.translate(os.path.normcase(glob)) for glob in TEXT_GLOBS))
 
 SKIP_TYPES = {
@@ -911,6 +912,8 @@ def enum_members(node):
       yield stmt.target
 
 def check_names(src, path):
+  if Path(path).name in NAMING_SKIP:
+    return []
   ignored = {n for n, line in enumerate(src.split('\n'), 1) if NAMING_IGNORE in line}
   found = []
   aliases = set()  # ids of the Name nodes that hold a 'type X = ...' name
@@ -1049,6 +1052,10 @@ def selftest():
     if len(got) != count:
       failures += 1
       print(f'FAIL names {src!r}: wanted {count}, got {got}')
+  skipped = check_names('Default = 1\n', 'examples/deploy/cloudflare/cloudflare.py')
+  if skipped:
+    failures += 1
+    print(f'FAIL names skip: wanted none for a file in NAMING_SKIP, got {skipped}')
   for label, before, want in TEXT_CASES:
     got = normalize_text(before)
     if got != want:
@@ -1082,7 +1089,7 @@ def selftest():
   if got != want:
     failures += 1
     print(f'FAIL error names the pass: want {want!r}, got {got!r}')
-  total = len(CASES) + len(NAME_CASES) + len(TEXT_CASES) + len(TOML_CASES) + 3  # + the stub, diff and AST checks
+  total = len(CASES) + len(NAME_CASES) + len(TEXT_CASES) + len(TOML_CASES) + 4  # + the naming skip, stub, diff and AST checks
   print(f'{total - failures} passed, {failures} failed')
   return 1 if failures else 0
 
@@ -1189,7 +1196,7 @@ def main(argv):
         print(f'Reformatted {path}')
     if path.suffix == '.pyi':
       continue  # stubs mirror the source, which is already name-checked
-    for message in check_names(new if not mode else current, path):
+    for message in check_names(new if not mode else current, path):  # files in NAMING_SKIP return nothing
       print(message)
       failed = True
 
