@@ -10,7 +10,7 @@ jobs:
   deploy-cloudflare:
     runs-on: ubuntu-latest
     environment:
-      name: Cloudflare (Example Deploy)
+      name: Cloudflare Workers (Example Deploy)
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.0
