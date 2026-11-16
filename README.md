@@ -20,7 +20,7 @@ import discord
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = discord.bot(os.environ['TOKEN'], intents = intents)
+bot = discord.bot(token = os.environ['TOKEN'], intents = intents)
 
 @bot.command
 async def ping(context):
