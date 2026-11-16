@@ -42,3 +42,4 @@ More code examples are found in the  `/examples` folder, and check the docs for 
 - **Documentation:** https://imptype.github.io/discord/
 - **Development Server:** https://discord.gg/8jrGWh9dPt
 - **Discord API Docs:** https://docs.discord.com/developers
+- **Discord Developer Portal:** https://discord.com/developers/applications
