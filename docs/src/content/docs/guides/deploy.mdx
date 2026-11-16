@@ -1,0 +1,216 @@
+---
+title: Deployment Guide
+description: A deployement tutorial.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+# Deployment Guide
+
+Now that you have a working bot, you'd want to **deploy your bot** so it can run forever.
+
+There are many ways to deploy your bot, and their pros and cons are explained in the sections below. 
+
+:::tip
+To improve your bot's **ping**, try to pick a location close to Discord's API servers. As of Novemeber 2026, Discord uses Google's `us-east1` region: Moncks Corner, South Carolina, USA or [here][Google Datacenter Map].
+
+Another way to improve your ping is to respond to interactions via an **HTTP server** instead, which is 1 less round-trip than responding via an API request. See the **Bot vs App** section for an explanation.
+:::
+
+## Self-hosting
+
+The easiest way to keep your bot online is to just run it on your **PC**, or on your **phone**, or on something like a **Raspberry Pi**.
+
+You can set up a script to automatically start it for you. This is the **ideal** setup for a personal bot, where it comes online and is usable whenever you're online. (There is no need to make it stay on overnight if it's only for you!)
+
+Want to make it work for others at any time of the day? Then **don't unplug**. But keep in mind that A) an inefficient machine might eat up lots of electricity and B) the more people use your bot, the more network bandwidth you eat up too.
+
+## Hosting Online
+
+Alternatively, you could keep your bot online by running it on **cloud servers**, and plentiful of platforms provide this service.
+
+There are 3 different ways of deploying online: **Managed Hosting**, **VPS**, and **Serverless**.  
+The sections below provide a brief overview and examples, and include <u>free</u> options.
+
+:::caution
+**Free** tiers are fine to use for small bots, but **expect less resources** and a **shared IP address**, so things like globally authorized webhooks may not work due to [bad actors].
+You should actively prepare a monetization plan so you can easily upgrade when your bot grows and eventually needs more resources.
+ 
+On top of that, be careful with **small** or **unknown** hosts, as they can be sketchy. They could just be fishing for valuable **bot tokens** to exploit or [exit scam] with, or want to steal your source code, or train AI on it, for example.
+:::
+
+### Managed Hosting
+
+A **managed host** runs your bot for you. Usually, there is a place to just link your **GitHub Repository**. Then the platform will use this to automatically **build** and **run** your code for you, and restart it too if it errors, maintaining the uptime.
+
+Managed hosts also have **dashboards** with **built-in logs** and **useful metrics**. However, the trade-off is the pricing for the same amount of resources, like **CPU** & **RAM**, will be slighty more than a VPS. You also have less control of the environment. 
+
+**Managed Examples:** [Heroku] | [Fly.io] | [DigitalOcean (App Platform)] | [Azure (App Service)] | [Google Cloud (Run)]  
+**Managed Examples with Free Tier:** [Railway] | [Render] | [Northflank]
+
+### VPS
+
+A **VPS (virtual private server)** usually refers to an **unmanaged** host.
+You get a virtual computer with more resources for its price compared to a managed host, but you only have a **shell** to work with.
+You'd need to install everything on your own, including your **runtime**, **logs**, **metrics**, **restarts**, and **security**.
+However, this lets you be more **flexible** with **custom setups**!
+
+**VPS Examples:** [Hetzner] | [Vultr] | [Linode] | [DigitalOcean] | [IONOS] | [OVHcloud] | [Scaleway] | [Hostinger] | [Contabo] | [Netcup] | [Time4VPS] | [AWS (EC2)] | [AWS (Lightsail)] | [Google Cloud (Compute Engine)] | [Azure (Virtual Machines)]  
+**VPS Examples with Free Tier:** [Oracle Cloud] | [Google Cloud (`e2-micro`)]
+
+### Serverless
+
+**Serverless** is a type of managed hosting, where it spins up instances and shuts them down after inactivity, scaling to what you need.
+As a result, there is **coldstart** for initial requests (~1 second) and **persistent websockets won't work**.
+
+**Serverless Examples:** [AWS (Lambda)] | [Azure (Functions)] | [Google Cloud (Functions)]  
+**Serverless Examples With Free Tier:** [Vercel] | [Cloudflare Workers] | [Scaleway (Serverless)]
+
+:::note
+Serverless only works with **HTTP servers**, see the **Bot vs App** section for an explanation. And despite the cold start, 
+Discord expects a response to an interaction **within 3 seconds**, so a serverless function should still respond in time!
+:::
+
+# Recommended Guide
+
+The most accessible and reliable form of hosting interaction commands online is **Serverless Deployment**.
+This guide will explore **Vercel** and **Cloudflare Workers**.
+However, you must first switch from **Bot** to an **App** to use serverless functions.
+
+**Discord** also has a [JavaScript Guide] for deploying a bot on **Cloudflare Workers**, so this is not something really unknown.
+
+## Bot vs App
+This library has 2 ways to define a bot.
+A **Bot** makes a websocket that connects to [Discord's Gateway].
+An **App** creates an ASGI app and an ASGI server runs it from outside.
+Use an **App** to receive interactions via HTTP server instead of gateway.
+
+Everything else in the library is **still the same**.
+Both still use the same **HTTPClient** to make **API requests** to **Discord**, and both still have access to the same ext's like **Cogs** and **Signals**, because they inherit from an internal **AppBase** class.
+
+This is how a `discord.Bot()` looks like:
+
+```py
+import os
+import discord
+
+bot = discord.Bot(token = os.environ['TOKEN'])
+
+@bot.command.slash
+async def ping(interaction):
+  await interaction.response.send('pong!')
+
+bot.run()
+```
+
+This is how a `discord.App()` looks like:
+
+```py
+import os
+import discord
+
+app = discord.App(
+  public_key = os.environ['PUBLIC_KEY'], # to verify /interaction requests
+  token = os.environ['TOKEN'], # to make http requests
+  application_id = os.environ['APPLICATION_ID'] # to do bot id stuff like sync()
+)
+
+@app.command.slash
+async def ping(interaction):
+  await interaction.response.send('pong!')
+```
+
+To run the **App**, follow these steps:
+<Steps>
+1. Use our CLI, run this in VSCode's terminal: `discord main:app`  
+   *(Assumes your file is called `main.py`, which is what `main` refers to.)*
+2. Start a **localhost tunnel** through one of the methods in [Resources].  
+   *(After starting a tunnel, you'll get a public URL that you can use for the next step.)*
+3. Open your app on [Discord's Developer Portal] and do this:
+    - In the **General Information** tab, set the **Interactions Endpoint URL** to `<URL>/interactions`.
+    - For example: `https://abcdef-8000.euw.devtunnels.ms/interactions`
+4. Outside of local testing, when you deploy your bot, change the URL to the platform's one:
+    - **Vercel Example:** `abcdef.vercel.app/interactions`
+    - You should consider setting up 2 bots, dev and prod, to avoid constantly switching URLs.
+</Steps>
+
+Remember, when you use the `App()` constructor, you cannot do websocket stuff, including receiving **Gateway Events** and **Voice**, but you can now deploy on serverless platforms, and respond slightly faster to initial interactions via HTTP Response.
+
+If you're smart, you could probably run a **hybrid** setup to get the best of both worlds.
+
+## Vercel vs Cloudflare
+
+Now here's a quick comparison of the 2 contenders. *(*Last updated November 2026)*
+
+Feature | Vercel ([Hobby Plan]) | Cloudflare Workers ([Free Tier])
+--- | --- | ---
+Requests | 1,000,000/month | 100,000/day
+Egress | 100 GB/month | No limit? (Not found)
+CPU | 4 active CPU hours/month | 10 ms CPU/request
+Memory | 360 GB-hours/month | 128 MB/worker
+Subrequests | No limit | 50 (~refers to external requests)
+Commercial use | Not for Hobby plan | Yes
+Next paid tier | Pro, $20/month | Paid, $5/month
+
+## Deploying to Vercel
+
+An example with a **README.md** is in the [`examples/deploy/vercel`] folder on **GitHub**.
+
+:::note
+Since **Python 3.15** is not supported in **Vercel** yet, select the **Framework Preset** of `Container` instead of `Python`, and use a `dockerfile.vercel` file (see example in vercel folder).
+You don't need a `Build` or a `Run` command override.
+:::
+
+## Deploying to Cloudflare Workers
+
+An example with a **README.md** is in the [`examples/deploy/cloudflare`] folder on **GitHub**.
+
+:::caution
+**Python 3.15** is <u>not supported</u> on **Cloudflare Workers** yet. It's scheduled to release in like **April 2027**. 
+Someone remind me to update this guide when it happens (& for **Vercel** too).
+:::
+
+{/* References */}
+[Google Datacenter Map]: https://google.com/maps/place/Google+Data+Center+Berkeley+County/@33.0659589,-80.0424733,948m
+[bad actors]: https://en.wikipedia.org/wiki/Threat_actor
+[exit scam]: https://en.wikipedia.org/wiki/Exit_scam
+[Heroku]: https://heroku.com
+[Railway]: https://railway.com
+[Render]: https://render.com
+[Northflank]: https://northflank.com
+[Fly.io]: https://fly.io
+[DigitalOcean (App Platform)]: https://digitalocean.com/products/app-platform
+[Azure (App Service)]: https://azure.microsoft.com/products/app-service
+[Google Cloud (Run)]: https://cloud.google.com/run
+[Hetzner]: https://hetzner.com
+[Vultr]: https://vultr.com
+[Linode]: https://linode.com
+[IONOS]: https://ionos.com
+[OVHcloud]: https://ovhcloud.com
+[Scaleway]: https://scaleway.com
+[DigitalOcean]: https://digitalocean.com
+[Hostinger]: https://hostinger.com/vps-hosting
+[Contabo]: https://contabo.com
+[Netcup]: https://netcup.com
+[Time4VPS]: https://time4vps.com
+[AWS (Lightsail)]: https://aws.amazon.com/lightsail/
+[AWS (EC2)]: https://aws.amazon.com/ec2/
+[Google Cloud (Compute Engine)]: https://cloud.google.com/products/compute
+[Google Cloud (`e2-micro`)]: https://cloud.google.com/products/compute
+[Azure (Virtual Machines)]: https://azure.microsoft.com/products/virtual-machines
+[Oracle Cloud]: https://oracle.com/cloud/free/
+[AWS (Lambda)]: https://aws.amazon.com/lambda/
+[Azure (Functions)]: https://azure.microsoft.com/products/functions
+[Google Cloud (Functions)]: https://cloud.google.com/functions
+[Scaleway (Serverless)]: https://scaleway.com/en/serverless-functions
+[Vercel]: https://vercel.com
+[Cloudflare Workers]: https://workers.cloudflare.com
+[JavaScript Guide]: https://docs.discord.com/developers/tutorials/hosting-on-cloudflare-workers
+[Discord's Gateway]: https://docs.discord.com/developers/events/gateway
+[`uvicorn`]: https://uvicorn.dev
+[Resources]: ../resources/
+[Discord's Developer Portal]: https://discord.com/developers/home
+[Hobby Plan]: https://vercel.com/docs/plans/hobby
+[Free Tier]: https://developers.cloudflare.com/workers/platform/limits
+[`examples/deploy/vercel`]: https://github.com/imptype/discord/tree/main/examples/deploy/vercel
+[`examples/deploy/cloudflare`]: https://github.com/imptype/discord/tree/main/examples/deploy/cloudflare

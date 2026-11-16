@@ -10,8 +10,9 @@ TUTORIAL_SOURCE = """
 import os
 import discord
 
-intents = discord.Intents.default() | discord.Intents.MESSAGE_CONTENT
-bot = discord.Bot(token = os.environ['TOKEN'], intents = intents)
+intents = discord.Intents.default()
+intents.message_content = True
+bot = discord.Bot(token = os.environ['TOKEN'], intents = intents) 
 
 @bot.command
 async def ping(context):

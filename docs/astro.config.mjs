@@ -12,6 +12,7 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'iDiscord',
+      tableOfContents: { minHeadingLevel: 1, maxHeadingLevel: 4 },
 			components: {
 				TableOfContents: './src/components/TableOfContents.astro', // dynamic right sidebar
 				Head: './src/components/Head.astro', // helps decide right sidebar and collapse state
@@ -26,12 +27,16 @@ export default defineConfig({
 				'./src/styles/icon-button.css', // reused icon buttons, daynight, hide sidebar
 				// './src/styles/luau-theme.css', // maybe a theme in the future
 				'./src/styles/sidebar-layout.css', // defines layout for sidebars, index, etc
+				'./src/styles/heading-divider.css', // adds dividers under heading
+				'./src/styles/main.css', // widens main page
 			],
 			sidebar: [
 				{
 					label: 'Guides',
 					items: [
 						{ label: 'Tutorial', slug: 'guides/tutorial' },
+						{ label: 'Deployment Guide', slug: 'guides/deploy' },
+						{ label: 'Resources', slug: 'guides/resources' },
 					],
 				},
 				{
