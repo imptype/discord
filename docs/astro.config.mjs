@@ -7,18 +7,18 @@ export default defineConfig({
 	site: 'https://imptype.github.io',
 	base: '/discord',
 	markdown: {
-    processor: satteri({features: {smartPunctuation: false}}) // disables unicode quote chars
-  },
+		processor: satteri({features: {smartPunctuation: false}}) // disables unicode quote chars
+	},
 	integrations: [
 		starlight({
 			title: 'iDiscord',
-      tableOfContents: { minHeadingLevel: 1, maxHeadingLevel: 4 },
+			tableOfContents: { minHeadingLevel: 1, maxHeadingLevel: 4 },
 			components: {
 				TableOfContents: './src/components/TableOfContents.astro', // dynamic right sidebar
 				Head: './src/components/Head.astro', // helps decide right sidebar and collapse state
 				Header: './src/components/Header.astro', // replaces top bar
 				Sidebar: './src/components/Sidebar.astro', // custom left sidebar (search under 
-                                                   // title, github button, daynight, bottom)
+																									 // title, github button, daynight, bottom)
 				PageTitle: './src/components/PageTitle.astro', // breadcrumb at top of doc pages
 				MobileMenuFooter: './src/components/Empty.astro', // disable default mobile footer (dupes daynight)
 			},
