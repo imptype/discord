@@ -36,10 +36,10 @@ def bot(monkeypatch):
   return bot
 
 def test_privileged_message_content_is_not_default():
-  assert not discord.Intents.default() & discord.Intents.MESSAGE_CONTENT
+  assert not discord.Intents.default() & discord.Intents.message_content
 
 def test_bot_intents_are_default_plus_message_content(bot):
-  assert bot.intents == discord.Intents.default() | discord.Intents.MESSAGE_CONTENT
+  assert bot.intents == discord.Intents.default() | discord.Intents.message_content
 
 def test_token_is_set_on_http_client(bot):
   assert bot.http.token == TEST_TOKEN
