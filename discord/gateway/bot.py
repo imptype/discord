@@ -54,7 +54,7 @@ class Bot(AppBase):
       if not self.intents & intents:
         names = ' / '.join(flag.name for flag in intents)
         log.warning(f'gateway command {name}() will never run: missing intents, enable one of {names}')
-      elif self.intents & Intents.GUILD_MESSAGES and not self.intents & Intents.MESSAGE_CONTENT:
+      elif self.intents & Intents.guild_messages and not self.intents & Intents.message_content:
         log.warning(f'gateway command {name}() may never run: missing intent, enable MESSAGE_CONTENT')
       self.command_handlers[command.name] = command
 
