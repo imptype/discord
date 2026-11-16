@@ -28,84 +28,84 @@ class EventIntents(Enum):
   SUBSCRIPTION_UPDATE = None
   SUBSCRIPTION_DELETE = None
 
-  GUILD_CREATE = Intents.GUILDS
-  GUILD_UPDATE = Intents.GUILDS
-  GUILD_DELETE = Intents.GUILDS
-  GUILD_ROLE_CREATE = Intents.GUILDS
-  GUILD_ROLE_UPDATE = Intents.GUILDS
-  GUILD_ROLE_DELETE = Intents.GUILDS
+  GUILD_CREATE = Intents.guilds
+  GUILD_UPDATE = Intents.guilds
+  GUILD_DELETE = Intents.guilds
+  GUILD_ROLE_CREATE = Intents.guilds
+  GUILD_ROLE_UPDATE = Intents.guilds
+  GUILD_ROLE_DELETE = Intents.guilds
 
-  CHANNEL_CREATE = Intents.GUILDS
-  CHANNEL_UPDATE = Intents.GUILDS
-  CHANNEL_DELETE = Intents.GUILDS
-  CHANNEL_PINS_UPDATE = Intents.GUILDS | Intents.DIRECT_MESSAGES
+  CHANNEL_CREATE = Intents.guilds
+  CHANNEL_UPDATE = Intents.guilds
+  CHANNEL_DELETE = Intents.guilds
+  CHANNEL_PINS_UPDATE = Intents.guilds | Intents.direct_messages
 
-  THREAD_CREATE = Intents.GUILDS
-  THREAD_UPDATE = Intents.GUILDS
-  THREAD_DELETE = Intents.GUILDS
-  THREAD_LIST_SYNC = Intents.GUILDS
-  THREAD_MEMBER_UPDATE = Intents.GUILDS
-  THREAD_MEMBERS_UPDATE = Intents.GUILDS | Intents.GUILD_MEMBERS
+  THREAD_CREATE = Intents.guilds
+  THREAD_UPDATE = Intents.guilds
+  THREAD_DELETE = Intents.guilds
+  THREAD_LIST_SYNC = Intents.guilds
+  THREAD_MEMBER_UPDATE = Intents.guilds
+  THREAD_MEMBERS_UPDATE = Intents.guilds | Intents.guild_members
 
-  STAGE_INSTANCE_CREATE = Intents.GUILDS
-  STAGE_INSTANCE_UPDATE = Intents.GUILDS
-  STAGE_INSTANCE_DELETE = Intents.GUILDS
+  STAGE_INSTANCE_CREATE = Intents.guilds
+  STAGE_INSTANCE_UPDATE = Intents.guilds
+  STAGE_INSTANCE_DELETE = Intents.guilds
 
-  GUILD_MEMBER_ADD = Intents.GUILD_MEMBERS
-  GUILD_MEMBER_UPDATE = Intents.GUILD_MEMBERS
-  GUILD_MEMBER_REMOVE = Intents.GUILD_MEMBERS
+  GUILD_MEMBER_ADD = Intents.guild_members
+  GUILD_MEMBER_UPDATE = Intents.guild_members
+  GUILD_MEMBER_REMOVE = Intents.guild_members
 
-  GUILD_AUDIT_LOG_ENTRY_CREATE = Intents.GUILD_MODERATION
-  GUILD_BAN_ADD = Intents.GUILD_MODERATION
-  GUILD_BAN_REMOVE = Intents.GUILD_MODERATION
+  GUILD_AUDIT_LOG_ENTRY_CREATE = Intents.guild_moderation
+  GUILD_BAN_ADD = Intents.guild_moderation
+  GUILD_BAN_REMOVE = Intents.guild_moderation
 
-  GUILD_EMOJIS_UPDATE = Intents.GUILD_EXPRESSIONS
-  GUILD_STICKERS_UPDATE = Intents.GUILD_EXPRESSIONS
-  GUILD_SOUNDBOARD_SOUND_CREATE = Intents.GUILD_EXPRESSIONS
-  GUILD_SOUNDBOARD_SOUND_UPDATE = Intents.GUILD_EXPRESSIONS
-  GUILD_SOUNDBOARD_SOUND_DELETE = Intents.GUILD_EXPRESSIONS
-  GUILD_SOUNDBOARD_SOUNDS_UPDATE = Intents.GUILD_EXPRESSIONS
+  GUILD_EMOJIS_UPDATE = Intents.guild_expressions
+  GUILD_STICKERS_UPDATE = Intents.guild_expressions
+  GUILD_SOUNDBOARD_SOUND_CREATE = Intents.guild_expressions
+  GUILD_SOUNDBOARD_SOUND_UPDATE = Intents.guild_expressions
+  GUILD_SOUNDBOARD_SOUND_DELETE = Intents.guild_expressions
+  GUILD_SOUNDBOARD_SOUNDS_UPDATE = Intents.guild_expressions
 
-  GUILD_INTEGRATIONS_UPDATE = Intents.GUILD_INTEGRATIONS
-  INTEGRATION_CREATE = Intents.GUILD_INTEGRATIONS
-  INTEGRATION_UPDATE = Intents.GUILD_INTEGRATIONS
-  INTEGRATION_DELETE = Intents.GUILD_INTEGRATIONS
+  GUILD_INTEGRATIONS_UPDATE = Intents.guild_integrations
+  INTEGRATION_CREATE = Intents.guild_integrations
+  INTEGRATION_UPDATE = Intents.guild_integrations
+  INTEGRATION_DELETE = Intents.guild_integrations
 
-  WEBHOOKS_UPDATE = Intents.GUILD_WEBHOOKS
+  WEBHOOKS_UPDATE = Intents.guild_webhooks
 
-  INVITE_CREATE = Intents.GUILD_INVITES
-  INVITE_DELETE = Intents.GUILD_INVITES
+  INVITE_CREATE = Intents.guild_invites
+  INVITE_DELETE = Intents.guild_invites
 
-  VOICE_CHANNEL_EFFECT_SEND = Intents.GUILD_VOICE_STATES
-  VOICE_STATE_UPDATE = Intents.GUILD_VOICE_STATES
+  VOICE_CHANNEL_EFFECT_SEND = Intents.guild_voice_states
+  VOICE_STATE_UPDATE = Intents.guild_voice_states
 
-  PRESENCE_UPDATE = Intents.GUILD_PRESENCES
+  PRESENCE_UPDATE = Intents.guild_presences
 
-  MESSAGE_CREATE = Intents.GUILD_MESSAGES | Intents.DIRECT_MESSAGES
-  MESSAGE_UPDATE = Intents.GUILD_MESSAGES | Intents.DIRECT_MESSAGES
-  MESSAGE_DELETE = Intents.GUILD_MESSAGES | Intents.DIRECT_MESSAGES
-  MESSAGE_DELETE_BULK = Intents.GUILD_MESSAGES
+  MESSAGE_CREATE = Intents.guild_messages | Intents.direct_messages
+  MESSAGE_UPDATE = Intents.guild_messages | Intents.direct_messages
+  MESSAGE_DELETE = Intents.guild_messages | Intents.direct_messages
+  MESSAGE_DELETE_BULK = Intents.guild_messages
 
-  MESSAGE_REACTION_ADD = Intents.GUILD_MESSAGE_REACTIONS | Intents.DIRECT_MESSAGE_REACTIONS
-  MESSAGE_REACTION_REMOVE = Intents.GUILD_MESSAGE_REACTIONS | Intents.DIRECT_MESSAGE_REACTIONS
-  MESSAGE_REACTION_REMOVE_ALL = Intents.GUILD_MESSAGE_REACTIONS | Intents.DIRECT_MESSAGE_REACTIONS
-  MESSAGE_REACTION_REMOVE_EMOJI = Intents.GUILD_MESSAGE_REACTIONS | Intents.DIRECT_MESSAGE_REACTIONS
+  MESSAGE_REACTION_ADD = Intents.guild_message_reactions | Intents.direct_message_reactions
+  MESSAGE_REACTION_REMOVE = Intents.guild_message_reactions | Intents.direct_message_reactions
+  MESSAGE_REACTION_REMOVE_ALL = Intents.guild_message_reactions | Intents.direct_message_reactions
+  MESSAGE_REACTION_REMOVE_EMOJI = Intents.guild_message_reactions | Intents.direct_message_reactions
 
-  TYPING_START = Intents.GUILD_MESSAGE_TYPING | Intents.DIRECT_MESSAGE_TYPING
+  TYPING_START = Intents.guild_message_typing | Intents.direct_message_typing
 
-  GUILD_SCHEDULED_EVENT_CREATE = Intents.GUILD_SCHEDULED_EVENTS
-  GUILD_SCHEDULED_EVENT_UPDATE = Intents.GUILD_SCHEDULED_EVENTS
-  GUILD_SCHEDULED_EVENT_DELETE = Intents.GUILD_SCHEDULED_EVENTS
-  GUILD_SCHEDULED_EVENT_USER_ADD = Intents.GUILD_SCHEDULED_EVENTS
-  GUILD_SCHEDULED_EVENT_USER_REMOVE = Intents.GUILD_SCHEDULED_EVENTS
+  GUILD_SCHEDULED_EVENT_CREATE = Intents.guild_scheduled_events
+  GUILD_SCHEDULED_EVENT_UPDATE = Intents.guild_scheduled_events
+  GUILD_SCHEDULED_EVENT_DELETE = Intents.guild_scheduled_events
+  GUILD_SCHEDULED_EVENT_USER_ADD = Intents.guild_scheduled_events
+  GUILD_SCHEDULED_EVENT_USER_REMOVE = Intents.guild_scheduled_events
 
-  AUTO_MODERATION_RULE_CREATE = Intents.AUTO_MODERATION_CONFIGURATION
-  AUTO_MODERATION_RULE_UPDATE = Intents.AUTO_MODERATION_CONFIGURATION
-  AUTO_MODERATION_RULE_DELETE = Intents.AUTO_MODERATION_CONFIGURATION
-  AUTO_MODERATION_ACTION_EXECUTION = Intents.AUTO_MODERATION_EXECUTION
+  AUTO_MODERATION_RULE_CREATE = Intents.auto_moderation_configuration
+  AUTO_MODERATION_RULE_UPDATE = Intents.auto_moderation_configuration
+  AUTO_MODERATION_RULE_DELETE = Intents.auto_moderation_configuration
+  AUTO_MODERATION_ACTION_EXECUTION = Intents.auto_moderation_execution
 
-  MESSAGE_POLL_VOTE_ADD = Intents.GUILD_MESSAGE_POLLS | Intents.DIRECT_MESSAGE_POLLS
-  MESSAGE_POLL_VOTE_REMOVE = Intents.GUILD_MESSAGE_POLLS | Intents.DIRECT_MESSAGE_POLLS
+  MESSAGE_POLL_VOTE_ADD = Intents.guild_message_polls | Intents.direct_message_polls
+  MESSAGE_POLL_VOTE_REMOVE = Intents.guild_message_polls | Intents.direct_message_polls
 
 class Event(Handler):
   def __init__(self, callback = None, name: str | None = None):
