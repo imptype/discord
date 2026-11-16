@@ -1,16 +1,14 @@
-# Meta stuff
+# Python
 .git/
 .venv/
 .vscode/
-.vercel/
-.wrangler/
 .ruff_cache/
+.pytest_cache/
 __pycache__/
-python_modules/
 dist/
 temp/
 
-# Hide personal stuff
+# Personal
 .env*
 test.py
 NOTES.md
@@ -19,3 +17,21 @@ archive/
 scripts/
 !scripts/format.py
 !scripts/stubs.py
+
+# Docs
+.DS_Store
+.astro/
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vercel
+.vercel/
+
+# Cloudflare
+.env
+.wrangler/
+.venv-workers/
+python_modules/
