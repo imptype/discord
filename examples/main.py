@@ -9,7 +9,7 @@ app = discord.App(
 
 @app.command.slash()
 async def ping(interaction):
-  await interaction.response.send('pong')
+  await interaction.response.send('pong!')
 
 @app.lifespan
 async def lifespan():
