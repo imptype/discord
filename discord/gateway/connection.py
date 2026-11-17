@@ -172,7 +172,7 @@ class Connection:
     log.info(str(self.intents))
     await self.send({'op': Opcode.IDENTIFY, 'd': {
       'token': self.token,
-      'intents': self.intents,
+      'intents': int(self.intents),
       'properties': properties
     }})
 
