@@ -11,8 +11,8 @@ temp/
 # Personal
 .env*
 test.py
-NOTES.md
-DUMP.md
+dev.md
+notes.md
 archive/
 scripts/
 !scripts/format.py
