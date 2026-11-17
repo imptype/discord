@@ -85,7 +85,14 @@ class CommandInteraction(Interaction):
 class SlashInteraction(CommandInteraction):
   """
   TODO
+
+  Attributes:
+    names: TODO
+    options: TODO
   """
+
+  names: Any # TODO
+  options: Any # TODO
 
   def __init__(self, data, app, is_from_http) -> None: # TODO
     """
@@ -196,9 +203,15 @@ class AutocompleteInteraction(Interaction):
 
   Attributes:
     response: TODO
+    names: TODO
+    options: TODO
+    focused: TODO
   """
 
   response: AutocompleteResponse
+  names: Any # TODO
+  options: Any # TODO
+  focused: Any # TODO
 
   def __init__(self, data, app, is_from_http) -> None: # TODO
     """

@@ -51,11 +51,14 @@ from .abc import Interactable as Interactable
 from .abc import PartialModel as PartialModel
 from .abc import snowflake_time as snowflake_time
 from .ext import Cog as Cog
+from .ext import Task as Task
+from .ext import task as task
 from .ext import color as color
 from .ext import colour as colour
 from .ext import signal as signal
 from .ext import Lifespan as Lifespan
 from .ext import lifespan as lifespan
+from .ext import schedule as schedule
 from .ext import SignalWaiter as SignalWaiter
 from .ext import SignalHandler as SignalHandler
 from .asgi import App as App
@@ -120,7 +123,3 @@ from .gateway import event as event
 from .gateway import Intents as Intents
 
 command = _command_namespace
-
-from .ext import Task as Task
-from .ext import task as task
-from .ext import schedule as schedule

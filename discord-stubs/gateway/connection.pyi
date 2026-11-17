@@ -40,7 +40,7 @@ class Connection:
   session_id: Any # TODO
   resume_url: Any # TODO
   heartbeat_task: Any # TODO
-  acked: Any # TODO
+  acked: bool
   last_beat: Any # TODO
 
   def __init__(self, http, token, intents, on_event) -> None: ...

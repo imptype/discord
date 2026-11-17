@@ -1,4 +1,5 @@
 from typing import Any
+from ..abc import RegistrarMixin
 
 class Cog:
   """
@@ -36,12 +37,11 @@ class Cog:
       TODO
     """
 
-class CogMixin:
+class CogMixin(RegistrarMixin):
   """
   TODO
 
   Attributes:
-    registrars: TODO
     reload: TODO
     cogs: TODO
     cog_handlers: TODO
@@ -57,14 +57,7 @@ class CogMixin:
   extension_files: Any # TODO
   reload_task: Any # TODO
 
-  def __init__(self, registrars, reload = ...) -> None: # TODO
-    """
-    TODO
-
-    Args:
-      registrars: TODO
-      reload: TODO
-    """
+  def __init__(self, *, reload = ..., **kwargs) -> None: ... # TODO
 
   async def run_registrars(self, handlers, remove = ...) -> Any: # TODO
     """
@@ -133,7 +126,7 @@ class CogMixin:
       TODO
     """
 
-  async def watch_extensions(self) -> Any: # TODO
+  async def watch_extensions(self) -> Any:
     """
     TODO
 

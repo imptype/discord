@@ -1,5 +1,6 @@
 from typing import Any
 from ..abc import Handler
+from ..abc import RegistrarMixin
 
 class BaseCommand(Handler): ...
 
@@ -240,7 +241,7 @@ class CommandProxy:
 
   def __getattr__(self, name) -> Any: ...
 
-class CommandMixin:
+class CommandMixin(RegistrarMixin):
   """
   TODO
 
@@ -252,15 +253,9 @@ class CommandMixin:
   registry: Any # TODO
   command: CommandNamespace
 
-  def __init__(self, registrars) -> None: # TODO
-    """
-    TODO
+  def __init__(self, **kwargs) -> None: ... # TODO
 
-    Args:
-      registrars: TODO
-    """
-
-  def set_proxy(self) -> Any: # TODO
+  def set_proxy(self) -> Any:
     """
     TODO
 

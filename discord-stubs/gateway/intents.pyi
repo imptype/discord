@@ -1,38 +1,44 @@
-from enum import IntFlag
 from typing import Any
 
-class Intents(IntFlag):
+class IntentFlag:
+  bit: Any # TODO
+
+  def __init__(self, bit) -> None: ...
+
+  def __set_name__(self, owner, name) -> Any: ...
+
+  def __get__(self, instance, owner) -> Any: ...
+
+  def __set__(self, instance, value) -> Any: ...
+
+class Intents:
   """
   TODO
+
+  Attributes:
+    guilds: TODO
+    guild_members: TODO
+    guild_moderation: TODO
+    guild_expressions: TODO
+    guild_integrations: TODO
+    guild_webhooks: TODO
+    guild_invites: TODO
+    guild_voice_states: TODO
+    guild_presences: TODO
+    guild_messages: TODO
+    guild_message_reactions: TODO
+    guild_message_typing: TODO
+    direct_messages: TODO
+    direct_message_reactions: TODO
+    direct_message_typing: TODO
+    message_content: TODO
+    guild_scheduled_events: TODO
+    auto_moderation_configuration: TODO
+    auto_moderation_execution: TODO
+    guild_message_polls: TODO
+    direct_message_polls: TODO
+    value: TODO
   """
-
-
-  @classmethod
-  def none(cls) -> Any: # TODO
-    """
-    TODO
-
-    Returns:
-      TODO
-    """
-
-  @classmethod
-  def default(cls) -> Any: # TODO
-    """
-    TODO
-
-    Returns:
-      TODO
-    """
-
-  @classmethod
-  def all(cls) -> Any: # TODO
-    """
-    TODO
-
-    Returns:
-      TODO
-    """
 
   guilds: IntentFlag
   guild_members: IntentFlag
@@ -55,6 +61,7 @@ class Intents(IntFlag):
   auto_moderation_execution: IntentFlag
   guild_message_polls: IntentFlag
   direct_message_polls: IntentFlag
+  value: Any # TODO
 
   def __init__(self, value = ...) -> None: # TODO
     """
@@ -62,6 +69,33 @@ class Intents(IntFlag):
 
     Args:
       value: TODO
+    """
+
+  @classmethod
+  def none(cls) -> Any: # TODO
+    """
+    TODO
+
+    Returns:
+      TODO
+    """
+
+  @classmethod
+  def all(cls) -> Any: # TODO
+    """
+    TODO
+
+    Returns:
+      TODO
+    """
+
+  @classmethod
+  def default(cls) -> Any: # TODO
+    """
+    TODO
+
+    Returns:
+      TODO
     """
 
   def __int__(self) -> Any: # TODO
@@ -101,16 +135,3 @@ class Intents(IntFlag):
     Returns:
       TODO
     """
-
-  value: Any # TODO
-
-class IntentFlag:
-  bit: Any # TODO
-
-  def __init__(self, bit) -> None: ...
-
-  def __set_name__(self, owner, name) -> Any: ...
-
-  def __get__(self, instance, owner) -> Any: ...
-
-  def __set__(self, instance, value) -> Any: ...

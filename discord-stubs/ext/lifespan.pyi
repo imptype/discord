@@ -1,7 +1,8 @@
-import asyncio
 from typing import Any
 from contextlib import AsyncExitStack
+from ..abc import LoopMixin
 from ..abc import BaseHandler
+from ..abc import RegistrarMixin
 from ..core.http import HTTPClient
 
 class Lifespan(BaseHandler):
@@ -30,7 +31,7 @@ def lifespan(callback = ..., *, name = ...) -> Any: # TODO
     TODO
   """
 
-class LifespanMixin:
+class LifespanMixin(RegistrarMixin, LoopMixin):
   """
   TODO
 
@@ -38,7 +39,6 @@ class LifespanMixin:
     http: The app's HTTPClient.
     stack: TODO
     lifespan_handlers: TODO
-    loop: TODO
     started_at: TODO
   """
 
@@ -47,14 +47,7 @@ class LifespanMixin:
   lifespan_handlers: Any # TODO
   started_at: Any # TODO
 
-  def __init__(self, registrars, http) -> None: # TODO
-    """
-    TODO
-
-    Args:
-      registrars: TODO
-      http: TODO
-    """
+  def __init__(self, *, http, **kwargs) -> None: ... # TODO
 
   def lifespan(self, callback = ...) -> Any: # TODO
     """
@@ -100,7 +93,7 @@ class LifespanMixin:
       TODO
     """
 
-  async def startup_lifespans(self) -> Any: # TODO
+  async def startup_lifespans(self) -> Any:
     """
     TODO
 
@@ -108,7 +101,7 @@ class LifespanMixin:
       TODO
     """
 
-  async def shutdown_lifespans(self) -> Any: # TODO
+  async def shutdown_lifespans(self) -> Any:
     """
     TODO
 

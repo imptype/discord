@@ -1,74 +1,74 @@
 """
 stubs.py - Generates template stub files for the "discord-stubs/" folder (This was AI-assisted).
 
+Every run re-derives each stub from the source, then merges in what you wrote by hand in the old stub:
+  - docstring text (the Args / Attributes sections are re-synced with the real signature / attributes)
+  - types you filled in where the source has no annotation
+  - imports that your hand-written types need
+
+So signatures, bases, attributes, async-ness and decorators always follow the source, and stubs for deleted
+modules are deleted.
+
+Only things the root `discord/__init__.py` exports (plus the classes behind exported instances/aliases,
+like CommandNamespace behind `command`, plus the mixins mixed into exported classes, like SignalMixin
+behind `App` and `Bot`) are documented. Everything else is "light": stubbed so type checking works, but
+with no docstring and no TODO. Add names to DOCUMENT_ALSO to opt an internal one in.
+
+Mixin classes keep their class docstring and their other methods' docstrings, but their __init__ never
+gets one (the class docstring already says what the mixin adds, e.g. a .loop attribute).
+
 Usage:
-  python stubs.py           create missing stubs, add missing names, remove stale ones
+  python stubs.py           write the stubs
   python stubs.py --diff    change nothing, show what a normal run would change
-  python stubs.py --check   change nothing, exit 1 if the stubs are out of date or unfinished (for CI)
+  python stubs.py --check   change nothing, exit 1 if stubs are out of date or still have TODOs (for CI)
 """
 
 import re
 import ast
 import sys
-import copy
 import difflib
 import argparse
 import builtins
 from pathlib import Path
 from dataclasses import dataclass, field
 
-PACKAGE = Path('discord')
-STUBS_DIR = Path('discord-stubs')
+ROOT = Path(__file__).resolve().parent.parent
+PACKAGE = ROOT / 'discord'
+STUBS_DIR = ROOT / 'discord-stubs'
 MARKER = '# TODO'
-IGNORED = { # never stubbed, edit to taste (internal module level constants are skipped automatically, see main)
+TODO = re.compile(r'\bTODO\b')
+SECTION = re.compile(r'^[A-Z][A-Za-z ]*:$')
+ENTRY = re.compile(r'^(\s+)(\*{0,2}\w+)(?:\s*\([^)]*\))?\s*:')
+IGNORED = {  # never stubbed
   '__repr__', '__str__', '__hash__', '__eq__', '__ne__', '__del__', '__post_init__',
-  'lazy_filter' # the root __init__.py is never filtered, so this one needs listing
+  'lazy_filter'  # the root __init__.py is never filtered, so this one needs listing
 }
+DOCUMENT_ALSO = set()  # names (classes, functions) that are not exported by the root but should still get docstrings
+MIXIN_SUFFIX = 'Mixin'  # classes with this name ending are documented when an exported class (indirectly) inherits them
 KEPT_DECORATORS = {'property', 'staticmethod', 'classmethod', 'abstractmethod', 'overload'}
 ENUM_BASES = {'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag'}
-EXPOSED_BASES = set() # extra base class names to treat as public, besides anything ending in Mixin (e.g. {'AppBase'})
-TODO = re.compile(r'\bTODO\b')
 BUILTINS = set(dir(builtins))
-FALLBACK_IMPORTS = { # for names a placeholder needs that the source never imports
-  'Any': 'from typing import Any'
-}
+FALLBACK_IMPORTS = {'Any': 'from typing import Any'}  # for names a placeholder needs that the source never imports
 
 @dataclass
 class Member:
-  kind: str # function, class, variable, import
-  line: int
-  node: ast.AST
-  signature: tuple | None = None
-  is_async: bool = False
-  count: int = 1 # definitions sharing the name (overloads, property setters)
-  import_lines: tuple = ()
-  members: dict = field(default_factory = dict)
-  light: bool = False # internal name, stubbed without docstrings (Any attributes are still marked with a TODO)
-
-@dataclass
-class Action:
-  kind: str # add or remove
+  kind: str  # function, class, variable, import
   name: str
-  member: Member
-  container: Member | None # the stub class it belongs to, None for module level
-
-@dataclass
-class Issue:
-  line: int
-  text: str
-  on_stub: bool = False
-  action: Action | None = None
+  nodes: list  # ast nodes, several for overloads and property setters
+  members: dict = field(default_factory = dict)
+  imports: tuple = ()  # kind == import: (import line, extra assignment line or None)
+  light: bool = False  # internal: stubbed without docstrings
+  unpacked: bool = False  # variable assigned through tuple unpacking, its type can't be inferred
 
 @dataclass
 class Module:
-  is_package: bool
-  definitions: set = field(default_factory = set) # every global name the module defines
-  imports: dict = field(default_factory = dict) # bound name -> (module it comes from, original name)
-  stars: list = field(default_factory = list) # modules it star imports
-  refs: dict = field(default_factory = dict) # name -> the name it was built from, for x = Cls(), x = Cls, x = Cls.attr
-  bases: dict = field(default_factory = dict) # class name -> names of its base classes
+  definitions: set = field(default_factory = set)  # every global name the module defines
+  imports: dict = field(default_factory = dict)  # bound name -> (module it comes from, original name)
+  stars: list = field(default_factory = list)  # modules it star imports
+  refs: dict = field(default_factory = dict)  # name -> the name it was built from: x = Cls(), x = Cls, x = Cls.attr
+  bases: dict = field(default_factory = dict)  # class name -> names of its base classes (Name or pkg.Name only)
 
-# ----- reading source and stubs
+# ----- reading the source
 
 def is_dunder(name):
   return name.startswith('__') and name.endswith('__')
@@ -76,7 +76,7 @@ def is_dunder(name):
 def is_public(name):
   return name not in IGNORED and (is_dunder(name) or not name.startswith('_'))
 
-def statements(body): # flattens if / try blocks
+def statements(body):  # flattens if / try blocks
   for node in body:
     match node:
       case ast.If():
@@ -88,20 +88,6 @@ def statements(body): # flattens if / try blocks
       case _:
         yield node
 
-def signature_of(args):
-  positional = tuple(a.arg for a in (*args.posonlyargs, *args.args))
-  kwonly = tuple(a.arg for a in args.kwonlyargs)
-  return positional, args.vararg and args.vararg.arg, kwonly, args.kwarg and args.kwarg.arg
-
-def param_names(signature): # what the Args section lists
-  positional, vararg, kwonly, kwarg = signature
-  return [*(name for name in positional if name not in ('self', 'cls')), *(['*' + vararg] if vararg else []), *kwonly, *(['**' + kwarg] if kwarg else [])]
-
-def format_signature(signature):
-  positional, vararg, kwonly, kwarg = signature
-  parts = [*positional, *(['*' + vararg] if vararg else ['*'] if kwonly else []), *kwonly, *(['**' + kwarg] if kwarg else [])]
-  return '(' + ', '.join(parts) + ')'
-
 def target_names(target):
   match target:
     case ast.Name(id = name):
@@ -112,12 +98,17 @@ def target_names(target):
     case ast.Starred(value = value):
       yield from target_names(value)
 
-def self_attribute(target):
+def self_attributes(target):  # self.a, and every self.x inside self.a, self.b = ...
   match target:
     case ast.Attribute(value = ast.Name(id = 'self'), attr = attr):
-      return attr
+      yield attr
+    case ast.Tuple() | ast.List():
+      for element in target.elts:
+        yield from self_attributes(element)
+    case ast.Starred(value = value):
+      yield from self_attributes(value)
 
-def base_name(base): # Name or pkg.Name -> Name, anything else (subscripts, calls) is ignored
+def base_name(base):  # Name or pkg.Name -> Name, anything else (subscripts, calls) is ignored
   match base:
     case ast.Name(id = name) | ast.Attribute(attr = name):
       return name
@@ -126,39 +117,42 @@ def reexport(level, module, alias):
   line = f"from {'.' * level}{module or ''} import {alias.name}"
   name = alias.asname or alias.name
   if name == alias.name:
-    return (f'{line} as {name}',) # "as" with the same name is what makes a stub re-export it
-  return (f'{line} as _{alias.name}', f'{name} = _{alias.name}') # a renamed re-export has no direct form
+    return f'{line} as {name}', None  # "as" with the same name is what makes a stub re-export it
+  return f'{line} as _{alias.name}', f'{name} = _{alias.name}'  # a renamed re-export has no direct form
 
-def collect(body, imports, members):
-  def add(name, member):
-    existing = members.get(name)
+def collect(body, reexports):
+  members = {}
+
+  def add(member):
+    existing = members.get(member.name)
     if existing is None:
-      members[name] = member
+      members[member.name] = member
     elif existing.kind == member.kind == 'function':
-      existing.count += 1
+      existing.nodes.extend(member.nodes)
 
   for node in statements(body):
     match node:
       case ast.FunctionDef() | ast.AsyncFunctionDef() if is_public(node.name):
-        add(node.name, Member('function', node.lineno, node, signature_of(node.args), isinstance(node, ast.AsyncFunctionDef)))
+        add(Member('function', node.name, [node]))
       case ast.ClassDef() if is_public(node.name):
-        add(node.name, Member('class', node.lineno, node, members = collect_class(node)))
+        add(Member('class', node.name, [node], collect_class(node)))
       case ast.TypeAlias(name = ast.Name(id = name)) if is_public(name):
-        add(name, Member('variable', node.lineno, node))
+        add(Member('variable', name, [node]))
       case ast.Assign():
-        for name in (name for target in node.targets for name in target_names(target)):
-          if is_public(name) and not is_dunder(name):
-            add(name, Member('variable', node.lineno, node))
+        for target in node.targets:
+          for name in target_names(target):
+            if is_public(name) and not is_dunder(name):
+              add(Member('variable', name, [node], unpacked = isinstance(target, (ast.Tuple, ast.List))))
       case ast.AnnAssign(target = ast.Name(id = name)) if is_public(name) and not is_dunder(name):
-        add(name, Member('variable', node.lineno, node))
-      case ast.ImportFrom(level = level) if imports and level:
+        add(Member('variable', name, [node]))
+      case ast.ImportFrom(level = level) if reexports and level:
         for alias in node.names:
           name = alias.asname or alias.name
           if name != '*' and is_public(name):
-            add(name, Member('import', node.lineno, node, import_lines = reexport(level, node.module, alias)))
+            add(Member('import', name, [node], imports = reexport(level, node.module, alias)))
   return members
 
-def init_methods(node): # __init__ plus every method of the class it calls through self.name(), transitively
+def init_methods(node):  # __init__ plus every method of the class it calls through self.name(), transitively
   methods = {item.name: item for item in node.body if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))}
   found = {}
   queue = ['__init__']
@@ -175,31 +169,20 @@ def init_methods(node): # __init__ plus every method of the class it calls throu
   return list(found.values())
 
 def collect_class(node):
-  members = collect(node.body, False, {})
+  members = collect(node.body, False)
   assigns = [
     sub for method in init_methods(node) for sub in ast.walk(method)
     if isinstance(sub, (ast.Assign, ast.AnnAssign))
   ]
   for sub in sorted(assigns, key = lambda sub: sub.lineno):
     for target in sub.targets if isinstance(sub, ast.Assign) else [sub.target]:
-      attr = self_attribute(target)
-      if attr and is_public(attr) and attr not in members:
-        members[attr] = Member('variable', sub.lineno, sub)
+      unpacked = isinstance(target, (ast.Tuple, ast.List))
+      for attr in self_attributes(target):
+        if is_public(attr) and attr not in members:
+          members[attr] = Member('variable', attr, [sub], unpacked = unpacked)
   return members
 
-def attribute_names(members):
-  return [name for name, member in members.items() if member.kind == 'variable']
-
-def flatten(members, scope = ''):
-  for name, member in members.items():
-    yield f'{scope}{name}'
-    yield from flatten(member.members, f'{scope}{name}.')
-
-def parse(path):
-  text = path.read_text(encoding = 'utf-8')
-  return text.splitlines(), ast.parse(text, filename = str(path))
-
-def source_import_map(tree):
+def import_map(tree):
   """bound name -> the import line that provides it, so placeholders can copy the imports their annotations need"""
   found = {}
   for node in statements(tree.body):
@@ -207,35 +190,27 @@ def source_import_map(tree):
       case ast.ImportFrom():
         for alias in node.names:
           if alias.name != '*':
-            found[alias.asname or alias.name] = f"from {'.' * node.level}{node.module or ''} import {alias.name}" + (f' as {alias.asname}' if alias.asname else '')
+            found[alias.asname or alias.name] = (
+              f"from {'.' * node.level}{node.module or ''} import {alias.name}"
+              + (f' as {alias.asname}' if alias.asname else '')
+            )
       case ast.Import():
         for alias in node.names:
           found[alias.asname or alias.name.split('.')[0]] = f'import {alias.name}' + (f' as {alias.asname}' if alias.asname else '')
   return found
 
-def bound_names(tree):
-  names = set()
-  for node in ast.walk(tree):
-    match node:
-      case ast.Import() | ast.ImportFrom():
-        names.update(alias.asname or alias.name.split('.')[0] for alias in node.names)
-      case ast.ClassDef() | ast.FunctionDef() | ast.AsyncFunctionDef():
-        names.add(node.name)
-      case ast.Assign():
-        names.update(name for target in node.targets for name in target_names(target))
-      case ast.AnnAssign(target = ast.Name(id = name)):
-        names.add(name)
-  return names
+def parse_file(path):
+  return ast.parse(path.read_text(encoding = 'utf-8'), filename = str(path))
 
 # ----- what the root exports
 
-def module_name(path): # discord/core/commands.py -> core.commands, discord/core/__init__.py -> core, discord/__init__.py -> ''
+def module_name(path):  # discord/core/command.py -> core.command, discord/core/__init__.py -> core, discord/__init__.py -> ''
   parts = list(path.relative_to(PACKAGE).with_suffix('').parts)
   if parts[-1] == '__init__':
     parts.pop()
   return '.'.join(parts)
 
-def import_target(module, is_package, node): # the dotted module a relative import points at
+def import_target(module, is_package, node):  # the dotted module a relative import points at
   parts = module.split('.') if module else []
   if not is_package and parts:
     parts.pop()
@@ -246,19 +221,20 @@ def import_target(module, is_package, node): # the dotted module a relative impo
   return '.'.join(parts)
 
 def index_module(name, is_package, tree):
-  module = Module(is_package)
+  module = Module()
   for node in statements(tree.body):
     match node:
-      case ast.FunctionDef() | ast.AsyncFunctionDef() | ast.ClassDef():
+      case ast.ClassDef():
         module.definitions.add(node.name)
-        if isinstance(node, ast.ClassDef):
-          module.bases[node.name] = [found for base in node.bases if (found := base_name(base))]
+        module.bases[node.name] = [base for base in map(base_name, node.bases) if base]  # not "name", it's used below
+      case ast.FunctionDef() | ast.AsyncFunctionDef():
+        module.definitions.add(node.name)
       case ast.TypeAlias(name = ast.Name(id = alias)):
         module.definitions.add(alias)
       case ast.Assign():
         for target in node.targets:
           module.definitions.update(target_names(target))
-        match node.value: # x = Cls(), x = Cls, x = Cls.attr: remember what x was built from
+        match node.value:  # x = Cls(), x = Cls, x = Cls.attr: remember what x was built from
           case ast.Call(func = ast.Name(id = ref)) | ast.Name(id = ref) | ast.Attribute(value = ast.Name(id = ref)):
             for target in node.targets:
               if isinstance(target, ast.Name):
@@ -273,20 +249,6 @@ def index_module(name, is_package, tree):
           else:
             module.imports[alias.asname or alias.name] = (target, alias.name)
   return module
-
-def index_package(files):
-  modules = {}
-  parsed = {} # path -> its tree, or the SyntaxError it raised (reported when the file itself is checked)
-  for path in files:
-    try:
-      _, tree = parse(path)
-    except SyntaxError as error:
-      parsed[path] = error
-      continue
-    parsed[path] = tree
-    name = module_name(path)
-    modules[name] = index_module(name, path.name == '__init__.py', tree)
-  return modules, parsed
 
 def resolve(modules, name, original, seen = ()):
   """follows a name back to the module that defines it, returns (module, name) or None"""
@@ -304,77 +266,149 @@ def resolve(modules, name, original, seen = ()):
       return found
   return None
 
-def set_light(member):
-  member.light = True
-  for inner in member.members.values():
-    set_light(inner)
-
-def imported_anywhere(modules):
-  """(defining module, name) for everything any module in the package imports, so a constant that another
-  module or a package __init__.py re-exports is not mistaken for an internal one"""
+def imported_by(modules, module):
+  """(defining module, name) for every name `module` imports"""
   found = set()
-  for module in modules.values():
-    for target, original in module.imports.values():
-      if result := resolve(modules, target, original):
-        found.add(result)
-    for target in module.stars:
-      source = modules.get(target)
-      if source is None:
-        continue
-      for original in {*source.definitions, *source.imports}:
-        if result := resolve(modules, target, original):
-          found.add(result)
-  return found
-
-def is_exposed_base(name):
-  return name.endswith('Mixin') or name in EXPOSED_BASES
-
-def exported(modules):
-  """(defining module, name) for everything the root __init__.py imports, plus the classes behind exported
-  instances and aliases, plus the mixins (see is_exposed_base) anywhere up the base chain of an exported class.
-  Other base classes, like API or Handler, are walked through but stay internal."""
-  root = modules['']
-  found = set()
-  for target, original in root.imports.values():
+  for target, original in module.imports.values():
     if result := resolve(modules, target, original):
       found.add(result)
-  for target in root.stars:
+  for target in module.stars:
     source = modules.get(target)
     if source is None:
       continue
     for original in {*source.definitions, *source.imports}:
       if result := resolve(modules, target, original):
         found.add(result)
+  return found
 
-  # command = command_namespace, command_namespace = CommandNamespace() exports CommandNamespace too
+def imported_anywhere(modules):
+  """so a constant that another module re-exports is not mistaken for an internal one"""
+  found = set()
+  for module in modules.values():
+    found |= imported_by(modules, module)
+  return found
+
+def mixins_of(modules, found):
+  """(defining module, name) for every mixin an exported class inherits, directly or through other classes.
+  Classes in between (like AppBase, which App inherits) are walked through but not exported themselves."""
+  mixins = set()
+  visited = set()
   queue = list(found)
-  seen = set(found)
+  while queue:
+    item = queue.pop()
+    if item in visited:
+      continue
+    visited.add(item)
+    target, name = item
+    for base in modules[target].bases.get(name, ()):
+      result = resolve(modules, target, base)
+      if result is None:
+        continue
+      if result[1].endswith(MIXIN_SUFFIX):
+        mixins.add(result)
+      queue.append(result)
+  return mixins
+
+def exported(modules):
+  """(defining module, name) for everything the root __init__.py imports, plus the classes behind exported
+  instances and aliases (command = command_namespace, command_namespace = CommandNamespace() exports CommandNamespace),
+  plus the mixins mixed into exported classes (App -> AppBase -> SignalMixin -> RegistrarMixin)"""
+  found = imported_by(modules, modules[''])
+  queue = list(found)
   while queue:
     target, name = queue.pop()
     ref = modules[target].refs.get(name)
-    if ref and ref[:1].isupper() and (result := resolve(modules, target, ref)) and result not in seen:
+    if ref and ref[:1].isupper() and (result := resolve(modules, target, ref)) and result not in found:
       found.add(result)
-      seen.add(result)
       queue.append(result)
-
-    # class Bot(AppBase), class AppBase(CommandMixin, ...): every ancestor is walked, only mixins are exported
-    for base in modules[target].bases.get(name, []):
-      result = resolve(modules, target, base)
-      if result is None or result in seen:
-        continue
-      seen.add(result)
-      if is_exposed_base(result[1]):
-        found.add(result)
-      queue.append(result)
+  found |= mixins_of(modules, found)
   return found
 
-# ----- generating placeholders
+def set_light(member):
+  member.light = True
+  for inner in member.members.values():
+    set_light(inner)
 
-def names_in(*nodes):
-  return {n.id for node in nodes if node is not None for n in ast.walk(node) if isinstance(n, ast.Name)}
+# ----- docstrings
 
-def type_param_names(node):
-  return {p.name for p in getattr(node, 'type_params', ())}
+def is_template(text):
+  """True if the docstring is untouched generated filler"""
+  for line in text.splitlines():
+    stripped = line.strip()
+    if stripped and not SECTION.match(line) and stripped != 'TODO' and not stripped.endswith(': TODO'):
+      return False
+  return True
+
+def trim(lines):
+  lines = list(lines)
+  while lines and not lines[-1].strip():
+    lines.pop()
+  return lines
+
+def entries_for(lines, names):
+  """keeps the existing entry text for names that are still wanted, adds TODO entries for new ones"""
+  entries = {}
+  current = None
+  indent = None
+  for line in lines:
+    match = ENTRY.match(line)
+    if match and (indent is None or len(match[1]) == indent):
+      indent = len(match[1])
+      current = match[2]
+      entries[current] = [line]
+    elif current is not None:
+      entries[current].append(line)
+  default = ' ' * (indent or 2)
+  out = []
+  for name in names:
+    out += trim(entries[name]) if name in entries else [f'{default}{name}: TODO']
+  return out
+
+def reconcile(text, wanted):
+  """wanted: {section title: names that must be listed}. Rewrites those sections, keeps everything else."""
+  preamble, sections = [], []
+  for line in text.splitlines():
+    if SECTION.match(line):
+      sections.append([line[:-1], []])
+    elif sections:
+      sections[-1][1].append(line)
+    else:
+      preamble.append(line)
+  seen = set()
+  kept = []
+  for title, lines in sections:
+    if title in wanted:
+      seen.add(title)
+      if wanted[title]:
+        kept.append((title, entries_for(lines, wanted[title])))
+    else:
+      kept.append((title, trim(lines)))
+  for title, names in reversed(list(wanted.items())):
+    if title not in seen and names:
+      kept.insert(0, (title, [f'  {name}: TODO' for name in names]))
+  result = trim(preamble)
+  for title, lines in kept:
+    result += ([''] if result else []) + [f'{title}:', *lines]
+  return '\n'.join(result)
+
+def new_doc(sections):
+  lines = ['TODO']
+  for title, entries in sections:
+    lines += ['', f'{title}:', *entries]
+  return '\n'.join(lines)
+
+def doc_block(text, indent):
+  text = text.replace('\\', '\\\\').replace('"""', '\\"\\"\\"')
+  return [f'{indent}"""', *[(indent + line) if line else '' for line in text.splitlines()], f'{indent}"""']
+
+# ----- generating stubs
+
+def old_docstring(node):
+  return ast.get_docstring(node) if node is not None else None
+
+def header_marked(node, lines):  # did the old stub's def line carry a "# TODO"?
+  end = max(node.body[0].lineno - 1, node.lineno)
+  return any(MARKER in line for line in lines[node.lineno - 1:end])
 
 def generics(node):
   return f"[{', '.join(map(ast.unparse, node.type_params))}]" if node.type_params else ''
@@ -388,24 +422,29 @@ def decorator_text(decorator):
     case ast.Attribute(attr = 'setter' | 'deleter'):
       return ast.unparse(decorator)
 
-def is_complete(node):
-  args = node.args
-  params = [*args.posonlyargs, *args.args, *args.kwonlyargs, args.vararg, args.kwarg]
-  annotated = all(p.annotation for p in params if p and p.arg not in ('self', 'cls'))
-  return annotated and (node.returns is not None or node.name == '__init__')
+def all_args(args):
+  return [*args.posonlyargs, *args.args, *([args.vararg] if args.vararg else []), *args.kwonlyargs, *([args.kwarg] if args.kwarg else [])]
 
-def doc_lines(indent, sections):
-  lines = [f'{indent}"""', f'{indent}TODO']
-  for title, entries in sections:
-    lines += ['', f'{indent}{title}:', *[f'{indent}  {entry}' for entry in entries]]
-  return [*lines, f'{indent}"""']
+def param_names(args):  # what the Args section lists
+  names = [arg.arg for arg in (*args.posonlyargs, *args.args) if arg.arg not in ('self', 'cls')]
+  if args.vararg:
+    names.append('*' + args.vararg.arg)
+  names += [arg.arg for arg in args.kwonlyargs]
+  if args.kwarg:
+    names.append('**' + args.kwarg.arg)
+  return names
 
-def is_enum(node):
-  return any(ast.unparse(base).split('.')[-1] in ENUM_BASES for base in node.bases)
+def format_args(args, old_annotations):
+  """like ast.unparse, but defaults become " = ..." and missing annotations come from the old stub.
+  Returns (text, whether a parameter is still unannotated)."""
+  missing = False
 
-def format_args(args): # like ast.unparse, but with spaces around the = of defaults
   def one(arg, has_default, prefix = ''):
-    text = prefix + arg.arg + (f': {ast.unparse(arg.annotation)}' if arg.annotation else '')
+    nonlocal missing
+    annotation = ast.unparse(arg.annotation) if arg.annotation else old_annotations.get(arg.arg)
+    if annotation is None and arg.arg not in ('self', 'cls'):
+      missing = True
+    text = prefix + arg.arg + (f': {annotation}' if annotation else '')
     return text + ' = ...' if has_default else text
 
   positional = [*args.posonlyargs, *args.args]
@@ -420,111 +459,145 @@ def format_args(args): # like ast.unparse, but with spaces around the = of defau
   parts += [one(arg, default is not None) for arg, default in zip(args.kwonlyargs, args.kw_defaults, strict = True)]
   if args.kwarg:
     parts.append(one(args.kwarg, False, '**'))
-  return ', '.join(parts)
+  return ', '.join(parts), missing
 
-def stub_function(node, indent, used, light = False):
-  lines = [f'{indent}@{text}' for text in map(decorator_text, node.decorator_list) if text]
-  args = copy.deepcopy(node.args)
-  args.defaults = [ast.Constant(value = ...) for _ in args.defaults]
-  args.kw_defaults = [None if d is None else ast.Constant(value = ...) for d in args.kw_defaults]
-  returns = node.returns
-  if returns is None: # never leave it out, a missing return is Unknown to a type checker and hides the gap
-    is_setter = any(text and text.endswith(('.setter', '.deleter')) for text in map(decorator_text, node.decorator_list))
-    returns = ast.Constant(value = None) if node.name == '__init__' or is_setter else ast.Name(id = 'Any')
-  used.update(names_in(args, returns, *node.type_params) - type_param_names(node))
+def stub_function(node, indent, light, old, old_lines, no_doc = False):
+  """no_doc: never write a docstring (used for the __init__ of a mixin class)"""
+  old_annotations, old_returns, old_marked, old_doc = {}, None, False, None
+  if old is not None:
+    old_annotations = {arg.arg: ast.unparse(arg.annotation) for arg in all_args(old.args) if arg.annotation}
+    old_returns = ast.unparse(old.returns) if old.returns else None
+    old_marked = header_marked(old, old_lines)
+    old_doc = old_docstring(old)
+
+  decorators = [text for text in map(decorator_text, node.decorator_list) if text]
+  bare = any(text.endswith(('.setter', '.deleter')) or text == 'overload' for text in decorators)
+  args, missing = format_args(node.args, old_annotations)
+
+  placeholder = False
+  if node.returns is not None:
+    returns = ast.unparse(node.returns)
+  elif old_returns is not None and not (old_returns == 'Any' and old_marked):
+    returns = old_returns  # filled in by hand
+  elif node.name == '__init__' or bare:
+    returns = 'None'
+  else:
+    returns, placeholder = 'Any', True  # never leave it out, a missing return is Unknown to a type checker
+
+  doc = None
+  if no_doc:
+    pass  # a mixin's __init__ has no docstring, the class docstring covers it
+  elif not light and not bare:
+    names = param_names(node.args)
+    if old_doc is not None:
+      doc = reconcile(old_doc, {'Args': names})
+    else:
+      sections = [('Args', [f'  {name}: TODO' for name in names])] if names else []
+      if returns != 'None' and 'property' not in decorators:
+        sections.append(('Returns', ['  TODO']))
+      doc = new_doc(sections)
+  elif old_doc is not None and not bare and not is_template(old_doc):
+    doc = old_doc  # a real docstring on an internal name is kept as is
+
   prefix = 'async def' if isinstance(node, ast.AsyncFunctionDef) else 'def'
-  arrow = f' -> {ast.unparse(returns)}'
-  todo = '' if light or is_complete(node) else f' {MARKER}'
-  header = f'{indent}{prefix} {node.name}{generics(node)}({format_args(args)}){arrow}:'
-  decorators = [decorator_text(d) for d in node.decorator_list]
-  if light or any(text and text.endswith(('.setter', '.deleter')) for text in decorators):
-    return [*lines, f'{header} ...{todo}'] # nothing to describe
-  sections = []
-  if names := param_names(signature_of(node.args)):
-    sections.append(('Args', [f'{name}: TODO' for name in names]))
-  is_none = isinstance(returns, ast.Constant) and returns.value is None
-  if not is_none and 'property' not in decorators:
-    sections.append(('Returns', ['TODO']))
-  return [*lines, header + todo, *doc_lines(indent + '  ', sections)]
+  header = f'{indent}{prefix} {node.name}{generics(node)}({args}) -> {returns}:'
+  todo = f' {MARKER}' if (missing or placeholder) and not light else ''
+  lines = [f'{indent}@{text}' for text in decorators]
+  if doc is None:
+    return [*lines, f'{header} ...{todo}']
+  return [*lines, header + todo, *doc_block(doc, indent + '  ')]
 
-def stub_variable(name, node, indent, used, light = False):
+def infer(member):
+  """('annotation' | 'alias', text) from the assigned value, or None"""
+  node = member.nodes[0]
+  if member.unpacked:
+    return None
+  value = getattr(node, 'value', None)
+  targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+  plain_name = len(targets) == 1 and isinstance(targets[0], ast.Name)
+  match value:
+    case ast.Call(func = ast.Name(id = 'cast') | ast.Attribute(attr = 'cast'), args = [kind, _]):  # cast(T, x) is typed T
+      return 'annotation', ast.unparse(kind)
+    case ast.Call(func = ast.Name(id = cls)) if cls[:1].isupper() and cls not in BUILTINS:  # x = Cls(...) is typed Cls
+      return 'annotation', cls
+    case ast.Name() | ast.Attribute() if plain_name:  # an alias like colour = Color
+      return 'alias', ast.unparse(value)
+    case ast.Constant(value = int() | float() | str() | bytes() as constant):
+      return 'annotation', type(constant).__name__
+  return None
+
+def stub_variable(member, indent, old, old_lines):
+  node = member.nodes[0]
   if isinstance(node, ast.TypeAlias):
-    used.update(names_in(node.value, *node.type_params) - type_param_names(node))
     return [indent + ast.unparse(node)]
   annotation = getattr(node, 'annotation', None)
   if annotation is not None:
-    used.update(names_in(annotation))
-    return [f'{indent}{name}: {ast.unparse(annotation)}']
-  value = getattr(node, 'value', None)
-  match value:
-    case ast.Call(func = ast.Name(id = 'cast') | ast.Attribute(attr = 'cast'), args = [kind, _]): # cast(T, x) is typed T
-      used.update(names_in(kind))
-      return [f'{indent}{name}: {ast.unparse(kind)}']
-    case ast.Call(func = ast.Name(id = cls)) if cls[:1].isupper() and cls not in BUILTINS: # x = Cls(...) is typed Cls
-      used.add(cls)
-      return [f'{indent}{name}: {cls}']
-  target = node.targets[0] if isinstance(node, ast.Assign) else node.target
-  match value if isinstance(target, ast.Name) else None: # not self.x = ...
-    case ast.Name() | ast.Attribute() as value: # an alias like colour = Color
-      used.update(names_in(value))
-      return [f'{indent}{name} = {ast.unparse(value)}']
-    case ast.Constant(value = int() | float() | str() | bytes() as constant):
-      return [f'{indent}{name}: {type(constant).__name__}']
-  used.add('Any')
-  return [f'{indent}{name}: Any {MARKER}'] # always marked, even in light classes, an Any hides gaps from type checkers
+    return [f'{indent}{member.name}: {ast.unparse(annotation)}']
+  if old is not None and old.kind == 'variable':  # a type filled in by hand survives, a TODO Any does not
+    old_node = old.nodes[0]
+    old_annotation = getattr(old_node, 'annotation', None)
+    if old_annotation is not None:
+      text = ast.unparse(old_annotation)
+      if not (text == 'Any' and MARKER in old_lines[old_node.lineno - 1]):
+        return [f'{indent}{member.name}: {text}']
+  match infer(member):
+    case ('annotation', text):
+      return [f'{indent}{member.name}: {text}']
+    case ('alias', text):
+      return [f'{indent}{member.name} = {text}']
+  return [f'{indent}{member.name}: Any {MARKER}']  # always marked, an Any hides gaps from type checkers
 
-def stub_class(node, members, indent, used, light = False):
+def is_enum(node):
+  return any(ast.unparse(base).split('.')[-1] in ENUM_BASES for base in node.bases)
+
+def is_mixin(node):
+  return node.name.endswith(MIXIN_SUFFIX)
+
+def stub_class(member, indent, old, old_lines):
+  node = member.nodes[0]
+  enum = is_enum(node)
+  mixin = is_mixin(node)
+  old = old if old is not None and old.kind == 'class' else None
+  old_members = old.members if old else {}
   bases = [ast.unparse(base) for base in node.bases]
   bases += [f'{k.arg}={ast.unparse(k.value)}' if k.arg else f'**{ast.unparse(k.value)}' for k in node.keywords]
-  enum = is_enum(node)
-  inner = names_in(*node.bases, *(k.value for k in node.keywords), *node.type_params)
+
   blocks = []
-  ordered = sorted(members.items(), key = lambda item: item[1].kind != 'variable') # attributes first, stable within each group
-  for name, member in ordered:
-    if enum and member.kind == 'variable':
+  ordered = sorted(member.members.items(), key = lambda item: item[1].kind != 'variable')  # attributes first
+  for name, inner in ordered:
+    if enum and inner.kind == 'variable':
       blocks.append([f'{indent}  {name} = ...'])
     else:
-      blocks.append(generate(name, member, indent + '  ', inner))
-  used.update(inner - type_param_names(node))
-  header = f'{indent}class {node.name}{generics(node)}' + (f"({', '.join(bases)})" if bases else '') + ':'
-  if light: # an internal class has no docstring
-    return [header, *join_blocks(blocks, False)] if blocks else [header + ' ...']
-  attributes = [] if enum else attribute_names(members)
-  sections = [('Attributes', [f'{name}: TODO' for name in attributes])] if attributes else []
-  return [header, *doc_lines(indent + '  ', sections), *join_blocks(blocks, True)]
+      blocks.append(generate(inner, indent + '  ', old_members.get(name), old_lines, in_mixin = mixin))
 
-def generate(name, member, indent, used):
+  old_doc = old_docstring(old.nodes[0]) if old else None
+  attributes = [] if enum else [name for name, inner in member.members.items() if inner.kind == 'variable']
+  if member.light:
+    doc = old_doc if old_doc is not None and not is_template(old_doc) else None
+  elif old_doc is not None:
+    doc = reconcile(old_doc, {'Attributes': attributes})
+  else:
+    doc = new_doc([('Attributes', [f'  {name}: TODO' for name in attributes])] if attributes else [])
+
+  header = f'{indent}class {node.name}{generics(node)}' + (f"({', '.join(bases)})" if bases else '') + ':'
+  if doc is None:
+    return [header, *join_blocks(blocks, False)] if blocks else [header + ' ...']
+  return [header, *doc_block(doc, indent + '  '), *join_blocks(blocks, True)]
+
+def generate(member, indent, old, old_lines, in_mixin = False):
   match member.kind:
     case 'function':
-      return stub_function(member.node, indent, used, member.light)
+      olds = old.nodes if old is not None and old.kind == 'function' else []
+      no_doc = in_mixin and member.name == '__init__'  # mixins keep the class docstring, but not one on __init__
+      lines = []
+      for index, node in enumerate(member.nodes):
+        lines += stub_function(node, indent, member.light, olds[index] if index < len(olds) else None, old_lines, no_doc)
+      return lines
     case 'class':
-      return stub_class(member.node, member.members, indent, used, member.light)
+      return stub_class(member, indent, old, old_lines)
     case 'import':
-      return [indent + line for line in member.import_lines]
-  return stub_variable(name, member.node, indent, used, member.light)
-
-# ----- applying actions to a stub
-
-def is_placeholder(statement):
-  return isinstance(statement, ast.Pass) or (isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Constant) and statement.value.value is ...)
-
-def is_inline_placeholder(node, lines): # class A: ...
-  first = node.body[0]
-  return len(node.body) == 1 and is_placeholder(first) and lines[first.lineno - 1][:first.col_offset].rstrip().endswith(':')
-
-def class_indent(node, lines):
-  return ' ' * (node.col_offset + 2 if is_inline_placeholder(node, lines) else node.body[0].col_offset)
-
-def import_position(tree): # after the docstring and __future__ imports
-  position = 0
-  for index, node in enumerate(tree.body):
-    if index == 0 and isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
-      position = node.end_lineno
-    elif isinstance(node, ast.ImportFrom) and node.module == '__future__':
-      position = node.end_lineno
-    else:
-      break
-  return position
+      return [indent + member.imports[0]]
+  return stub_variable(member, indent, old, old_lines)
 
 def is_definition(block):
   return block[0].lstrip().startswith(('class ', 'def ', 'async def ', 'type ', '@'))
@@ -542,229 +615,156 @@ def join_blocks(blocks, after_content):
     previous = block
   return out
 
-def apply_actions(lines, tree, source_tree, source, actions):
-  """returns (new lines, names that still need an import by hand)"""
-  while lines and not lines[-1].strip():
-    lines.pop()
-  ops = [] # (position, depth, kind, payload), applied from the bottom up so earlier line numbers stay valid
-  used = set()
-  module_blocks = []
-  class_blocks = {} # id(stub class) -> (stub class, indent, new blocks)
-  for action in actions:
-    if action.kind == 'remove':
-      node = action.member.node
-      start = min([d.lineno for d in getattr(node, 'decorator_list', [])] + [node.lineno])
-      ops.append((start, 0, 'delete', (start, node.end_lineno)))
-    elif action.container is None:
-      module_blocks.append(generate(action.name, action.member, '', used))
-    else:
-      container = action.container
-      indent = class_indent(container.node, lines)
-      entry = class_blocks.setdefault(id(container), (container, indent, []))
-      entry[2].append(generate(action.name, action.member, indent, used))
-
-  # depth breaks ties at the same position: outer blocks go in first so inner blocks end up above them
-  if module_blocks:
-    new = join_blocks(module_blocks, bool(lines))
-    ops.append((len(lines) + 0.5, 0, 'insert', (len(lines), new)))
-  for container, indent, blocks in class_blocks.values():
-    node = container.node
-    first = node.body[0]
-    depth = len(indent)
-    only_placeholder = len(node.body) == 1 and is_placeholder(first)
-    new = join_blocks(blocks, not only_placeholder)
-    if only_placeholder:
-      if is_inline_placeholder(node, lines):
-        header = lines[first.lineno - 1][:first.col_offset].rstrip()
-        ops.append((first.lineno, 0, 'replace', (first.lineno, header)))
-        ops.append((first.lineno + 0.5, depth, 'insert', (first.lineno, new)))
-      else:
-        ops.append((first.lineno, 0, 'delete', (first.lineno, first.end_lineno)))
-        ops.append((first.lineno - 0.5, depth, 'insert', (first.lineno - 1, new)))
-    else:
-      ops.append((node.end_lineno + 0.5, depth, 'insert', (node.end_lineno, new)))
-
-  # imports the placeholders need
-  available = source_import_map(source_tree)
-  import_lines, unresolved = [], []
-  for name in sorted(used - BUILTINS - set(source) - bound_names(tree)):
-    if name in available:
-      import_lines.append(available[name])
-    elif name in FALLBACK_IMPORTS:
-      import_lines.append(FALLBACK_IMPORTS[name])
-    else:
-      unresolved.append(name)
-  if import_lines:
-    position = import_position(tree)
-    follow = lines[position] if position < len(lines) else None
-    new = import_lines if follow is not None and not follow.strip() else [*import_lines, '']
-    ops.append((position + 0.5, 10 ** 6, 'insert', (position, new)))
-
-  for _position, _depth, kind, payload in sorted(ops, key = lambda op: (op[0], -op[1]), reverse = True):
-    match kind:
-      case 'insert':
-        after, new = payload
-        lines[after:after] = new
-      case 'delete':
-        start, end = payload
-        del lines[start - 1:end]
-      case 'replace':
-        number, text = payload
-        lines[number - 1] = text
-  return lines, unresolved
-
-# ----- comparing
-
-def documented(node, section):
-  """names listed under a Google style section (Args, Attributes) of the docstring, None without a docstring"""
-  doc = ast.get_docstring(node)
-  if doc is None:
-    return None
-  names, inside, level = [], False, 0
-  for line in doc.splitlines():
-    if line and not line[0].isspace():
-      inside, level = line.rstrip() == f'{section}:', 0
-    elif inside and (match := re.match(r'( +)(\*{0,2}\w+)[^:]*:', line)):
-      level = level or len(match[1]) # the first entry sets the indent, deeper lines are continuations
-      if len(match[1]) == level:
-        names.append(match[2])
+def bound_names(tree):
+  names = set()
+  for node in tree.body:
+    match node:
+      case ast.ClassDef() | ast.FunctionDef() | ast.AsyncFunctionDef():
+        names.add(node.name)
+      case ast.TypeAlias(name = ast.Name(id = name)) | ast.AnnAssign(target = ast.Name(id = name)):
+        names.add(name)
+      case ast.Assign():
+        names.update(name for target in node.targets for name in target_names(target))
+      case ast.Import() | ast.ImportFrom():
+        names.update(alias.asname or alias.name.split('.')[0] for alias in node.names)
+  for node in ast.walk(tree):
+    names.update(param.name for param in getattr(node, 'type_params', None) or ())
   return names
 
-def compare_docs(qualified, section, expected, node, issues):
-  found = documented(node, section)
-  if found is None:
-    return
-  missing = [name for name in expected if name not in found]
-  unknown = [name for name in found if name not in expected]
-  if missing or unknown:
-    parts = [f"missing {', '.join(missing)}" if missing else '', f"unknown {', '.join(unknown)}" if unknown else '']
-    issues.append(Issue(node.lineno, f"{qualified} docstring {section}: {'; '.join(part for part in parts if part)}", on_stub = True))
+def render(members, source_tree, old_text):
+  """returns (stub text, names that need an import by hand)"""
+  old_tree, old_lines = None, []
+  if old_text is not None:
+    try:
+      old_tree, old_lines = ast.parse(old_text), old_text.splitlines()
+    except SyntaxError:
+      pass  # an unreadable old stub is just overwritten
+  old_members = collect(old_tree.body, False) if old_tree else {}
 
-def compare(source, stub, scope, container, issues):
-  for name, member in source.items():
-    qualified = f'{scope}{name}'
-    other = stub.get(name)
-    if other is None:
-      issues.append(Issue(member.line, f'{qualified} ({member.kind}) is missing from the stub', action = Action('add', name, member, container)))
-    elif 'import' in (member.kind, other.kind):
-      continue
-    elif (member.kind == 'class') != (other.kind == 'class'):
-      issues.append(Issue(other.line, f'{qualified} is a {member.kind} in the source but a {other.kind} in the stub', on_stub = True))
-    elif member.kind == 'class':
-      compare(member.members, other.members, f'{qualified}.', other, issues)
-      if not is_enum(member.node) and not member.light:
-        compare_docs(qualified, 'Attributes', attribute_names(member.members), other.node, issues)
-    elif member.kind == other.kind == 'function':
-      if member.is_async != other.is_async:
-        issues.append(Issue(other.line, f'{qualified} async-ness differs from the source', on_stub = True))
-      if member.count == other.count == 1 and member.signature != other.signature:
-        text = f'{qualified} signature differs: source {format_signature(member.signature)} vs stub {format_signature(other.signature)}'
-        issues.append(Issue(other.line, text, on_stub = True))
-      if member.count == other.count == 1 and not member.light:
-        compare_docs(qualified, 'Args', param_names(member.signature), other.node, issues)
-  for name, other in stub.items():
-    if name not in source:
-      by_hand = other.kind == 'import' and len(other.node.names) > 1 # a grouped import has other names in it
-      action = None if by_hand else Action('remove', name, other, container)
-      issues.append(Issue(other.line, f'{scope}{name} ({other.kind}) is in the stub but not in the source', on_stub = True, action = action))
+  blocks, extras = [], []
+  for name, member in members.items():
+    if member.kind == 'import':
+      blocks.append([member.imports[0]])
+      if member.imports[1]:
+        extras.append(member.imports[1])
+    else:
+      blocks.append(generate(member, '', old_members.get(name), old_lines))
+  body = join_blocks(blocks, False)
+  if extras:
+    body += ['', *extras]
+
+  # imports the body needs: the source's own import wins, then one you added to the old stub, then a fallback
+  tree = ast.parse('\n'.join(body))
+  used = {node.id for node in ast.walk(tree) if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load)}
+  from_source = import_map(source_tree)
+  from_old = import_map(old_tree) if old_tree else {}
+  lines, unresolved = set(), []
+  for name in sorted(used - bound_names(tree) - BUILTINS):
+    line = from_source.get(name) or from_old.get(name) or FALLBACK_IMPORTS.get(name)
+    if line:
+      lines.add(line)
+    else:
+      unresolved.append(name)
+  imports = sorted(lines, key = lambda line: (line.startswith('from .'), line.startswith('from '), len(line), line))
+  out = [*imports, '', *body] if imports and body else [*imports, *body]
+  return '\n'.join(out) + '\n', unresolved
 
 # ----- main
 
 def main():
-  parser = argparse.ArgumentParser(description = 'Keep the discord-stubs/ folder in sync with what the package exports.')
-  parser.add_argument('--check', action = 'store_true', help = 'change nothing, exit 1 if the stubs are out of date or unfinished')
+  parser = argparse.ArgumentParser(description = 'Keep the discord-stubs/ folder in sync with the discord/ package.')
+  parser.add_argument('--check', action = 'store_true', help = 'change nothing, exit 1 if stubs are out of date or have TODOs left')
   parser.add_argument('--diff', action = 'store_true', help = 'change nothing, show what a normal run would change')
   options = parser.parse_args()
 
-  files = sorted(path for path in PACKAGE.rglob('*.py') if not any(part == '__pycache__' or part.startswith('.') for part in path.parts))
+  def rel(path):
+    return path.relative_to(ROOT).as_posix()
+
+  files = sorted(
+    path for path in PACKAGE.rglob('*.py')
+    if not any(part == '__pycache__' or part.startswith('.') for part in path.relative_to(PACKAGE).parts)
+  )
   if not files:
-    print(f'no .py files found in {PACKAGE}, run this from the repo root')
+    print(f'no .py files found in {PACKAGE}')
     return 1
-  modules, parsed = index_package(files)
+
+  modules, trees, failed = {}, {}, False
+  for path in files:
+    try:
+      trees[path] = parse_file(path)
+    except SyntaxError as error:
+      print(f'{rel(path)}:{error.lineno}: could not parse source: {error.msg}')
+      failed = True
+      continue
+    modules[module_name(path)] = index_module(module_name(path), path.name == '__init__.py', trees[path])
   if '' not in modules:
-    print(f'could not read {PACKAGE}/__init__.py, nothing to export from')
+    print(f'could not read {rel(PACKAGE / "__init__.py")}, nothing to export from')
     return 1
   exports = exported(modules)
   shared = imported_anywhere(modules)
 
-  problems = [] # (path, line, text)
+  wanted = {}  # stub path -> new text
   notes = []
-  failed = False
-  for path in files:
-    stub_path = STUBS_DIR / path.relative_to(PACKAGE).with_suffix('.pyi')
-    imports = path.name == '__init__.py'
-    source_tree = parsed[path]
-    if isinstance(source_tree, SyntaxError):
-      problems.append((path, source_tree.lineno or 1, f'could not parse source: {source_tree.msg}'))
-      continue
-    module = module_name(path)
-    source = collect(source_tree.body, imports, {})
-    if module: # the root __init__.py defines what is exported, everything else is internal
-      for name, member in list(source.items()):
-        result = resolve(modules, module, name)
-        if member.kind == 'import' or result in exports:
+  for path in trees:
+    name = module_name(path)
+    members = collect(trees[path].body, path.name == '__init__.py')
+    if name:  # the root __init__.py defines what is exported, everything else is internal unless the root exports it
+      for member_name, member in list(members.items()):
+        if member.kind == 'import' or (name, member_name) in exports or member_name in DOCUMENT_ALSO:
           continue
-        is_alias = isinstance(member.node, ast.TypeAlias) # signatures can use these, so they stay
-        if member.kind == 'variable' and result not in shared and not is_alias:
-          del source[name] # an internal constant nothing else imports, never stubbed
+        is_alias = isinstance(member.nodes[0], ast.TypeAlias)  # signatures can use these, so they stay
+        if member.kind == 'variable' and (name, member_name) not in shared and not is_alias:
+          del members[member_name]  # an internal constant nothing else imports, never stubbed
         else:
           set_light(member)
-    exists = stub_path.exists()
-    if not exists and not source:
+    if not members:
       continue
-    if not exists and options.check:
-      problems.append((path, 1, f'no stub file ({len(list(flatten(source)))} public names)'))
-      continue
+    stub_path = STUBS_DIR / path.relative_to(PACKAGE).with_suffix('.pyi')
+    old_text = stub_path.read_text(encoding = 'utf-8') if stub_path.exists() else None
+    text, unresolved = render(members, trees[path], old_text)
+    wanted[stub_path] = text
+    notes += [f'{rel(stub_path)}: needs an import for {n!r} but the source has none, add one by hand' for n in unresolved]
 
-    lines, stub_tree = [], ast.Module(body = [], type_ignores = [])
-    if exists:
-      try:
-        lines, stub_tree = parse(stub_path)
-      except SyntaxError as error:
-        problems.append((stub_path, error.lineno or 1, f'could not parse stub: {error.msg}'))
-        continue
-    found = []
-    compare(source, collect(stub_tree.body, imports, {}), '', None, found)
+  changes = []  # (stub path, old text or None, new text or None for delete)
+  for stub_path, text in wanted.items():
+    old_text = stub_path.read_text(encoding = 'utf-8') if stub_path.exists() else None
+    if old_text != text:
+      changes.append((stub_path, old_text, text))
+  for stub_path in sorted(STUBS_DIR.rglob('*.pyi')):
+    if stub_path not in wanted:  # its source module is gone
+      changes.append((stub_path, stub_path.read_text(encoding = 'utf-8'), None))
 
-    actions = [issue.action for issue in found if issue.action]
-    if actions and not options.check:
-      try:
-        new_lines, unresolved = apply_actions(list(lines), stub_tree, source_tree, source, actions)
-        ast.parse('\n'.join(new_lines)) # never write something that doesn't parse
-      except (SyntaxError, IndexError) as error:
-        notes.append(f'{stub_path.as_posix()}: not updated, the result would not parse ({error})')
-        failed = True
-      else:
-        if options.diff:
-          diff = difflib.unified_diff(lines, new_lines, fromfile = f'a/{stub_path.as_posix()}', tofile = f'b/{stub_path.as_posix()}', lineterm = '')
-          print('\n'.join(diff))
-        else:
-          stub_path.parent.mkdir(parents = True, exist_ok = True)
-          stub_path.write_text('\n'.join(new_lines) + '\n', encoding = 'utf-8', newline = '\n')
-          added = sum(a.kind == 'add' for a in actions)
-          notes.append(f"{stub_path.as_posix()}: {'updated' if exists else 'created'}, added {added}" + (f', removed {len(actions) - added}' if added < len(actions) else ''))
-          exists = True
-        notes.extend(f'{stub_path.as_posix()}: placeholders use {name!r} but the source has no import for it, add one by hand' for name in unresolved)
-        done = {id(action) for action in actions}
-        found = [issue for issue in found if id(issue.action) not in done]
-    problems.extend((stub_path if issue.on_stub else path, issue.line, issue.text) for issue in found)
+  for stub_path, old_text, text in changes:
+    verb = 'delete' if text is None else 'create' if old_text is None else 'update'
+    if options.diff:
+      diff = difflib.unified_diff(
+        (old_text or '').splitlines(), (text or '').splitlines(),
+        fromfile = f'a/{rel(stub_path)}', tofile = f'b/{rel(stub_path)}', lineterm = ''
+      )
+      print('\n'.join(diff) or f'{verb} {rel(stub_path)}')
+    elif options.check:
+      print(f'{rel(stub_path)}: out of date (would {verb})')
+    elif text is None:
+      stub_path.unlink()
+      print(f'{rel(stub_path)}: deleted, its source module no longer exists')
+    else:
+      stub_path.parent.mkdir(parents = True, exist_ok = True)
+      stub_path.write_text(text, encoding = 'utf-8', newline = '\n')
+      print(f'{rel(stub_path)}: {verb}d')
 
-    if exists and not options.diff:
-      marked = [number for number, line in enumerate(stub_path.read_text(encoding = 'utf-8').splitlines(), 1) if TODO.search(line)]
-      if marked:
-        problems.append((stub_path, marked[0], f'{len(marked)} placeholder(s) left to fill in (search for "TODO")'))
-
-  for note in notes:
-    print(note)
+  unfinished = 0
   if not options.diff:
-    for path, line, text in sorted(problems, key = lambda problem: (problem[0].as_posix(), problem[1])):
-      print(f'{path.as_posix()}:{line}: {text}')
-    if not (problems or notes):
+    for stub_path, text in wanted.items():
+      marked = [number for number, line in enumerate(text.splitlines(), 1) if TODO.search(line)]
+      if marked:
+        unfinished += 1
+        print(f'{rel(stub_path)}:{marked[0]}: {len(marked)} placeholder(s) left to fill in (search for "TODO")')
+    for note in notes:
+      print(note)
+    if not (changes or unfinished or notes or failed):
       print('all stubs are up to date')
-    elif problems:
-      print(f'\n{len(problems)} thing(s) left to look at')
   if options.check:
-    return int(bool(problems))
+    return int(bool(changes or unfinished or notes or failed))
   return int(failed)
 
 if __name__ == '__main__':

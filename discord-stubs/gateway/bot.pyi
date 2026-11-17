@@ -119,7 +119,6 @@ class Bot(AppBase):
       TODO
     """
 
-
   def handle_gateway_command(self, message) -> Any: # TODO
     """
     TODO

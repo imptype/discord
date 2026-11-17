@@ -1,6 +1,7 @@
 import asyncio
 from typing import Any
 from ..abc import Handler
+from ..abc import RegistrarMixin
 
 class SignalTimeoutError(TimeoutError): ...
 
@@ -21,7 +22,7 @@ class SignalHandler(Handler):
   priority: Any # TODO
   timeout: Any # TODO
   max_runs: Any # TODO
-  runs: Any # TODO
+  runs: int
   app: Any # TODO
 
   def __init__(self, callback = ..., name = ..., priority = ..., timeout = ..., max_runs = ..., once = ...) -> None: # TODO
@@ -140,7 +141,6 @@ class SignalModule:
 
   def __init__(self, app) -> None: ...
 
-
   async def dispatch(self, name, args, *, each, wait) -> Any: ...
 
   async def fire(self, name, /, *args) -> Any: ...
@@ -175,7 +175,7 @@ def signal(callback = ..., *, name = ..., priority = ..., timeout = ..., max_run
     TODO
   """
 
-class SignalMixin:
+class SignalMixin(RegistrarMixin):
   """
   TODO
 
@@ -189,13 +189,7 @@ class SignalMixin:
   signal_waiters: Any # TODO
   signal: SignalModule
 
-  def __init__(self, registrars) -> None: # TODO
-    """
-    TODO
-
-    Args:
-      registrars: TODO
-    """
+  def __init__(self, **kwargs) -> None: ... # TODO
 
   def add_signals(self, *signals) -> Any: # TODO
     """

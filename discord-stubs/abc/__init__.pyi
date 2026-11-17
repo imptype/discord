@@ -1,6 +1,7 @@
 from .api import API as API
 from .api import Route as Route
 from .mixin import LoopMixin as LoopMixin
+from .mixin import RegistrarMixin as RegistrarMixin
 from .model import Snowflake as Snowflake
 from .model import PartialModel as PartialModel
 from .model import snowflake_time as snowflake_time
@@ -9,4 +10,3 @@ from .handler import BaseHandler as BaseHandler
 from .component import clean as clean
 from .component import Component as Component
 from .component import Interactable as Interactable
-from .registrar import RegistrarMixin as RegistrarMixin

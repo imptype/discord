@@ -1,4 +1,6 @@
 from typing import Any
+from ..abc import LoopMixin
+from ..abc import RegistrarMixin
 
 DEFAULT_TIMEOUT: int
 
@@ -10,7 +12,7 @@ def resolve_timeout(component, view = ...) -> Any: ...
 
 def validate_timeout(component, view = ...) -> Any: ...
 
-class ComponentMixin:
+class ComponentMixin(RegistrarMixin, LoopMixin):
   """
   TODO
 
@@ -19,7 +21,6 @@ class ComponentMixin:
     component_timers: TODO
     modal_cache: TODO
     modal_timers: TODO
-    loop: TODO
   """
 
   component_cache: Any # TODO
@@ -27,14 +28,7 @@ class ComponentMixin:
   modal_cache: Any # TODO
   modal_timers: Any # TODO
 
-  def __init__(self, registrars, loop) -> None: # TODO
-    """
-    TODO
-
-    Args:
-      registrars: TODO
-      loop: TODO
-    """
+  def __init__(self, **kwargs) -> None: ... # TODO
 
   def add_views(self, *views) -> Any: # TODO
     """

@@ -11,15 +11,16 @@ class RegistrarMixin:
 
   registrars: Any # TODO
 
-  def __init__(self, **kwargs) -> None: # TODO
-    """
-    TODO
-
-    Args:
-      **kwargs: TODO
-    """
+  def __init__(self, **kwargs) -> None: ... # TODO
 
 class LoopMixin:
+  """
+  TODO
+
+  Attributes:
+    loop: TODO
+  """
+
   loop: asyncio.AbstractEventLoop
 
-  def __init__(self, **kwargs) -> None: ...
+  def __init__(self, **kwargs) -> None: ... # TODO

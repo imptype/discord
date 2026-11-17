@@ -29,7 +29,7 @@ class InteractionResponse:
   interaction: Any # TODO
   app: Any # TODO
   body: Any # TODO
-  responded: Any # TODO
+  responded: bool
 
   def __init__(self, interaction) -> None: # TODO
     """

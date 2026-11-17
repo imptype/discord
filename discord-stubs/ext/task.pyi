@@ -1,5 +1,6 @@
 from typing import Any
 from ..abc import Handler
+from ..abc import RegistrarMixin
 
 class Task(Handler):
   """
@@ -66,16 +67,60 @@ def task(callback = ..., *, name = ..., seconds, autostart = ...) -> Any: # TODO
     TODO
   """
 
-class TaskMixin:
+class TaskMixin(RegistrarMixin):
+  """
+  TODO
+
+  Attributes:
+    task_handlers: TODO
+    tasks_started: TODO
+  """
+
   task_handlers: Any # TODO
-  tasks_started: Any # TODO
+  tasks_started: bool
 
-  def __init__(self, registrars) -> None: ...
+  def __init__(self, **kwargs) -> None: ... # TODO
 
-  def task(self, callback = ..., *, name = ..., seconds, autostart = ...) -> Any: ...
+  def task(self, callback = ..., *, name = ..., seconds, autostart = ...) -> Any: # TODO
+    """
+    TODO
 
-  def add_tasks(self, *tasks) -> Any: ...
+    Args:
+      callback: TODO
+      name: TODO
+      seconds: TODO
+      autostart: TODO
 
-  def remove_tasks(self, *tasks) -> Any: ...
+    Returns:
+      TODO
+    """
 
-  async def task_lifespan(self) -> Any: ...
+  def add_tasks(self, *tasks) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      *tasks: TODO
+
+    Returns:
+      TODO
+    """
+
+  def remove_tasks(self, *tasks) -> Any: # TODO
+    """
+    TODO
+
+    Args:
+      *tasks: TODO
+
+    Returns:
+      TODO
+    """
+
+  async def task_lifespan(self) -> Any:
+    """
+    TODO
+
+    Returns:
+      TODO
+    """
