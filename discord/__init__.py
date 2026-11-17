@@ -5,8 +5,6 @@ def lazy_filter(importing_module, imported_module, fromlist):
 sys.set_lazy_imports_filter(lazy_filter)
 sys.set_lazy_imports('all')
 
-MISSING = sentinel('MISSING')
-
 from .ui import (
   ActionRow, BaseSelect, BaseView, Button, ButtonStyle, ChannelSelect, ChannelType,
   Checkbox, CheckboxGroup, Container, ContentComponent, ComponentType, Embed,
@@ -16,7 +14,7 @@ from .ui import (
   TextDisplay, TextInput, TextInputStyle, Thumbnail, UserSelect, View, button,
   channel_select, mentionable_select, role_select, string_select, user_select
 )
-from .abc import Component, Interactable, PartialModel, Snowflake, snowflake_time
+from .abc import Component, Interactable, PartialModel, Snowflake, snowflake_time, MISSING
 from .ext import (
   Cog, Lifespan, SignalHandler, SignalWaiter, Task, color, colour, lifespan, signal, task,
   schedule

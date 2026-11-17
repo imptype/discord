@@ -1,6 +1,6 @@
 import uuid
 from typing import Any
-from .. import MISSING
+from .types import MISSING
 from .handler import Handler
 
 def clean(data):

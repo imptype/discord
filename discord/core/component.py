@@ -1,7 +1,6 @@
 import logging
-from .. import MISSING
 from ..ui import BaseSelect, BaseView
-from ..abc import Interactable, LoopMixin, RegistrarMixin
+from ..abc import Interactable, LoopMixin, RegistrarMixin, MISSING
 from ..ext import Cog
 from .modal import Modal
 from .interaction import ComponentInteraction, ModalInteraction, SelectInteraction

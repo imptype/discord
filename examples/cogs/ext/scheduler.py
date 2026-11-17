@@ -9,7 +9,7 @@ class SchedulerCog(discord.Cog):
 
     async def callback():
       print('spawn coro') # runs before 'done'
-    
+
     print('start')
     self.bot.spawn(callback())
     print('done')
@@ -19,7 +19,7 @@ class SchedulerCog(discord.Cog):
 
     async def callback():
       print('defer coro') # runs after 'done'
-    
+
     print('start')
     self.bot.defer(callback())
     print('done')
@@ -29,7 +29,7 @@ class SchedulerCog(discord.Cog):
 
     async def callback():
       print('delay coro') # runs 5 seconds after 'done'
-    
+
     print('start')
     self.bot.delay(5, callback())
     print('done')

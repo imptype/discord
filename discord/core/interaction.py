@@ -1,6 +1,5 @@
 from typing import Any
-from .. import MISSING
-from ..abc import Snowflake
+from ..abc import Snowflake, MISSING
 from ..models import edit_params
 from .enums import OptionType
 from .modal import ModalResult

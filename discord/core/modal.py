@@ -1,8 +1,7 @@
 import uuid
 from typing import Any
-from .. import MISSING
 from ..ui import ComponentType, Label, TextDisplay
-from ..abc import Handler
+from ..abc import Handler, MISSING
 
 class ModalResult:
   def __init__(self, data):

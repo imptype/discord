@@ -1,4 +1,4 @@
-from .. import MISSING
+from ..abc import MISSING
 from ..models import MessageFlags, Payload, edit_params, send_params, RESPONSE_MESSAGE_FLAGS
 from .enums import InteractionType, ResponseType
 

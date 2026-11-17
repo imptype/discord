@@ -5,6 +5,7 @@ from .mixin import RegistrarMixin as RegistrarMixin
 from .model import Snowflake as Snowflake
 from .model import PartialModel as PartialModel
 from .model import snowflake_time as snowflake_time
+from .types import MISSING as MISSING
 from .handler import Handler as Handler
 from .handler import BaseHandler as BaseHandler
 from .component import clean as clean

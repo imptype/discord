@@ -1,6 +1,5 @@
 from datetime import datetime
-from .. import MISSING
-from ..abc import PartialModel
+from ..abc import PartialModel, MISSING
 from .user import User
 from .enums import MessageFlags
 from .guild import PartialGuild

@@ -1,7 +1,3 @@
-from typing import Any
-
-MISSING: Any # TODO
-
 from .ui import File as File
 from .ui import View as View
 from .ui import Embed as Embed
@@ -45,6 +41,7 @@ from .ui import MediaGalleryItem as MediaGalleryItem
 from .ui import SeparatorSpacing as SeparatorSpacing
 from .ui import MentionableSelect as MentionableSelect
 from .ui import mentionable_select as mentionable_select
+from .abc import MISSING as MISSING
 from .abc import Component as Component
 from .abc import Snowflake as Snowflake
 from .abc import Interactable as Interactable

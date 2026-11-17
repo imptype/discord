@@ -1,5 +1,6 @@
 from .api import Route, API
 from .mixin import LoopMixin, RegistrarMixin
 from .model import PartialModel, Snowflake, snowflake_time
+from .types import MISSING
 from .handler import BaseHandler, Handler
 from .component import Component, Interactable, clean

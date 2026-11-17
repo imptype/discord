@@ -1,5 +1,4 @@
-from .. import MISSING
-from ..abc import Interactable, clean
+from ..abc import Interactable, clean, MISSING
 from .enums import ComponentType
 
 def format_defaults(kind, ids):

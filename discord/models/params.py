@@ -1,7 +1,7 @@
 import uuid
 import orjson
-from .. import MISSING
 from ..ui import LayoutView
+from ..abc import MISSING
 from .enums import MessageFlags, EDIT_MESSAGE_FLAGS, SEND_MESSAGE_FLAGS
 
 def check_flags(flags, allowed, action):
