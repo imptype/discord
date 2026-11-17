@@ -24,7 +24,8 @@ def schedule(tasks, coro, eager_start = False):
   return task
 
 class SchedulerMixin:
-  def __init__(self):
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs)
     self.tasks = set() # holds running asyncio tasks
 
   def spawn(self, coro):

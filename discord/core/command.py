@@ -3,7 +3,7 @@ import types
 import inspect
 from typing import Any, cast
 from functools import cached_property
-from ..abc import Handler, clean
+from ..abc import Handler, RegistrarMixin, clean
 from ..models import parse_arguments
 from .enums import CommandType, OptionType
 from .interaction import AutocompleteInteraction, MessageInteraction, SlashInteraction, UserInteraction
@@ -173,9 +173,10 @@ class CommandProxy:
       return result
     return wrapper
 
-class CommandMixin:
-  def __init__(self, registrars):
-    registrars[BaseCommand] = (self.add_commands, self.remove_commands)
+class CommandMixin(RegistrarMixin):
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs)
+    self.registrars[BaseCommand] = (self.add_commands, self.remove_commands)
     self.registry = {} # {(kind, name): InteractionCommand}
     self.set_proxy()
 

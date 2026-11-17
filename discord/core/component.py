@@ -1,7 +1,7 @@
 import logging
 from .. import MISSING
 from ..ui import BaseSelect, BaseView
-from ..abc import Interactable
+from ..abc import Interactable, LoopMixin, RegistrarMixin
 from ..ext import Cog
 from .modal import Modal
 from .interaction import ComponentInteraction, ModalInteraction, SelectInteraction
@@ -51,9 +51,10 @@ def validate_timeout(component, view = None):
     raise ValueError(f'{describe(component)} must set a custom_id to be persistent')
   return timeout
 
-class ComponentMixin:
-  def __init__(self, registrars, loop):
-    registrars.update({
+class ComponentMixin(RegistrarMixin, LoopMixin):
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs)
+    self.registrars.update({
       Modal: (self.add_modals, self.remove_modals),
       BaseView: (self.add_views, self.remove_views),
       Interactable: (self.add_components, self.remove_components)
@@ -62,7 +63,6 @@ class ComponentMixin:
     self.component_timers = {}
     self.modal_cache = {}
     self.modal_timers = {}
-    self.loop = loop
 
   def add_views(self, *views): # also used by send() and edit()
     for view in views:

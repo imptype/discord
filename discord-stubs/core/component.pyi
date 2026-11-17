@@ -26,7 +26,6 @@ class ComponentMixin:
   component_timers: Any # TODO
   modal_cache: Any # TODO
   modal_timers: Any # TODO
-  loop: Any # TODO
 
   def __init__(self, registrars, loop) -> None: # TODO
     """

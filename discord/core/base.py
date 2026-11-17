@@ -6,14 +6,7 @@ from .component import ComponentMixin
 
 class AppBase(CommandMixin, LifespanMixin, ComponentMixin, CogMixin, SignalMixin, TaskMixin, SchedulerMixin):
   def __init__(self, token = None, application_id = None, reload = False):
-    registrars = {} # {object: (add, remove)}, used by cog
-    CommandMixin.__init__(self, registrars)
-    LifespanMixin.__init__(self, registrars, HTTPClient(token, application_id))
-    ComponentMixin.__init__(self, registrars, self.loop)
-    CogMixin.__init__(self, registrars, reload)
-    SignalMixin.__init__(self, registrars)
-    TaskMixin.__init__(self, registrars)
-    SchedulerMixin.__init__(self)
+    super().__init__(http = HTTPClient(token, application_id), reload = reload)
     self.lifespan_handlers[Lifespan(self.task_lifespan)] = None
     self.model = ModelFactory(self)
 

@@ -4,7 +4,7 @@ import inspect
 import logging
 import importlib
 from pathlib import Path
-from ..abc import BaseHandler
+from ..abc import BaseHandler, RegistrarMixin
 
 log = logging.getLogger(__name__)
 
@@ -20,9 +20,9 @@ class Cog:
   async def cog_load(self): ...
   async def cog_unload(self): ...
 
-class CogMixin:
-  def __init__(self, registrars, reload = False):
-    self.registrars = registrars
+class CogMixin(RegistrarMixin):
+  def __init__(self, *, reload = False, **kwargs):
+    super().__init__(**kwargs)
     self.reload = reload
     self.cogs = {} # loaded cogs {Cog: instance}
     self.cog_handlers = {} # {Cog: [copy.copy of handlers]}

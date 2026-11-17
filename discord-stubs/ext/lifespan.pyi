@@ -45,7 +45,6 @@ class LifespanMixin:
   http: HTTPClient
   stack: AsyncExitStack
   lifespan_handlers: Any # TODO
-  loop: asyncio.AbstractEventLoop
   started_at: Any # TODO
 
   def __init__(self, registrars, http) -> None: # TODO

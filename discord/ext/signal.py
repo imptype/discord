@@ -35,7 +35,7 @@ Terms:
 
 import asyncio
 import logging
-from ..abc import Handler
+from ..abc import Handler, RegistrarMixin
 
 DEFAULT_WAITER_TIMEOUT = 180
 DEFAULT_HANDLER_TIMEOUT = None
@@ -288,9 +288,10 @@ def signal(callback = None, *, name = None, priority = None, timeout = DEFAULT_H
     return SignalHandler(callback, name, priority, timeout, max_runs, once)
   return wrap(callback) if callback else wrap
 
-class SignalMixin:
-  def __init__(self, registrars):
-    registrars[SignalHandler] = (self.add_signals, self.remove_signals)
+class SignalMixin(RegistrarMixin):
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs)
+    self.registrars[SignalHandler] = (self.add_signals, self.remove_signals)
     self.signal_handlers = {} # {name: [SignalHandler]}
     self.signal_waiters = {} # {name: [SignalWaiter]}
     self.signal = SignalModule(self)

@@ -50,7 +50,6 @@ class CogMixin:
     reload_task: TODO
   """
 
-  registrars: Any # TODO
   reload: Any # TODO
   cogs: Any # TODO
   cog_handlers: Any # TODO

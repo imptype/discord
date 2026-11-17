@@ -22,7 +22,7 @@ Task loops will continue errors (waits again).
 
 import asyncio
 import logging
-from ..abc import Handler
+from ..abc import Handler, RegistrarMixin
 
 log = logging.getLogger(__name__)
 
@@ -59,9 +59,10 @@ def task(callback = None, *, name = None, seconds, autostart = True):
     return Task(callback, name, seconds = seconds, autostart = autostart)
   return wrap(callback) if callback else wrap
 
-class TaskMixin:
-  def __init__(self, registrars):
-    registrars[Task] = (self.add_tasks, self.remove_tasks)
+class TaskMixin(RegistrarMixin):
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs)
+    self.registrars[Task] = (self.add_tasks, self.remove_tasks)
     self.task_handlers = {} # {Task: None}, ordered
     self.tasks_started = False # is true when enter lifespan, so new tasks start now
 
