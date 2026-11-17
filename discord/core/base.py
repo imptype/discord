@@ -1,10 +1,10 @@
-from ..ext import CogMixin, LifespanMixin, SignalMixin
+from ..ext import CogMixin, Lifespan, LifespanMixin, SignalMixin, TaskMixin
 from .http import HTTPClient
 from .command import CommandMixin
 from .factory import ModelFactory
 from .component import ComponentMixin
 
-class AppBase(CommandMixin, LifespanMixin, ComponentMixin, CogMixin, SignalMixin):
+class AppBase(CommandMixin, LifespanMixin, ComponentMixin, CogMixin, SignalMixin, TaskMixin):
   def __init__(self, token = None, application_id = None, reload = False):
     registrars = {} # {object: (add, remove)}, used by cog
     CommandMixin.__init__(self, registrars)
@@ -12,6 +12,10 @@ class AppBase(CommandMixin, LifespanMixin, ComponentMixin, CogMixin, SignalMixin
     ComponentMixin.__init__(self, registrars, self.loop)
     CogMixin.__init__(self, registrars, reload)
     SignalMixin.__init__(self, registrars)
+
+    TaskMixin.__init__(self, registrars)
+    self.lifespan_handlers[Lifespan(self.task_lifespan)] = None
+
     self.model = ModelFactory(self)
     self.tasks = set() # holds running asyncio tasks
 

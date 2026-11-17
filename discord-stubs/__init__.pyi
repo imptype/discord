@@ -58,6 +58,7 @@ from .ext import Lifespan as Lifespan
 from .ext import lifespan as lifespan
 from .ext import SignalWaiter as SignalWaiter
 from .ext import SignalHandler as SignalHandler
+from .asgi import App as App
 from .core import Modal as Modal
 from .core import modal as modal
 from .core import Choice as Choice
@@ -114,9 +115,11 @@ from .models import PartialGuild as PartialGuild
 from .models import PartialMember as PartialMember
 from .models import PartialChannel as PartialChannel
 from .models import PartialMessage as PartialMessage
-from .server import App as App
 from .gateway import Bot as Bot
 from .gateway import event as event
 from .gateway import Intents as Intents
 
 command = _command_namespace
+
+from .ext import Task as Task
+from .ext import task as task

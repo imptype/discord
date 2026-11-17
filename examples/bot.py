@@ -32,7 +32,8 @@ async def lifespan():
     # 'cogs.count',    # loaded by !loadcog command from 'cogs.loader'
 
     # extensions
-    # 'cogs.ext.signal'    # example of signals (custom events)
+    # 'cogs.ext.signal', # example of signals (custom events)
+    # 'cogs.ext.task'    # example of task (custom repeat tasks)
   )
 
   # You can also import and add stuff directly (add_events/commands/lifespans/components/views etc.)

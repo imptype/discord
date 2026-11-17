@@ -17,7 +17,9 @@ from .ui import (
   channel_select, mentionable_select, role_select, string_select, user_select
 )
 from .abc import Component, Interactable, PartialModel, Snowflake, snowflake_time
-from .ext import Cog, Lifespan, SignalHandler, SignalWaiter, color, colour, lifespan, signal
+from .ext import (
+  Cog, Lifespan, SignalHandler, SignalWaiter, Task, color, colour, lifespan, signal, task
+)
 from .asgi import App
 from .core import (
   AttachmentOption, AutocompleteInteraction, AutocompleteResponse, BooleanOption, ChannelOption,

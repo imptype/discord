@@ -1,5 +1,8 @@
 from .cog import Cog as Cog
 from .cog import CogMixin as CogMixin
+from .task import Task as Task
+from .task import task as task
+from .task import TaskMixin as TaskMixin
 from .color import color as color
 from .color import colour as colour
 from .signal import signal as signal
