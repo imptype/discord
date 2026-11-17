@@ -5,14 +5,14 @@ class Loader(discord.Cog):
     self.bot = bot
 
   @discord.command
-  async def loadcount(self, ctx):
+  async def loadcount(self, context):
     await self.bot.load_extensions('cogs.count')
-    await ctx.send('Loaded count cog!')
+    await context.send('Loaded count cog!')
 
   @discord.command
-  async def unloadcount(self, ctx):
+  async def unloadcount(self, context):
     await self.bot.unload_extensions('cogs.count')
-    await ctx.send('Unloaded count cog.')
+    await context.send('Unloaded count cog.')
 
 async def setup(bot):
   await bot.add_cogs(Loader)
