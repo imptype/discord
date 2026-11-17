@@ -31,11 +31,13 @@ async def lifespan():
     # 'cogs.loader',   # example of reloading a command without restarting the bot
     # 'cogs.count',    # loaded by !loadcog command from 'cogs.loader'
 
-    # extensions
-    # 'cogs.ext.signal',    # example of signals (custom events)
-    # 'cogs.ext.task',      # example of task (custom repeat tasks)
+    # extensions (in order of complexity)
+    # 'cogs.ext.color',     # example of using custom discord.Color()
+    # 'cogs.ext.cog',       # example of loading cogs as cog (not as extension)
     # 'cogs.ext.scheduler', # example of scheduling (asyncio task)
-    # 'cogs.ext.lifespan'  # example of lifespan in a cog
+    # 'cogs.ext.task',      # example of task (custom repeat tasks)
+    # 'cogs.ext.lifespan',  # example of lifespan in a cog
+    # 'cogs.ext.signal'     # example of signals (custom events)
   )
 
   # You can also import and add stuff directly (add_events/commands/lifespans/components/views etc.)
