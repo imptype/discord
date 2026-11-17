@@ -97,11 +97,6 @@ class Bot(AppBase):
       if not handlers:
         self.event_handlers.pop(event.gateway_name, None)
 
-  def spawn(self, coro):
-    task = self.loop.create_task(coro)
-    self.tasks.add(task)
-    task.add_done_callback(self.tasks.discard)
-
   def handle_gateway_command(self, message):
     data = message.data
     if data.get('webhook_id') or data.get('author', {}).get('bot'):

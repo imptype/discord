@@ -161,12 +161,6 @@ class SignalModule:
   def __init__(self, app):
     self.app = app
 
-  def spawn(self, coro, eager = False):
-    task = asyncio.create_task(coro, eager_start = eager)
-    self.app.tasks.add(task)
-    task.add_done_callback(self.app.tasks.discard)
-    return task
-
   async def dispatch(self, name, args, *, each, wait):
     """
     To explain the design of dispatch, there's basically 4 futures:
@@ -214,7 +208,7 @@ class SignalModule:
           if each and should_wait_to_finish:
             await step(*args)
           else:
-            handler_tasks.append(self.spawn(step(*args), eager = True))
+            handler_tasks.append(self.app.spawn(step(*args)))
 
         # 3.2. Run signal waiter
         else:
@@ -274,10 +268,10 @@ class SignalModule:
     await self.dispatch(name, args, each = True, wait = True)
 
   async def defer(self, name, /, *args):
-    self.spawn(self.dispatch(name, args, each = False, wait = False))
+    self.app.defer(self.dispatch(name, args, each = False, wait = False))
 
   async def defer_each(self, name, /, *args): # wait preferably keeps sender task alive til all done
-    self.spawn(self.dispatch(name, args, each = True, wait = True))
+    self.app.defer(self.dispatch(name, args, each = True, wait = True))
 
   def wait(self, name, priority = None, timeout = DEFAULT_WAITER_TIMEOUT):
     return SignalWaiter(self.app, name, priority, timeout)

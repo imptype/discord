@@ -22,9 +22,7 @@ async def handler(app, payload, response_ack_future):
   interaction_id = int(payload['id'])
   response_future = app.loop.create_future()
   app.pending_interactions[interaction_id] = (response_future, response_ack_future)
-  task = app.loop.create_task(coro(payload, is_from_http = True))
-  app.tasks.add(task)
-  task.add_done_callback(app.tasks.discard)
+  task = app.spawn(coro(payload, is_from_http = True))
   try:
     await asyncio.wait({response_future, task}, return_when = asyncio.FIRST_COMPLETED)
   finally:

@@ -123,3 +123,4 @@ command = _command_namespace
 
 from .ext import Task as Task
 from .ext import task as task
+from .ext import schedule as schedule

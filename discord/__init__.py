@@ -18,7 +18,8 @@ from .ui import (
 )
 from .abc import Component, Interactable, PartialModel, Snowflake, snowflake_time
 from .ext import (
-  Cog, Lifespan, SignalHandler, SignalWaiter, Task, color, colour, lifespan, signal, task
+  Cog, Lifespan, SignalHandler, SignalWaiter, Task, color, colour, lifespan, signal, task,
+  schedule
 )
 from .asgi import App
 from .core import (

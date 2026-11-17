@@ -39,7 +39,7 @@ class Task(Handler):
       raise ValueError(f'task {self.name!r} cannot start until it is added to an app that has started')
     if self.runner:
       raise ValueError(f'task {self.name!r} is already running')
-    self.runner = self.app.loop.create_task(self.run())
+    self.runner = self.app.spawn(self.run())
 
   def stop(self):
     if self.runner:

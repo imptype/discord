@@ -12,3 +12,5 @@ from .signal import SignalHandler as SignalHandler
 from .lifespan import Lifespan as Lifespan
 from .lifespan import lifespan as lifespan
 from .lifespan import LifespanMixin as LifespanMixin
+from .scheduler import schedule as schedule
+from .scheduler import SchedulerMixin as SchedulerMixin
